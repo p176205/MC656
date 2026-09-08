@@ -6,5 +6,6 @@
 | -------- | -------- |
 | Daniela Souza Cardoso Naves | 281141   |
 | Thiago Gradvohl de Oliveira | 281378   |
+| Gabriel Lopes de Barros     | 281198   |
 
 ## Descrição do Projeto
