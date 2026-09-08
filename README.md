@@ -5,5 +5,6 @@
 | NOME | RA |
 | -------- | -------- |
 | Daniela Souza Cardoso Naves | 281141   |
+| Thiago Gradvohl de Oliveira | 281378   |
 
 ## Descrição do Projeto
