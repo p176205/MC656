@@ -8,6 +8,7 @@
 | Thiago Gradvohl de Oliveira | 281378   |
 | Gabriel Lopes de Barros     | 281198   |
 | Priscilla Almeida           | 176205   |
+| Ana Luiza Mota Gomes        | 242389   |
 
 ## Descrição do Projeto
 
