@@ -1,27 +1,76 @@
 "use client";
 
+import { CadastroErrors, Usuario, UsuarioForm } from "@/entities/entities";
 import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
 
-export default function usuario() {
+export default function cadastro() {
   // Aqui ficam function, estados (usamos o useState para isso), efeitos colaterais (usamos useEffect para isso)
-  const [nome, setNome] = useState(""); // Isso não é um array (mesmo que pareça) é um estado (pense como se fosse uma variavel), usamos desse jeito para que na tela apareça a mudança quando essa "variavel" mudar
-  const [email, setEmail] = useState("");
+    
+  function validarCadastro(email: string, senha: string): CadastroErrors {
+    const erros: CadastroErrors = {}; // cria um objeto do tipo CadastroErrors vazio
 
-  async function Cadastrar() {
-    const resposta = await fetch("http://localhost:8080/usuarios", { // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Validação do e-mail
+    if (!email.trim()) { // .trim() retira espaço inicial e final da string
+      erros.email = "O e-mail é obrigatório.";
+    } else if (!emailRegex.test(email)) {
+      erros.email = "Digite um e-mail válido.";
+    }
+
+    // Validação da senha
+    if (!senha) {
+      erros.senha = "A senha é obrigatória.";
+    } else if (senha.length < 8) {
+      erros.senha = "A senha deve ter pelo menos 8 caracteres.";
+    }
+    // verificar se a senha é numerica
+
+    return erros;
+  }
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<UsuarioForm>({
+  // resolver: ,
+    defaultValues: {
+      nome: "",
+      email: "",
+      senha: "", // 
+    },
+    mode: "onChange", // Atualizará valores conforme cada caractere digitado, o que permite que mensagens de erro nao sejam exibidas só ao enviar o form
+  });
+
+  const onSubmit = async (data: UsuarioForm) => {
+    console.log("Enviando formulario", data);
+    
+    try {
+    const resposta = await fetch("http://localhost:8080/usuarios", {
+      // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
       method: "POST", // Esse metodo diz que queremos inserir no banco. Existe, por exemplo o metodo GET (que fala que queremos pegar uma informação do banco)
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome: nome, email: email }),
+      body: JSON.stringify({ nome: data.nome, email: data.email }),
     });
 
     if (resposta.ok) {
       alert("Usuário cadastrado!");
-      setNome(""); // reseta o estado (variavel) nome
-      setEmail("");
     } else {
       alert("Erro ao cadastrar");
     }
-  }
+
+
+      // setMostrarSpam(true);
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+      toast.error("Erro inesperado. Tente novamente.");
+    } finally {
+      //
+    }
+  };
+
 
   // No return fica o "html e o css", soó que em um formato mais compacto onde misturamos html e css (se não seriam dois arquivos separados). onde fazemos o visual da pagina
   return (
