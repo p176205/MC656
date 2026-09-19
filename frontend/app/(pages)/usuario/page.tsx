@@ -8,7 +8,7 @@ export default function usuario() {
   const [email, setEmail] = useState("");
 
   async function Cadastrar() {
-    const resposta = await fetch("http://localhost:8080/usuarios", { // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
+    const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios`, { // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
       method: "POST", // Esse metodo diz que queremos inserir no banco. Existe, por exemplo o metodo GET (que fala que queremos pegar uma informação do banco)
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nome: nome, email: email }),
