@@ -26,17 +26,37 @@ public abstract class Contexto {
     public Contexto(String nome, TipoContexto tipo){
         this.nome = nome;
         this.tipo = tipo;
+        validar_contexto();
+    }
+
+    // Confere se uma nova entidade "Contexto" poderá ser criada sem erros
+    public final void validar_contexto(){
+
+        // O nome do "Contexto" não pode estar vazio
+        if (nome == null || nome.isBlank()){
+            throw new IllegalArgumentException("O nome do contexto não pode ser vazio.");
+        }
+        // O tipo do "Contexto" não pode ser nulo
+        if (tipo == null){
+            throw new IllegalArgumentException("O tipo do contexto deve ser informado.");
+        }
     }
 
     public Long getId(){
         return id;
     }
 
+    public TipoContexto getTipo(){
+        return tipo;
+    }
+
     public String getNome(){
         return nome;
     }
 
-    public TipoContexto getTipo(){
-        return tipo;
+    // O nome é o único atributo do "Contexto" que poderá ser modificado após a criação da entidade, caso necessário:
+    public void getNome(String nome){
+        this.nome = nome;
+        validar_contexto();
     }
 }
