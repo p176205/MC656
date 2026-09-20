@@ -32,6 +32,19 @@ jobs:
         working-directory: backend
         run: ./mvnw -B test
 
+      - name: Generate backend coverage report
+        if: always()
+        working-directory: backend
+        run: ./mvnw -B jacoco:report
+
+      - name: Upload backend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco
+          if-no-files-found: warn
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
