@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 export default function cadastro() {
   // Aqui ficam function, estados (usamos o useState para isso), efeitos colaterais (usamos useEffect para isso)
+
   const [cadastrar, setCadastrar] = useState<boolean>(false);
   const [errors, setErrors] = useState<CadastroErrors>({
     nome: { message: "", status: false },
@@ -72,7 +73,7 @@ export default function cadastro() {
   // No return fica o "html e o css", soó que em um formato mais compacto onde misturamos html e css (se não seriam dois arquivos separados). onde fazemos o visual da pagina
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-5 text-black">
-      <h1 className="text-2xl font-bold">Cadastre um usuário</h1>
+      <h1 className="text-2xl font-bold">Cadastro</h1>
 
       <form
         className="flex w-full max-w-md flex-col gap-5 rounded-lg border p-6 shadow-md"
@@ -137,7 +138,7 @@ export default function cadastro() {
 
           <input
             className="rounded-md border border-gray-300 p-2 outline-none focus:border-purple-600"
-            type="number"
+            type="text"
             {...register("senha")}
             onChange={(event) => {
               register("senha").onChange(event);

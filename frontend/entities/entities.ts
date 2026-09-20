@@ -9,6 +9,7 @@ type Error = {
     message: string;
     status: boolean;
 }
+
 export type CadastroErrors = {
     nome: Error;
     email: Error;
