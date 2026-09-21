@@ -30,6 +30,11 @@ jobs:
 
       - name: Test backend
         working-directory: backend
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: ./mvnw -B test
 
       - name: Generate backend coverage report
