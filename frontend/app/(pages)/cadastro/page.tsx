@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export default function cadastro() {
+export default function Cadastro() {
   // Aqui ficam function, estados (usamos o useState para isso), efeitos colaterais (usamos useEffect para isso)
 
   const [cadastrar, setCadastrar] = useState<boolean>(false);
