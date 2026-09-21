@@ -28,12 +28,12 @@ public class ParticipacaoController {
     }
 
     private ContextoParticipacaoDTO toDTO(Participacao participacao) {
-        Contexto contexto = participacao.getContexto();
-        return new ContextoParticipacaoDTO(
-                contexto.getId(),
-                contexto.getTipo(),
-                contexto.getNome(),
-                participacao.getPapel()
-        );
-    }
+    Contexto contexto = participacao.getContexto();
+    return new ContextoParticipacaoDTO(
+            contexto.getId(),
+            contexto.getTipo().name(),   
+            contexto.getNome(),
+            participacao.getPapel()
+    );
+}
 }
