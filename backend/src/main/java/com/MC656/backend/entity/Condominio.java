@@ -46,8 +46,12 @@ public class Condominio extends Contexto {
 
     // Adiciona ou modifica o número de moradores atual do condomínio
     public void setTotalMoradores(int total_moradores){
+
+        // O "Condominio" deve ter ao menos 1 morador (o representante)
+        if (total_moradores <= 0){
+            throw new IllegalArgumentException("O condomínio deve ter ao menos um morador.");
+        }
         this.total_moradores = total_moradores;
-        validar_condominio();
     }
 
     // Confere se a entidade "Condominio" poderá ser criada sem erros

@@ -41,13 +41,13 @@ public class ContextoTest {
 
     // TESTE 3: Não permite a criação de um novo contexto com o tipo nulo
     @Test
-    void naoDevePermitirTipoNulo() {
+    void naoDevePermitirTipoNulo(){
         assertThrows(IllegalArgumentException.class, () -> new ContextoTeste("Contexto Teste", null));
     }
 
     // TESTE 4: Permite a modificação do nome de um contexto para outro nome válido
     @Test
-    void devePermitirAlterarNome() {
+    void devePermitirAlterarNome(){
 
         Contexto contexto_teste = new ContextoTeste("Nome Inicial", TipoContexto.CONDOMINIO);
 
@@ -61,15 +61,15 @@ public class ContextoTest {
 
         Contexto contexto_teste = new ContextoTeste("Nome Inicial", TipoContexto.CONDOMINIO);
 
-        // 2.1: Nome == null (inválido)
+        // 5.1: Nome == null (inválido)
         assertThrows(IllegalArgumentException.class, () -> contexto_teste.setNome(null));
         assertEquals("Nome Inicial", contexto_teste.getNome());
 
-        // 2.2: Nome == "" (inválido)
+        // 5.2: Nome == "" (inválido)
         assertThrows(IllegalArgumentException.class, () -> contexto_teste.setNome(""));
         assertEquals("Nome Inicial", contexto_teste.getNome());
 
-        // 2.3: Nome == "   " (inválido)
+        // 5.3: Nome == "   " (inválido)
         assertThrows(IllegalArgumentException.class, () -> contexto_teste.setNome("    "));
         assertEquals("Nome Inicial", contexto_teste.getNome());
     }
