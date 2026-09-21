@@ -55,8 +55,12 @@ public abstract class Contexto {
     }
 
     // O nome é o único atributo do "Contexto" que poderá ser modificado após a criação da entidade, caso necessário:
-    public void getNome(String nome){
+    public void setNome(String nome){
+
+        // O nome do "Contexto" não pode estar vazio
+        if (nome == null || nome.isBlank()){
+            throw new IllegalArgumentException("O nome do contexto não pode ser vazio.");
+        }
         this.nome = nome;
-        validar_contexto();
     }
 }
