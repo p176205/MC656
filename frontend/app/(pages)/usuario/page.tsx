@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function usuario() {
+export default function Usuario() {
   // Aqui ficam function, estados (usamos o useState para isso), efeitos colaterais (usamos useEffect para isso)
   const [nome, setNome] = useState(""); // Isso não é um array (mesmo que pareça) é um estado (pense como se fosse uma variavel), usamos desse jeito para que na tela apareça a mudança quando essa "variavel" mudar
   const [email, setEmail] = useState("");
