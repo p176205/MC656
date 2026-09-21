@@ -2,13 +2,16 @@ package com.MC656.backend.entity;
 
 import java.util.ArrayList;
 
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 
 // "Assembleia" deve herdar de "Contexto"
 @Entity // A classe representa uma entidade no banco de dados
 public class Assembleia extends Contexto {
   
+    @ElementCollection 
     private ArrayList<String> pautas;
+    
     private int participantes;
 
     // Construtor
@@ -37,8 +40,12 @@ public class Assembleia extends Contexto {
     }
 
     public void setParticipantes(int participantes){
+
+        // A assembleia deve ter ao menos 1 participante (o criador)
+        if (participantes <= 0){
+            throw new IllegalArgumentException("A assembleia deve ter ao menos um participante.");
+        }
         this.participantes = participantes;
-        validar_assembleia();
     }
 
     // Confere se a entidade "Assembleia" poderá ser criada sem erros
