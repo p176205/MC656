@@ -2,7 +2,6 @@ package com.MC656.backend.entity;
 
 // Bibliotecas para os testes automáticos
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.TestExecutionListeners;
 
 import static org.junit.jupiter.api.Assertions.*;
 
