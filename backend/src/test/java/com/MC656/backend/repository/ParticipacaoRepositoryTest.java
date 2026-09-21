@@ -1,5 +1,6 @@
 package com.MC656.backend.repository;
 
+import com.MC656.backend.entity.CentroAcademico;
 import com.MC656.backend.entity.Contexto;
 import com.MC656.backend.entity.Papel;
 import com.MC656.backend.entity.Participacao;
@@ -12,9 +13,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/* salva um Usuario, um Contexto e uma Participacao, e valida que o link
- (FKs) e o papel foram persistidos corretamente
- */
+/* salva um Usuario, um Contexto e uma Participacao, e valida que o linke o papel foram persistidos corretamente*/
 @DataJpaTest
 class ParticipacaoRepositoryTest {
 
@@ -30,7 +29,7 @@ class ParticipacaoRepositoryTest {
     @Test
     void devePersistirParticipacaoComPapelEVincularUsuarioEContexto() {
         Usuario usuario = usuarioRepository.save(new Usuario("Thiago", "thiago@example.com"));
-        Contexto contexto = contextoRepository.save(new Contexto("Centro Acadêmico", "CA de Computação"));
+        Contexto contexto = contextoRepository.save(new CentroAcademico("CA de Computação", 1));
 
         Participacao participacao = new Participacao(usuario, contexto, Papel.MEMBRO);
         participacaoRepository.save(participacao);
