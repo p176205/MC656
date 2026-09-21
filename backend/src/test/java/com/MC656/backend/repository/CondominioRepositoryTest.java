@@ -19,7 +19,7 @@ class CondominioRepositoryTest {
     @Test
     void devePersistirCondominio(){
 
-        // Cria um condomínio genérico e salva ele no bancon de dados
+        // Cria um condomínio genérico e salva ele no banco de dados
         Condominio condominio_teste = new Condominio("Condomínio Teste",10);
         Condominio condominio_salvo = condominioRepository.save(condominio_teste);
 

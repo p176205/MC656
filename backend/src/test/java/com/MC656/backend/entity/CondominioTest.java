@@ -1,6 +1,6 @@
 package com.MC656.backend.entity;
 
-// Bibliotecas para os teste automáticos
+// Bibliotecas para os testes automáticos
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
@@ -9,7 +9,7 @@ class CondominioTest {
 
     // TESTE 1: Verifica se a criação de um novo condominio é feita corretamente (Nome, tipo e número de moradores válidos)
     @Test
-    void deveCriarCondominioComDadosValido(){
+    void deveCriarCondominioComDadosValidos(){
 
         Condominio condominio_teste = new Condominio("Condomínio Teste", 10);
 

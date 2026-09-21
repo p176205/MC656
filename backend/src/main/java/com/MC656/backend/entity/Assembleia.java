@@ -1,16 +1,18 @@
 package com.MC656.backend.entity;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 
 // "Assembleia" deve herdar de "Contexto"
 @Entity // A classe representa uma entidade no banco de dados
 public class Assembleia extends Contexto {
   
-    @ElementCollection 
-    private ArrayList<String> pautas;
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<String> pautas;
     
     private int participantes;
 
@@ -26,7 +28,7 @@ public class Assembleia extends Contexto {
     protected Assembleia(){}
 
     // Retorna a lista de pautas da assembleia
-    public ArrayList<String> getPautas(){
+    public List<String> getPautas(){
         return pautas;
     }
 
