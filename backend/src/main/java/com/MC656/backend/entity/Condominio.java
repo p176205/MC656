@@ -7,10 +7,14 @@ import jakarta.persistence.Entity;
 public class Condominio extends Contexto {
 
     private Usuario representante;
+    private int total_moradores;
     
     // Construtor
-    public Condominio(String nome){
+    public Condominio(String nome, Usuario representante, int total_moradores){
         super(nome, TipoContexto.CONDOMINIO);
+        this.representante = representante;
+        this.total_moradores = total_moradores;
+        validar_condominio();
     }
 
     // Construtor sem argumentos, para ser utilizado pelo banco de dados
@@ -21,8 +25,33 @@ public class Condominio extends Contexto {
         return representante;
     }
 
+    // Obtém o número de moradores atual do condomínio
+    public int getTotalMoradores(){
+        return total_moradores;
+    }
+
     // Adiciona ou modifica o representante (síndico) atual do condomínio
     public void setRepresentante(Usuario representante){
         this.representante = representante;
+        validar_condominio();
+    }
+
+    // Adiciona ou modifica o número de moradores atual do condomínio
+    public void setTotalMoradores(int total_moradores){
+        this.total_moradores = total_moradores;
+        validar_condominio();
+    }
+
+    // Confere se a entidade "Condominio" poderá ser criada sem erros
+    public final void validar_condominio(){
+
+        // O "Condominio" deve ter um representante (síndico) sempre
+        if (representante == null){
+            throw new IllegalArgumentException("O representante do condomínio deve ser informado.");
+        }
+        // O "Condominio" deve ter ao menos 1 morador (o representante)
+        if (total_moradores <= 0){
+            throw new IllegalArgumentException("O condomínio deve ter ao menos um morador.");
+        }
     }
 }

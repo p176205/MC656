@@ -29,7 +29,7 @@ public abstract class Contexto {
         validar_contexto();
     }
 
-    // Confere se uma nova entidade "Contexto" poderá ser criada sem erros
+    // Confere se a entidade "Contexto" poderá ser criada sem erros
     public final void validar_contexto(){
 
         // O nome do "Contexto" não pode estar vazio
