@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 
-export default function usuario() {
+export default function Usuario() {
   // Aqui ficam function, estados (usamos o useState para isso), efeitos colaterais (usamos useEffect para isso)
   const [nome, setNome] = useState(""); // Isso não é um array (mesmo que pareça) é um estado (pense como se fosse uma variavel), usamos desse jeito para que na tela apareça a mudança quando essa "variavel" mudar
   const [email, setEmail] = useState("");
 
   async function Cadastrar() {
-    const resposta = await fetch("http://localhost:8080/usuarios", { // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
+    const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios`, { // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
       method: "POST", // Esse metodo diz que queremos inserir no banco. Existe, por exemplo o metodo GET (que fala que queremos pegar uma informação do banco)
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nome: nome, email: email }),
