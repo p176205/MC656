@@ -28,7 +28,7 @@ class ParticipacaoRepositoryTest {
 
     @Test
     void devePersistirParticipacaoComPapelEVincularUsuarioEContexto() {
-        Usuario usuario = usuarioRepository.save(new Usuario("Thiago", "thiago@example.com"));
+        Usuario usuario = usuarioRepository.save(new Usuario("Thiago", "thiago@example.com", "senha123"));
         Contexto contexto = contextoRepository.save(new CentroAcademico("CA de Computação", 1));
 
         Participacao participacao = new Participacao(usuario, contexto, Papel.MEMBRO);

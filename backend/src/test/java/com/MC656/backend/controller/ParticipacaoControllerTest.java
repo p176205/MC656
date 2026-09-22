@@ -33,7 +33,7 @@ class ParticipacaoControllerTest {
 
     @Test
     void deveRetornar200ComListaDeContextosDoUsuario() throws Exception {
-        Usuario usuario = new Usuario("Thiago", "thiago@example.com");
+        Usuario usuario = new Usuario("Thiago", "thiago@example.com", "senha123");
         Contexto contexto = new CentroAcademico("CA de Computação", 1);
         Participacao participacao = new Participacao(usuario, contexto, Papel.MEMBRO);
 
