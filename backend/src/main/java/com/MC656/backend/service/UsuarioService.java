@@ -1,13 +1,12 @@
 package com.MC656.backend.service;
 
-import org.springframework.stereotype.Service;
-
-import com.MC656.backend.dto.UsuarioRequest;
+import com.MC656.backend.dto.UsuarioCreateDTO;
+import com.MC656.backend.dto.UsuarioResponseDTO;
 import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.repository.UsuarioRepository;
+import org.springframework.stereotype.Service;
 
-@Service // Aqui conterá a lógica relacionada ao usuario
-// Pegamos a requisição do front (usuarioRequest), transformamos para um objeto Usuario e salvamos no banco (usuarioRepository.save(usuario))
+@Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
@@ -16,10 +15,14 @@ public class UsuarioService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public Usuario salvar(UsuarioRequest request) {
+    public UsuarioResponseDTO cadastrar(UsuarioCreateDTO dto) {
+        if (usuarioRepository.existsByEmail(dto.email())) {
+            throw new IllegalArgumentException("E-mail já cadastrado");
+        }
 
-        Usuario usuario = new Usuario(request.getNome(), request.getEmail());
+        Usuario usuario = new Usuario(dto.nome(), dto.email(), dto.senha());
+        usuario = usuarioRepository.save(usuario);
 
-        return usuarioRepository.save(usuario);
+        return new UsuarioResponseDTO(usuario.getId(), usuario.getNome(), usuario.getEmail());
     }
 }
