@@ -1,5 +1,7 @@
 # Arquitetura do sistema de votação
 
+![Diagrama C4 de componentes do backend](c4-componentes.png)
+
 ## Componentes e responsabilidades
 
 | Componente | Responsabilidade | Se relaciona com |
