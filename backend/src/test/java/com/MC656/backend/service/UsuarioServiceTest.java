@@ -10,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,6 +56,8 @@ class UsuarioServiceTest {
         Usuario usuarioCapturado = captor.getValue();
         assertEquals("Maria", usuarioCapturado.getNome());
         assertEquals("maria@email.com", usuarioCapturado.getEmail());
+        assertEquals("hash-bcrypt", usuarioCapturado.getSenha());
+        verify(passwordEncoder).encode("senha123");
     }
 
     @Test
@@ -67,5 +70,24 @@ class UsuarioServiceTest {
 
         verify(usuarioRepository).existsByEmail("maria@email.com");
         verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    void testCadastrar_SenhaNaoEhSalvaEmTextoPuro() {
+        PasswordEncoder encoderReal = new BCryptPasswordEncoder();
+        UsuarioService servicoComBCrypt = new UsuarioService(usuarioRepository, encoderReal);
+        UsuarioCreateDTO dto = new UsuarioCreateDTO("Maria", "maria@email.com", "senha123");
+
+        when(usuarioRepository.existsByEmail("maria@email.com")).thenReturn(false);
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        servicoComBCrypt.cadastrar(dto);
+
+        ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(captor.capture());
+        String senhaSalva = captor.getValue().getSenha();
+
+        assertNotEquals("senha123", senhaSalva);
+        assertTrue(encoderReal.matches("senha123", senhaSalva));
     }
 }
