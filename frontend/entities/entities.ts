@@ -15,3 +15,15 @@ export type CadastroErrors = {
     email: Error;
     senha: Error;
 };
+
+export interface ContextProps {
+  titulo: string;
+  usuarioId: string;
+  modoAdmin: boolean;
+}
+
+export interface UsuarioResponse{
+    id: number;
+    nome: string;
+    email: string;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { validarCadastro } from "@/app/actions/cadastro";
-import { CadastroErrors, Usuario } from "@/entities/entities";
+import { CadastroErrors, Usuario, UsuarioResponse } from "@/entities/entities";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -49,7 +49,7 @@ export default function Cadastro() {
     };
 
     try {
-      const resposta = await fetch("http://localhost:8080/usuarios", {
+      const resposta = await fetch("http://localhost:8080/api/usuarios", {
         // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
         method: "POST", // Esse metodo diz que queremos inserir no banco. Existe, por exemplo o metodo GET (que fala que queremos pegar uma informação do banco)
         headers: { "Content-Type": "application/json" },
@@ -57,8 +57,12 @@ export default function Cadastro() {
       });
 
       if (resposta.ok) {
+        const usuario: UsuarioResponse = await resposta.json();
+        console.log(usuario)
         toast.success(`Usuário ${usuario.nome} cadastrado!`);
       } else {
+        const erro = await resposta.text();
+        console.log("res:", erro)
         toast.error(`Erro ao cadastrar o usuário ${usuario.nome}.`);
       }
     } catch (err) {

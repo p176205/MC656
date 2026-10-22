@@ -15,14 +15,15 @@ public class UsuarioService {
         this.usuarioRepository = usuarioRepository;
     }
 
+    
     public UsuarioResponseDTO cadastrar(UsuarioCreateDTO dto) {
         if (usuarioRepository.existsByEmail(dto.email())) {
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
-
         Usuario usuario = new Usuario(dto.nome(), dto.email(), dto.senha());
         usuario = usuarioRepository.save(usuario);
 
         return new UsuarioResponseDTO(usuario.getId(), usuario.getNome(), usuario.getEmail());
     }
 }
+
