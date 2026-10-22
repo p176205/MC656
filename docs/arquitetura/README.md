@@ -15,3 +15,11 @@
 | PostgreSQL | Armazena usuários, contextos e participações. | Repositories |
 
 Os repositories de `CentroAcademico`, `Condominio` e `Assembleia` já existem, mas ainda não têm Controller nem Service que os usem.
+
+## Estilos arquiteturais
+
+**Cliente-servidor.** O frontend é o cliente e envia requisições HTTP com JSON ao backend, que responde com o resultado. Assim cada lado evolui separadamente.
+
+**Em camadas (no backend).** Controller recebe a requisição, Service concentra a regra de negócio e Repository acessa o banco. DTOs definem o que trafega pela API e entidades representam o que é persistido.
+
+**Exceção conhecida.** `ParticipacaoController` acessa `ParticipacaoRepository` diretamente e faz a conversão para DTO. Isso pula a camada de Service e está registrado como code smell (Feature Envy) na Seção 3 do PDF.
