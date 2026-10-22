@@ -23,3 +23,13 @@ Os repositories de `CentroAcademico`, `Condominio` e `Assembleia` já existem, m
 **Em camadas (no backend).** Controller recebe a requisição, Service concentra a regra de negócio e Repository acessa o banco. DTOs definem o que trafega pela API e entidades representam o que é persistido.
 
 **Exceção conhecida.** `ParticipacaoController` acessa `ParticipacaoRepository` diretamente e faz a conversão para DTO. Isso pula a camada de Service e está registrado como code smell (Feature Envy) na Seção 3 do PDF.
+
+## Decisões arquiteturais
+
+**PostgreSQL como banco.** Modelo relacional com SQL e consultas complexas, adequado a usuários, contextos e participações. Em troca, exige manter um esquema e o desempenho depende da modelagem.
+
+**Spring Boot no backend.** Facilita APIs REST e a separação em camadas. Em troca, traz mais configuração e abstrações do que alternativas simples.
+
+**Next.js no frontend.** Organiza páginas e componentes sobre React e favorece reuso. Em troca, exige conhecimento adicional do framework.
+
+**Herança JOINED para `Contexto`.** Centro Acadêmico, Condomínio e Assembleia herdam de `Contexto`, cada um com sua tabela ligada à tabela base. Isso permite uma plataforma única para os três cenários, com colunas específicas sem campos nulos. Em troca, consultas polimórficas exigem joins.
