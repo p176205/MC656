@@ -1,8 +1,12 @@
 package com.MC656.backend.controller;
 
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,6 +67,19 @@ public class ContextoController {
 
         try {
             var resposta = contextoService.criarCentroAcademico(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> listarContextosDoUsuario(
+            @PathVariable Long id) {
+
+        try {
+            var resposta = contextoService.listarContextosDoUsuario(id);
+            System.out.println("Contextos encontrados: " + resposta);
             return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

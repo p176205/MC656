@@ -1,14 +1,19 @@
 package com.MC656.backend.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
+import com.MC656.backend.dto.ContextoResponseDTO;
 import com.MC656.backend.dto.UsuarioCreateDTO;
 import com.MC656.backend.dto.UsuarioResponseDTO;
 import com.MC656.backend.entity.Assembleia;
@@ -90,4 +95,27 @@ public class ContextoService {
 
         return contextoSalvo;
     }
+
+public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {
+
+    // Busca todas as participações associadas ao usuário informado.
+    // Cada participação relaciona um usuário a um contexto.
+    return participacaoRepository.findByUsuarioId(id).stream() // permitindo transformar cada elemento individualmente.
+            .map(participacao -> {// Para cada participação, executa a função abaixo (fazemos isso para construir um DTO com os dados que serão enviados ao frontend)
+
+                Contexto contexto = participacao.getContexto(); // Obtém o contexto associado à participação atual. (Ele pode ser uma Assembleia, um Condominio ou um CentroAcademico.)
+
+                return new ContextoResponseDTO(
+                        contexto.getId(),
+                        contexto.getNome(),
+                        contexto.getTipo().toString(),
+                        participacao.getPapel().toString(),                         // Retorna true se o papel do usuário for ADMINISTRADOR; caso contrário, retorna false.
+                        contexto
+                );
+            })
+
+            // Reúne todos os DTOs produzidos em uma nova lista.
+            .toList();
+}
+
 }
