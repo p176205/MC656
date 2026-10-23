@@ -73,4 +73,18 @@ public class ContextoTest {
         assertThrows(IllegalArgumentException.class, () -> contexto_teste.setNome("    "));
         assertEquals("Nome Inicial", contexto_teste.getNome());
     }
+
+    // TESTE 6: A mensagem de erro do nome em branco é a mesma na criação e na alteração
+    @Test
+    void deveManterMensagemDeErroDoNomeEmBranco(){
+
+        IllegalArgumentException naCriacao = assertThrows(IllegalArgumentException.class,
+                () -> new ContextoTeste("", TipoContexto.CONDOMINIO));
+        assertEquals("O nome do contexto não pode ser vazio.", naCriacao.getMessage());
+
+        Contexto contexto_teste = new ContextoTeste("Nome Inicial", TipoContexto.CONDOMINIO);
+        IllegalArgumentException naAlteracao = assertThrows(IllegalArgumentException.class,
+                () -> contexto_teste.setNome("   "));
+        assertEquals("O nome do contexto não pode ser vazio.", naAlteracao.getMessage());
+    }
 }

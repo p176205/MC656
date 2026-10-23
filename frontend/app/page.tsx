@@ -2,6 +2,7 @@
 
 import Navbar from "@/components/navbar";
 import { Contexto, ContextoDTO, Usuario } from "@/entities/entities";
+import { getContextos, ResultadoGetContextos } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 
 export default function Home() {
@@ -14,15 +15,7 @@ export default function Home() {
       setCarregando(true);
 
       try {
-        // Testando o metodo GET
-        // Gente no fetch esta hardcoded pq estava apenas testando com um id que esta no meu banco. Mais para frente farei um cookie de sessão para guardar o id do usuario no navegador e vou usa-lo aqui
-        const resposta = await fetch(
-          `http://localhost:8080/api/contextos/${3}`, 
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        const resposta: Response = await getContextos();
 
         if (!resposta.ok) {
           const erro = await resposta.text();

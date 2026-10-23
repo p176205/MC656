@@ -1,28 +1,17 @@
 package com.MC656.backend.service;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
 import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.ContextoResponseDTO;
-import com.MC656.backend.dto.UsuarioCreateDTO;
-import com.MC656.backend.dto.UsuarioResponseDTO;
 import com.MC656.backend.entity.Assembleia;
 import com.MC656.backend.entity.CentroAcademico;
 import com.MC656.backend.entity.Condominio;
 import com.MC656.backend.entity.Contexto;
 import com.MC656.backend.entity.Papel;
 import com.MC656.backend.entity.Participacao;
-import com.MC656.backend.entity.TipoContexto;
 import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.repository.ContextoRepository;
 import com.MC656.backend.repository.ParticipacaoRepository;

@@ -1,7 +1,5 @@
 package com.MC656.backend.controller;
 
-import java.util.stream.Collectors;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -11,18 +9,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
-import com.MC656.backend.dto.UsuarioCreateDTO;
-import com.MC656.backend.dto.UsuarioResponseDTO;
-import com.MC656.backend.entity.Contexto;
-import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.service.ContextoService;
-import com.MC656.backend.service.UsuarioService;
-
-import jakarta.validation.Valid;
 
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
 @RequestMapping("/api/contextos") // endereco base (esse é o endereco completo q o front deve usar para fazer requisição: http://localhost:8080/api/contextos)
