@@ -16,14 +16,31 @@ export type CadastroErrors = {
     senha: Error;
 };
 
-export interface ContextProps {
-  titulo: string;
-  usuarioId: string;
-  modoAdmin: boolean;
-}
 
 export interface UsuarioResponse{
     id: number;
     nome: string;
     email: string;
+}
+
+export interface Assembleia{
+    id: number;
+    nome: string;
+    participantes: number;
+}
+
+export interface Condominio{
+    id: number;
+    nome: string;
+    total_moradores: number;
+}
+
+export interface CentroAcademico{
+    id: number;
+    nome: string;
+    tempo_vigencia: number;
+}
+
+export interface Contexto{
+    tipo: Condominio | CentroAcademico | Assembleia;
 }

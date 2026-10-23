@@ -1,57 +1,108 @@
-
 "use client";
 
-import { useState } from "react";
+import Navbar from "@/components/navbar";
+import { Usuario } from "@/entities/entities";
+import { useState, useEffect } from "react";
 
-export default function Cadastro() {
-    const [loading, setLoading] = useState(false);
+export default function Home() {
+  const [carregando, setCarregando] = useState(true);
+  const [user, setUser] = useState<Usuario>();
+  const [contextos, setContextos] = useState();
 
-    async function criarAssembleia() {
-        setLoading(true);
+  useEffect(() => {
+    async function carregarDados() {
+      setCarregando(true);
 
-        try {
-            const resposta = await fetch(
-                "http://localhost:8080/api/contextos/assembleias",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        nome: "C1",
-                        participantes: 3,
-                    }),
-                }
-            );
+      try {
+        // Exemplo: buscar dados usando usuarioId
 
-            // Lê o corpo uma única vez, independentemente do resultado.
-            const texto = await resposta.text();
-
-            if (resposta.ok) {
-                console.log("Assembleia criada:", texto);
-            } else {
-                console.error(
-                    "Erro do backend:",
-                    resposta.status,
-                    texto
-                );
-            }
-        } catch (err) {
-            console.error("Erro inesperado:", err);
-        } finally {
-            setLoading(false);
-        }
+      } catch {
+        setMensagem("Erro ao carregar os dados.");
+      } finally {
+        setCarregando(false);
+      }
     }
 
-    return (
-        <section>
-            <button
-                onClick={criarAssembleia}
-                disabled={loading}
-                className="bg-black"
-            >
-                {loading ? "Criando..." : "Criar assembleia"}
-            </button>
-        </section>
-    );
+    carregarDados();
+  }, [usuarioId]);
+
+  return (
+// so estava pensando mais ou menos em como vai ficar
+    <main className="min-h-screen bg-gray-50 text-gray-900">
+        <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
+            <div>
+                <h1 className="text-2xl font-bold">
+                Olá, usuário!
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                Você está no contexto "X".
+                </p>
+            </div>
+            <SeletorContexto/>
+        <header/>
+
+        <div className="mx-auto max-w-6xl px-6">
+            <Navbar/>
+
+            <div className="py-8">{renderizarConteudo()}</div>
+        </div>
+    </main>
+  );
 }
+
+// "use client";
+
+// import { useState } from "react";
+
+// export default function Cadastro() {
+//     const [loading, setLoading] = useState(false);
+
+//     async function criarAssembleia() {
+//         setLoading(true);
+
+//         try {
+//             const resposta = await fetch(
+//                 "http://localhost:8080/api/contextos/assembleias",
+//                 {
+//                     method: "POST",
+//                     headers: {
+//                         "Content-Type": "application/json",
+//                     },
+//                     body: JSON.stringify({
+//                         nome: "C1",
+//                         participantes: 3,
+//                     }),
+//                 }
+//             );
+
+//             // Lê o corpo uma única vez, independentemente do resultado.
+//             const texto = await resposta.text();
+
+//             if (resposta.ok) {
+//                 console.log("Assembleia criada:", texto);
+//             } else {
+//                 console.error(
+//                     "Erro do backend:",
+//                     resposta.status,
+//                     texto
+//                 );
+//             }
+//         } catch (err) {
+//             console.error("Erro inesperado:", err);
+//         } finally {
+//             setLoading(false);
+//         }
+//     }
+
+//     return (
+//         <section>
+//             <button
+//                 onClick={criarAssembleia}
+//                 disabled={loading}
+//                 className="bg-black"
+//             >
+//                 {loading ? "Criando..." : "Criar assembleia"}
+//             </button>
+//         </section>
+//     );
+// }
