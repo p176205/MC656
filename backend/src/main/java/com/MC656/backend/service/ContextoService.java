@@ -109,7 +109,7 @@ public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {
                         contexto.getId(),
                         contexto.getNome(),
                         contexto.getTipo().toString(),
-                        participacao.getPapel().toString(),                         // Retorna true se o papel do usuário for ADMINISTRADOR; caso contrário, retorna false.
+                        participacao.getPapel().toString(),          
                         contexto
                 );
             })

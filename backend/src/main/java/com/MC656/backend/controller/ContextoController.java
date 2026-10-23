@@ -25,8 +25,7 @@ import com.MC656.backend.service.UsuarioService;
 import jakarta.validation.Valid;
 
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
-@RequestMapping("/api/contextos") // endereco base (esse é o endereco completo q o front deve usar para fazer a
-                                  // requisição: http://localhost:8080/api/usuarios)
+@RequestMapping("/api/contextos") // endereco base (esse é o endereco completo q o front deve usar para fazer requisição: http://localhost:8080/api/contextos)
 @CrossOrigin(origins = "http://localhost:3000")
 public class ContextoController {
     private final ContextoService contextoService;

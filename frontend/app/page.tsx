@@ -15,8 +15,9 @@ export default function Home() {
 
       try {
         // Testando o metodo GET
+        // Gente no fetch esta hardcoded pq estava apenas testando com um id que esta no meu banco. Mais para frente farei um cookie de sessão para guardar o id do usuario no navegador e vou usa-lo aqui
         const resposta = await fetch(
-          `http://localhost:8080/api/contextos/${3}`, // gente aqui esta hardcoded pq estava apenas testando com um id que esta no meu banco
+          `http://localhost:8080/api/contextos/${3}`, 
           {
             method: "GET",
             headers: { "Content-Type": "application/json" },
