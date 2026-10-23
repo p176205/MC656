@@ -33,9 +33,8 @@ public abstract class Contexto {
     public final void validar_contexto(){
 
         // O nome do "Contexto" não pode estar vazio
-        if (nome == null || nome.isBlank()){
-            throw new IllegalArgumentException("O nome do contexto não pode ser vazio.");
-        }
+        validarNome(nome);
+
         // O tipo do "Contexto" não pode ser nulo
         if (tipo == null){
             throw new IllegalArgumentException("O tipo do contexto deve ser informado.");
@@ -56,11 +55,14 @@ public abstract class Contexto {
 
     // O nome é o único atributo do "Contexto" que poderá ser modificado após a criação da entidade, caso necessário:
     public void setNome(String nome){
+        validarNome(nome);
+        this.nome = nome;
+    }
 
-        // O nome do "Contexto" não pode estar vazio
+    // Regra única do nome (usada na criação e na alteração): não pode ser nulo nem vazio
+    private void validarNome(String nome){
         if (nome == null || nome.isBlank()){
             throw new IllegalArgumentException("O nome do contexto não pode ser vazio.");
         }
-        this.nome = nome;
     }
 }

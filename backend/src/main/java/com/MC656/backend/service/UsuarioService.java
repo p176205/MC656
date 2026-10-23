@@ -4,15 +4,18 @@ import com.MC656.backend.dto.UsuarioCreateDTO;
 import com.MC656.backend.dto.UsuarioResponseDTO;
 import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.repository.UsuarioRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UsuarioResponseDTO cadastrar(UsuarioCreateDTO dto) {
@@ -20,7 +23,8 @@ public class UsuarioService {
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
 
-        Usuario usuario = new Usuario(dto.nome(), dto.email(), dto.senha());
+        String senhaCodificada = passwordEncoder.encode(dto.senha());
+        Usuario usuario = new Usuario(dto.nome(), dto.email(), senhaCodificada);
         usuario = usuarioRepository.save(usuario);
 
         return new UsuarioResponseDTO(usuario.getId(), usuario.getNome(), usuario.getEmail());

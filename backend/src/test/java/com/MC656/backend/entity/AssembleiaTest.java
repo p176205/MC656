@@ -66,4 +66,17 @@ public class AssembleiaTest {
         assertEquals("Nova pauta", assembleia_teste.getPautas().get(0));
     }
 
+    // TESTE 6: A mensagem de erro é a mesma na criação e na alteração do número de participantes
+    @Test
+    void deveManterMensagemDeErroDeParticipantesInvalidos(){
+
+        IllegalArgumentException naCriacao = assertThrows(IllegalArgumentException.class,
+                () -> new Assembleia("Assembleia teste", 0));
+        assertEquals("A assembleia deve ter ao menos um participante.", naCriacao.getMessage());
+
+        Assembleia assembleia_teste = new Assembleia("Assembleia teste", 10);
+        IllegalArgumentException naAlteracao = assertThrows(IllegalArgumentException.class,
+                () -> assembleia_teste.setParticipantes(0));
+        assertEquals("A assembleia deve ter ao menos um participante.", naAlteracao.getMessage());
+    }
 }

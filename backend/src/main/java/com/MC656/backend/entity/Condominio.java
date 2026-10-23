@@ -1,4 +1,4 @@
-// OBS: A existência do "representante" como parte dos atributos do Condominio foi apagada temporariamente, 
+// OBS: A existência do "representante" como parte dos atributos do Condominio foi apagada temporariamente,
 // pois os testes relacionados a essa funcionalidade exigem a implementação completa da classe Usuario e do relacionamento Participa (entre usuários e contextos),
 // que só serão finalizados na próxima entrega
 
@@ -12,11 +12,11 @@ import jakarta.persistence.Entity;
 public class Condominio extends Contexto {
 
     // TO DO: Finalizar a implementação do representante do comdomínio (entrega 3)
-    //@ManyToOne 
+    //@ManyToOne
     //private Usuario representante;
 
     private int total_moradores;
-    
+
     // Construtor
     public Condominio(String nome, int total_moradores){
         super(nome, TipoContexto.CONDOMINIO);
@@ -46,11 +46,7 @@ public class Condominio extends Contexto {
 
     // Adiciona ou modifica o número de moradores atual do condomínio
     public void setTotalMoradores(int total_moradores){
-
-        // O "Condominio" deve ter ao menos 1 morador (o representante)
-        if (total_moradores <= 0){
-            throw new IllegalArgumentException("O condomínio deve ter ao menos um morador.");
-        }
+        validarTotalMoradores(total_moradores);
         this.total_moradores = total_moradores;
     }
 
@@ -62,7 +58,12 @@ public class Condominio extends Contexto {
         //    throw new IllegalArgumentException("O representante do condomínio deve ser informado.");
         //}
         // O "Condominio" deve ter ao menos 1 morador (o representante)
-        if (total_moradores <= 0){
+        validarTotalMoradores(total_moradores);
+    }
+
+    // Regra única do total de moradores (usada na criação e na alteração)
+    private void validarTotalMoradores(int valor){
+        if (valor <= 0){
             throw new IllegalArgumentException("O condomínio deve ter ao menos um morador.");
         }
     }

@@ -1,5 +1,15 @@
 # MC656 - Podemos dar um título ao projeto
 
+## Alunos Integrantes
+
+| NOME | RA |
+| -------- | -------- |
+| Daniela Souza Cardoso Naves | 281141   |
+| Thiago Gradvohl de Oliveira | 281378   |
+| Gabriel Lopes de Barros     | 281198   |
+| Priscilla Almeida           | 176205   |
+| Ana Luiza Mota Gomes        | 242389   |
+
 ## Descrição
 
 O sistema abrange três contextos principais: eleições de Centros Acadêmicos,

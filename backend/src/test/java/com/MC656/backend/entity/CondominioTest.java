@@ -53,4 +53,18 @@ class CondominioTest {
         assertThrows(IllegalArgumentException.class, () -> condominio_teste.setTotalMoradores(-10));
         assertEquals(10, condominio_teste.getTotalMoradores());
     }
+
+    // TESTE 5: A mensagem de erro é a mesma na criação e na alteração do total de moradores
+    @Test
+    void deveManterMensagemDeErroDeMoradoresInvalidos(){
+
+        IllegalArgumentException naCriacao = assertThrows(IllegalArgumentException.class,
+                () -> new Condominio("Condomínio Teste", 0));
+        assertEquals("O condomínio deve ter ao menos um morador.", naCriacao.getMessage());
+
+        Condominio condominio_teste = new Condominio("Condomínio Teste", 10);
+        IllegalArgumentException naAlteracao = assertThrows(IllegalArgumentException.class,
+                () -> condominio_teste.setTotalMoradores(0));
+        assertEquals("O condomínio deve ter ao menos um morador.", naAlteracao.getMessage());
+    }
 }

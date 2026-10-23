@@ -42,11 +42,7 @@ public class Assembleia extends Contexto {
     }
 
     public void setParticipantes(int participantes){
-
-        // A assembleia deve ter ao menos 1 participante (o criador)
-        if (participantes <= 0){
-            throw new IllegalArgumentException("A assembleia deve ter ao menos um participante.");
-        }
+        validarParticipantes(participantes);
         this.participantes = participantes;
     }
 
@@ -54,7 +50,12 @@ public class Assembleia extends Contexto {
     public void validar_assembleia(){
 
         // A assembleia deve ter ao menos 1 participante (o criador)
-        if (participantes <= 0){
+        validarParticipantes(participantes);
+    }
+
+    // Regra única do número de participantes (usada na criação e na alteração)
+    private void validarParticipantes(int valor){
+        if (valor <= 0){
             throw new IllegalArgumentException("A assembleia deve ter ao menos um participante.");
         }
     }
