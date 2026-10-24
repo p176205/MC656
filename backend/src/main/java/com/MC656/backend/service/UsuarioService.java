@@ -18,6 +18,7 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    
     public UsuarioResponseDTO cadastrar(UsuarioCreateDTO dto) {
         if (usuarioRepository.existsByEmail(dto.email())) {
             throw new IllegalArgumentException("E-mail já cadastrado");

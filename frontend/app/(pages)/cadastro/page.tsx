@@ -2,7 +2,7 @@
 
 import { validarCadastro } from "@/app/actions/cadastro";
 import { CadastroErrors, Usuario } from "@/entities/entities";
-import { cadastrarUsuario } from "@/services/apiFacade";
+import { cadastrarUsuario, ResultadoApi } from "@/services/apiFacade";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -50,17 +50,16 @@ export default function Cadastro() {
     };
 
     try {
-      const resposta = await cadastrarUsuario(usuario);
+      const resposta: ResultadoApi = await cadastrarUsuario(usuario);
 
       if (resposta.ok) {
         toast.success(`Usuário ${usuario.nome} cadastrado!`);
       } else {
+        console.log("res:", resposta.message)
         toast.error(`Erro ao cadastrar o usuário ${usuario.nome}.`);
       }
     } catch (err) {
       console.error("Erro inesperado:", err);
-      toast.error("Erro ao enviar dados para o backend");
-      // quando tivermos uma exception podemos pegar aq
     } finally {
       setCadastrar(false);
     }

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 // Aqui é o endpoint (rota) que o front vai usar para mandar e pegar dados
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
-@RequestMapping ("/api/usuarios") // endereco base
+@RequestMapping ("/api/usuarios") // endereco base (esse é o endereco completo q o front deve usar para fazer a requisição: http://localhost:8080/api/usuarios)
 @CrossOrigin (origins = "http://localhost:3000")
 public class UsuarioController {
 
@@ -18,7 +18,7 @@ public class UsuarioController {
 
     public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
-    }
+    } // Spring cria uma instancia de UsuarioService e a fornece para o controller automaticamente
 
     @PostMapping
     public ResponseEntity<?> cadastrar(@Valid @RequestBody UsuarioCreateDTO dto) {
