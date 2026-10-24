@@ -1,8 +1,6 @@
 "use client";
-
-import Navbar from "@/components/navbar";
-import { Contexto, ContextoDTO, Usuario } from "@/entities/entities";
-import { getContextos, ResultadoGetContextos } from "@/services/apiFacade";
+import { ContextoDTO, Usuario } from "@/entities/entities";
+import { getContextos, } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 
 export default function Home() {

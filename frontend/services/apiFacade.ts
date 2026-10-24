@@ -1,4 +1,4 @@
-import type { ContextoDTO, Usuario } from "@/entities/entities";
+import type { Usuario } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
