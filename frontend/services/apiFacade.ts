@@ -9,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 export type ResultadoApi = {
   ok: boolean;
   status: number;
-  message: Promise<string>;
+  message: string;
 };
 
 // POST /api/usuarios
@@ -21,7 +21,8 @@ export async function cadastrarUsuario(usuario: Usuario): Promise<ResultadoApi> 
     body: JSON.stringify(usuario),
   });
 
-  return { ok: resposta.ok, status: resposta.status, message: resposta.text() };
+  const message = await resposta.text();
+  return { ok: resposta.ok, status: resposta.status, message: message };
 }
 
 
