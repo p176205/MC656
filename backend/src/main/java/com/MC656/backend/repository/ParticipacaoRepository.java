@@ -7,4 +7,8 @@ import java.util.List;
 public interface ParticipacaoRepository extends JpaRepository<Participacao, Long> {
 
     List<Participacao> findByUsuarioId(Long usuarioId);
+
+    List<Participacao> findByUsuarioIdAndContextoId(Long usuarioId, Long contextoId);
+
+    List<Participacao> findByContextoId(Long contextoId);
 }

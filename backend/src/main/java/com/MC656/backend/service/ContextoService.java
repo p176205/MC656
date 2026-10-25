@@ -1,6 +1,10 @@
 package com.MC656.backend.service;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
@@ -106,5 +110,21 @@ public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {
             // Reúne todos os DTOs produzidos em uma nova lista.
             .toList();
 }
+
+    // Retorna a participacao que habilita o usuario a votar no contexto, se existir
+    public Optional<Participacao> buscarParticipacaoVotante(Long usuarioId, Long contextoId) {
+        return participacaoRepository.findByUsuarioIdAndContextoId(usuarioId, contextoId).stream()
+                .max(Comparator.comparing(Participacao::getPeso));
+    }
+
+    // Eleitorado do contexto: id do usuário -> peso do seu voto
+    public Map<Long, Double> pesosDoEleitorado(Long contextoId) {
+        List<Participacao> participacoes = participacaoRepository.findByContextoId(contextoId);
+        return participacoes.stream()
+                .collect(Collectors.toMap(
+                        p -> p.getUsuario().getId(),
+                        Participacao::getPeso,
+                        Math::max));
+    }
 
 }
