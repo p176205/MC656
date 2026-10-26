@@ -2,6 +2,7 @@
 
 import { validarCadastro } from "@/app/actions/cadastro";
 import { CadastroErrors, Usuario } from "@/entities/entities";
+import { cadastrarUsuario, ResultadoApi } from "@/services/apiFacade";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -49,22 +50,16 @@ export default function Cadastro() {
     };
 
     try {
-      const resposta = await fetch("http://localhost:8080/usuarios", {
-        // Isso enviará para o nosso back, no formato JSON, os dados do nosso formulario (nome e email), quando o usuario clicar em cadastrar
-        method: "POST", // Esse metodo diz que queremos inserir no banco. Existe, por exemplo o metodo GET (que fala que queremos pegar uma informação do banco)
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(usuario),
-      });
+      const resposta: ResultadoApi = await cadastrarUsuario(usuario);
 
       if (resposta.ok) {
         toast.success(`Usuário ${usuario.nome} cadastrado!`);
       } else {
+        console.log("res:", resposta.message)
         toast.error(`Erro ao cadastrar o usuário ${usuario.nome}.`);
       }
     } catch (err) {
       console.error("Erro inesperado:", err);
-      toast.error("Erro ao enviar dados para o backend")
-      // quando tivermos uma exception podemos pegar aq
     } finally {
       setCadastrar(false);
     }
@@ -98,7 +93,7 @@ export default function Cadastro() {
               }));
             }}
           />
-          {/* Se possuir erro exibiremos uma mensagem abaixo do input, div className="min-h-[24px] (define um espaço para a mensagem de erro e impede que o conteudo "pule" ao exibir a mensagem*/}
+          {/* Se possuir erro exibiremos uma mensagem abaixo do input, div className="min-h-[24px] (define um espaço para a mensagem de erro e impede que o conteudo "pule" ao exibir a mensagem */}
           <div className="min-h-[15]px mt-1">
             {errors.nome.status === true && (
               <p className="text-red-600 text-base">{errors.nome.message}</p>
@@ -125,7 +120,7 @@ export default function Cadastro() {
               }));
             }}
           />
-          {/* Se possuir erro exibiremos uma mensagem abaixo do input, div className="min-h-[24px] (define um espaço para a mensagem de erro e impede que o conteudo "pule" ao exibir a mensagem*/}
+          {/* Se possuir erro exibiremos uma mensagem abaixo do input, div className="min-h-[24px] (define um espaço para a mensagem de erro e impede que o conteudo "pule" ao exibir a mensagem */}
           <div className="min-h-[15]px mt-1">
             {errors.email.status === true && (
               <p className="text-red-600 text-base">{errors.email.message}</p>
@@ -152,7 +147,7 @@ export default function Cadastro() {
               }));
             }}
           />
-          {/* Se possuir erro exibiremos uma mensagem abaixo do input, div className="min-h-[24px] (define um espaço para a mensagem de erro e impede que o conteudo "pule" ao exibir a mensagem*/}
+          {/* Se possuir erro exibiremos uma mensagem abaixo do input, div className="min-h-[24px] (define um espaço para a mensagem de erro e impede que o conteudo "pule" ao exibir a mensagem */}
           <div className="min-h-[15]px mt-1">
             {errors.senha.status && (
               <p className="text-red-600 text-base">{errors.senha.message}</p>
