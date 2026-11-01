@@ -79,3 +79,9 @@ export interface ContextoDTO {
     papel: Papel;
     contexto: Contexto;
 }
+
+export type Aba =
+  | "comunidade"
+  | "votacao"
+  | "propostas"
+  | "configurar-votacao";
