@@ -1,4 +1,4 @@
-import type { Usuario } from "@/entities/entities";
+import type { LoginUsuario, Usuario } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -15,6 +15,19 @@ export type ResultadoApi = {
 // POST /api/usuarios
 export async function cadastrarUsuario(usuario: Usuario): Promise<ResultadoApi> {
   const resposta = await fetch(`${API_URL}/api/usuarios`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(usuario),
+  });
+
+  const message = await resposta.text();
+  return { ok: resposta.ok, status: resposta.status, message: message };
+}
+
+// POST /api/usuarios/login
+export async function loginUsuario(usuario: LoginUsuario): Promise<ResultadoApi> {
+  const resposta = await fetch(`${API_URL}/api/usuarios/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",

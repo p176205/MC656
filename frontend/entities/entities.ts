@@ -5,6 +5,12 @@ export type Usuario = {
     senha: string; 
 };
 
+export type LoginUsuario = {
+    id?: string; 
+    email: string;
+    senha: string; 
+};
+
 type Error = {
     message: string;
     status: boolean;
@@ -12,6 +18,11 @@ type Error = {
 
 export type CadastroErrors = {
     nome: Error;
+    email: Error;
+    senha: Error;
+};
+
+export type LoginErrors = {
     email: Error;
     senha: Error;
 };
