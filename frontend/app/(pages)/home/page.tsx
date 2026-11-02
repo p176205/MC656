@@ -10,7 +10,7 @@ export default function Home() {
   const [user, setUser] = useState<Usuario>();
   const [contextos, setContextos] = useState<ContextoDTO[]>([]);
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
-
+  const [open, setOpen] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState<Aba>("comunidade");
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function Home() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
+      <main className="flex min-h-screen items-center justify-center text-[#376DF1]">
         Carregando...
       </main>
     );
@@ -54,7 +54,9 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
         <header className="mx-auto flex max-w-8xl items-center justify-between gap-4 px-6 py-6">
-          <h1 className="text-2xl font-bold text-indigo-500">Olá, {user?.nome}!</h1>
+          <h1 className="text-2xl font-bold text-indigo-500">
+            Olá, {user?.nome}!
+          </h1>
         </header>
         <h1 className="text-xl font-semibold text-gray-800">
           Você ainda não está em nenhum contexto
@@ -66,7 +68,7 @@ export default function Home() {
         <div className="flex flex-row gap-4">
           <button
             onClick={() => {
-              window.location.href = "/contextos/criar";
+              window.location.href = "/";
             }}
             className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-blue-700"
           >
@@ -75,7 +77,7 @@ export default function Home() {
 
           <button
             onClick={() => {
-              window.location.href = "/contextos/criar";
+              window.location.href = "/";
             }}
             className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-blue-700"
           >
@@ -90,27 +92,43 @@ export default function Home() {
     switch (abaSelecionada) {
       case "comunidade":
         return (
-          <section className="rounded-2xl bg-blue-50 p-6">
+          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen">
             <h2 className="text-xl font-semibold text-gray-900">Comunidade</h2>
             <p className="mt-2 text-gray-600">
-              Acompanhe as conversas e novidades deste contexto.
+              Acompanhe as conversas e novidades.
             </p>
           </section>
         );
 
       case "votacao":
         return (
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
+          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen">
             <h2 className="text-xl font-semibold">Votações</h2>
             <p className="mt-2 text-gray-600">
               Consulte as votações disponíveis.
             </p>
+
+            {/* Exibir as votações disponiveis: Deixei um exemplo para visualizarmos apenas */}
+            <section className="flex flex-col gap-3 py-3">
+              <div className="bg-white rounded-2xl h-24 px-4 py-3">
+                Votação 1
+              </div>
+              <div className="bg-white rounded-2xl h-24 px-4 py-3">
+                Votação 2
+              </div>
+              <div className="bg-white rounded-2xl h-24 px-4 py-3">
+                Votação 3
+              </div>
+              <div className="bg-white rounded-2xl h-24 px-4 py-3">
+                Votação 4
+              </div>
+            </section>
           </section>
         );
 
       case "propostas":
         return (
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
+          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen shadow-sm">
             <h2 className="text-xl font-semibold">
               {contextoAtual!.tipo === "ASSEMBLEIA" ? "Chapas" : "Propostas"}
             </h2>
@@ -141,9 +159,12 @@ export default function Home() {
             Você está no contexto {contextoAtual?.nome}.
           </p>
         </div>
-        {/* <SeletorContexto
+        <div className="flex flex-row gap-3">
+          <SeletorContexto
             contextos={contextos}
             contextoAtual={contextoAtual}
+            open={open}
+            setOpen={setOpen}
             onSelecionar={(contexto) => {
               setContextoAtual(contexto);
               setAbaSelecionada("comunidade");
@@ -154,7 +175,11 @@ export default function Home() {
             onEntrar={() => {
               window.location.href = "/contextos/entrar";
             }}
-          /> */}
+          />
+          <button className="bg-indigo-500 rounded-xl text-white w-24 h-12">
+            Sair
+          </button>
+        </div>
       </header>
 
       <div className="mx-auto max-w-6xl px-6">
@@ -170,4 +195,3 @@ export default function Home() {
     </main>
   );
 }
-
