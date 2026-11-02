@@ -17,10 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
 @RequestMapping("/api/usuarios") // endereco base (esse é o endereco completo q o front deve usar para fazer a
                                  // requisição: http://localhost:8080/api/usuarios)
-@CrossOrigin(
-    origins = "http://localhost:3000",
-    allowCredentials = "true"
-)
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -43,7 +40,6 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody UsuarioLoginDTO dto, HttpServletRequest request) {
         try {
-            System.err.printf("printtttttt",dto);
             UsuarioResponseLoginDTO response = usuarioService.login(dto);
             HttpSession sessao = request.getSession(true);
 
@@ -53,4 +49,34 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getId(HttpServletRequest request) {
+        try {
+            // Recupera a sessão existente, sem criar uma nova
+            HttpSession sessao = request.getSession(false);
+
+            // Verifica se existe uma sessão
+            if (sessao == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            // Recupera o ID do usuário armazenado na sessão
+            Long usuarioId = (Long) sessao.getAttribute("usuarioId");
+
+            // Verifica se o ID está armazenado
+            if (usuarioId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            UsuarioResponseDTO response = usuarioService.getUser(usuarioId);
+
+            // Retorna o usuario
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
+    }
+
 }

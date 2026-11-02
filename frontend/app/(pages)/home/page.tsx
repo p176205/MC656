@@ -1,13 +1,18 @@
 "use client";
 import Navbar from "@/components/navbar";
 import SeletorContexto from "@/components/seletorContextos";
-import { Aba, ContextoDTO, Usuario } from "@/entities/entities";
-import { getContextos } from "@/services/apiFacade";
+import {
+  Aba,
+  ContextoDTO,
+  Usuario,
+  UsuarioResponse,
+} from "@/entities/entities";
+import { getContextos, getIdUser } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const [carregando, setCarregando] = useState(true);
-  const [user, setUser] = useState<Usuario>();
+  const [user, setUser] = useState<UsuarioResponse>();
   const [contextos, setContextos] = useState<ContextoDTO[]>([]);
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
   const [open, setOpen] = useState(false);
@@ -18,22 +23,32 @@ export default function Home() {
       setCarregando(true);
 
       try {
-        // Fazer get do user
-        const resposta: Response = await getContextos();
+        // 1. Obtém o ID do usuário autenticado
+        const usuario: UsuarioResponse = await getIdUser();
+
+        console.log("ID do usuário:", usuario);
+        setUser(usuario);
+        // 2. Busca os contextos associados ao usuário
+        const resposta = await getContextos(usuario.id);
 
         if (!resposta.ok) {
           const erro = await resposta.text();
-          console.error("Erro ao buscar contextos:", erro);
-          return;
+          throw new Error(`Erro ao buscar contextos: ${erro}`);
         }
 
+        // 3. Converte a resposta da API para uma lista de contextos
         const contextos: ContextoDTO[] = await resposta.json();
-        setContextoAtual(contextos[0]);
 
         console.log("Contextos recebidos:", contextos);
         setContextos(contextos);
+
+        if (contextos.length > 0) {
+          setContextoAtual(contextos[0]);
+        }
       } catch (erro) {
-        console.error("Erro na requisição:", erro);
+        if (erro instanceof Error) {
+          console.error("Erro ao carregar dados:", erro.message);
+        }
       } finally {
         setCarregando(false);
       }
@@ -52,11 +67,14 @@ export default function Home() {
 
   if (!contextoAtual) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
-        <header className="mx-auto flex max-w-8xl items-center justify-between gap-4 px-6 py-6">
+      <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
+        <header className="flex w-full max-w-8xl items-center justify-between gap-8 px-12 pb-6 pt-0">
           <h1 className="text-2xl font-bold text-indigo-500">
             Olá, {user?.nome}!
           </h1>
+          <button className="bg-white border-2 border-indigo-500 rounded-xl text-gray-700 w-24 h-12">
+            Sair
+          </button>
         </header>
         <h1 className="text-xl font-semibold text-gray-800">
           Você ainda não está em nenhum contexto
@@ -70,7 +88,7 @@ export default function Home() {
             onClick={() => {
               window.location.href = "/";
             }}
-            className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-blue-700"
+            className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-indigo-600"
           >
             Criar novo contexto
           </button>
@@ -79,7 +97,7 @@ export default function Home() {
             onClick={() => {
               window.location.href = "/";
             }}
-            className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-blue-700"
+            className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-indigo-600"
           >
             Entrar em um contexto existente
           </button>
@@ -176,7 +194,7 @@ export default function Home() {
               window.location.href = "/contextos/entrar";
             }}
           />
-          <button className="bg-indigo-500 rounded-xl text-white w-24 h-12">
+          <button className="bg-white border-2 border-indigo-500 rounded-xl text-gray-700 w-24 h-12">
             Sair
           </button>
         </div>

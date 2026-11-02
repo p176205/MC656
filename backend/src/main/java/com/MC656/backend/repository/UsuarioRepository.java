@@ -23,4 +23,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Busca o usuário completo pelo e-mail
     // Usamos Optional porque o e-mail pode não existir no banco
     Optional<Usuario> findByEmail(String email);
+
+    // Busca o usuário completo pelo id
+    // Usamos Optional porque o id pode não existir no banco
+    Optional<Usuario> findById(Long id);
 }

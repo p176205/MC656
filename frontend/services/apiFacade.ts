@@ -1,4 +1,4 @@
-import type { LoginUsuario, Usuario } from "@/entities/entities";
+import type { LoginUsuario, Usuario, UsuarioResponse } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -38,16 +38,36 @@ export async function loginUsuario(usuario: LoginUsuario): Promise<ResultadoApi>
   return { ok: resposta.ok, status: resposta.status, message: message };
 }
 
+// GET /api/usuarios/id
+export async function getIdUser(): Promise<UsuarioResponse> {
+  const resposta = await fetch(`${API_URL}/api/usuarios/me`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!resposta.ok) {
+    if (resposta.status === 401) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    throw new Error("Erro ao buscar o ID do usuário.");
+  }
+
+  const usuarioId: UsuarioResponse = await resposta.json();
+
+  return usuarioId;
+}
 
 // GET /api/contextos/{id}
 // Testando o metodo GET
 // Gente no fetch esta hardcoded pq estava apenas testando com um id que esta no meu banco. Mais para frente farei um cookie de sessão para guardar o id do usuario no navegador e vou usa-lo aqui
-export async function getContextos(): Promise<Response> {
-  const resposta = await fetch(`http://localhost:8080/api/contextos/${3}`, 
+export async function getContextos(usuarioId: number): Promise<Response> {
+  const resposta = await fetch(
+    `${API_URL}/api/contextos/${usuarioId}`,
     {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
-    },
+      credentials: "include",
+    }
   );
 
   return resposta;

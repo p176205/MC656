@@ -46,4 +46,11 @@ public class UsuarioService {
         // 3. Se passou pelas validações, retorna o DTO de resposta do login
         return new UsuarioResponseLoginDTO(usuario.getId());
     }
+
+    public UsuarioResponseDTO getUser(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        return new UsuarioResponseDTO(usuario.getId(), usuario.getNome(), usuario.getEmail());
+    }
 }
