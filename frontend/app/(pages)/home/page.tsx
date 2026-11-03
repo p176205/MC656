@@ -1,4 +1,5 @@
 "use client";
+import CriarContexto from "@/components/criarContexto";
 import Navbar from "@/components/navbar";
 import SeletorContexto from "@/components/seletorContextos";
 import {
@@ -17,6 +18,7 @@ export default function Home() {
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
   const [open, setOpen] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState<Aba>("comunidade");
+  const [criarContexto, setCriarContexto] = useState(true);
 
   useEffect(() => {
     async function carregarDados() {
@@ -102,6 +104,14 @@ export default function Home() {
             Entrar em um contexto existente
           </button>
         </div>
+      </main>
+    );
+  }
+
+  if (criarContexto) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
+        <CriarContexto />
       </main>
     );
   }

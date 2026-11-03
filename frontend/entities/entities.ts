@@ -35,19 +35,19 @@ export interface UsuarioResponse{
 }
 
 export interface Assembleia {
-    id: number;
+    id?: number;
     nome: string;
     participantes: number;
 }
 
 export interface Condominio {
-    id: number;
+    id?: number;
     nome: string;
     total_moradores: number;
 }
 
 export interface CentroAcademico {
-    id: number;
+    id?: number;
     nome: string;
     tempo_vigencia: number;
 }

@@ -1,4 +1,4 @@
-import type { LoginUsuario, Usuario, UsuarioResponse } from "@/entities/entities";
+import type { Contexto, LoginUsuario, TipoContexto, Usuario, UsuarioResponse } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -56,6 +56,20 @@ export async function getIdUser(): Promise<UsuarioResponse> {
   const usuarioId: UsuarioResponse = await resposta.json();
 
   return usuarioId;
+}
+
+// POST /api/contextos
+// corrigir
+export async function criarContexto(contexto: Contexto, tipo: TipoContexto, id: number): Promise<ResultadoApi> {
+  const resposta = await fetch(`${API_URL}/api/usuarios`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(contexto), // Tem q armazenar o id do user tbm
+  });
+
+  const message = await resposta.text();
+  return { ok: resposta.ok, status: resposta.status, message: message };
 }
 
 // GET /api/contextos/{id}
