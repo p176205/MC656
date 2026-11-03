@@ -1,4 +1,4 @@
-import type { Contexto, LoginUsuario, TipoContexto, Usuario, UsuarioResponse } from "@/entities/entities";
+import type { Contexto, ContextoDTO, LoginUsuario, TipoContexto, Usuario, UsuarioResponse } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -59,22 +59,37 @@ export async function getIdUser(): Promise<UsuarioResponse> {
 }
 
 // POST /api/contextos
-// corrigir
-export async function criarContexto(contexto: Contexto, tipo: TipoContexto, id: number): Promise<ResultadoApi> {
-  const resposta = await fetch(`${API_URL}/api/usuarios`, {
+export async function criarContexto(contexto: Contexto, tipo: TipoContexto): Promise<ContextoDTO> {
+  const rotasPorTipo = {
+    ASSEMBLEIA: "assembleias",
+    CENTRO_ACADEMICO: "centros-academicos",
+    CONDOMINIO: "condominios",
+  };
+
+  const endpointTipo = rotasPorTipo[tipo];
+  console.log("endpoint",endpointTipo)
+  console.log(contexto)
+
+  const resposta = await fetch(`${API_URL}/api/contextos/${endpointTipo}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(contexto), // Tem q armazenar o id do user tbm
+    body: JSON.stringify(contexto), 
   });
 
-  const message = await resposta.text();
-  return { ok: resposta.ok, status: resposta.status, message: message };
+  if (!resposta.ok) {
+    if (resposta.status === 401) {
+      throw new Error("Não foi possivel criar o contexto.");
+    }
+
+    throw new Error("Erro ao criar o contexto.");
+  }
+
+  const contexto_res = await resposta.json();
+  return contexto_res;
 }
 
 // GET /api/contextos/{id}
-// Testando o metodo GET
-// Gente no fetch esta hardcoded pq estava apenas testando com um id que esta no meu banco. Mais para frente farei um cookie de sessão para guardar o id do usuario no navegador e vou usa-lo aqui
 export async function getContextos(usuarioId: number): Promise<Response> {
   const resposta = await fetch(
     `${API_URL}/api/contextos/${usuarioId}`,

@@ -88,7 +88,7 @@ export default function SeletorContexto({
           >
             <div className="flex flex-row gap-1">
               <MdAdd />
-              <p>Entrar em um contexto existente</p>
+              <p>Criar um novo contexto</p>
             </div>
           </button>
 

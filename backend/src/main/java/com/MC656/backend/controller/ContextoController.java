@@ -42,6 +42,7 @@ public class ContextoController {
             @RequestBody CondominioRequestDTO dto) {
 
         try {
+            System.err.printf("stooo"+ dto);
             var resposta = contextoService.criarCondominio(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
         } catch (IllegalArgumentException e) {

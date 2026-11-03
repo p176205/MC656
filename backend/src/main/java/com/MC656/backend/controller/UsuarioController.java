@@ -42,7 +42,6 @@ public class UsuarioController {
         try {
             UsuarioResponseLoginDTO response = usuarioService.login(dto);
             HttpSession sessao = request.getSession(true);
-
             sessao.setAttribute("usuarioId", response.id());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -55,7 +54,7 @@ public class UsuarioController {
         try {
             // Recupera a sessão existente, sem criar uma nova
             HttpSession sessao = request.getSession(false);
-
+            System.out.println("Sessão: " + sessao);
             // Verifica se existe uma sessão
             if (sessao == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

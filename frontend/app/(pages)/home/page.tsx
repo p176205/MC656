@@ -1,5 +1,6 @@
 "use client";
 import CriarContexto from "@/components/criarContexto";
+import EntrarContexto from "@/components/entrarContexto";
 import Navbar from "@/components/navbar";
 import SeletorContexto from "@/components/seletorContextos";
 import {
@@ -18,7 +19,8 @@ export default function Home() {
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
   const [open, setOpen] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState<Aba>("comunidade");
-  const [criarContexto, setCriarContexto] = useState(true);
+  const [criarContexto, setCriarContexto] = useState(false);
+  const [entrarContexto, setEntrarContexto] = useState(false);
 
   useEffect(() => {
     async function carregarDados() {
@@ -88,7 +90,7 @@ export default function Home() {
         <div className="flex flex-row gap-4">
           <button
             onClick={() => {
-              window.location.href = "/";
+              setCriarContexto(true);
             }}
             className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-indigo-600"
           >
@@ -97,7 +99,7 @@ export default function Home() {
 
           <button
             onClick={() => {
-              window.location.href = "/";
+              setEntrarContexto(true);
             }}
             className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-indigo-600"
           >
@@ -108,10 +110,18 @@ export default function Home() {
     );
   }
 
-  if (criarContexto) {
+  if (criarContexto && user) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
-        <CriarContexto />
+        <CriarContexto user={user} setCriarContexto={setCriarContexto} />
+      </main>
+    );
+  }
+
+  if (entrarContexto && user) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
+        <EntrarContexto user={user} setEntrarContexto={setEntrarContexto} />
       </main>
     );
   }
@@ -182,10 +192,10 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 text-gray-900">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
         <div>
-          <h1 className="text-2xl font-bold">Olá, {user?.nome}!</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Você está no contexto {contextoAtual?.nome}.
-          </p>
+          <h1 className="text-2xl font-bold">
+            Olá, {user?.nome}! Você está no contexto {contextoAtual?.nome}.
+          </h1>
+          <p className="mt-1 text-lg text-gray-700">Link do contexto:</p>
         </div>
         <div className="flex flex-row gap-3">
           <SeletorContexto
@@ -198,10 +208,10 @@ export default function Home() {
               setAbaSelecionada("comunidade");
             }}
             onCriar={() => {
-              window.location.href = "/contextos/criar";
+              setCriarContexto(true);
             }}
             onEntrar={() => {
-              window.location.href = "/contextos/entrar";
+              setEntrarContexto(true);
             }}
           />
           <button className="bg-white border-2 border-indigo-500 rounded-xl text-gray-700 w-24 h-12">

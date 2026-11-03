@@ -5,18 +5,26 @@ import {
   CentroAcademico,
   Condominio,
   Contexto,
+  ContextoDTO,
   TipoContexto,
+  UsuarioResponse,
 } from "@/entities/entities";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { FiArrowLeft, FiArrowRight, FiCheckCircle } from "react-icons/fi";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { criarContexto } from "@/services/apiFacade";
+import { MdOutlineClose } from "react-icons/md";
 
-interface CriarContextoProps {}
+interface CriarContextoProps {
+  user: UsuarioResponse;
+  setCriarContexto: (estado: boolean) => void;
+}
 
-export default function CriarContexto({}: CriarContextoProps) {
-  const router = useRouter();
+export default function CriarContexto({
+  user,
+  setCriarContexto,
+}: CriarContextoProps) {
   const [cadastrarContexto, setCadastrarContexto] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedContexto, setSelectedContexto] = useState<TipoContexto | null>(
@@ -64,16 +72,19 @@ export default function CriarContexto({}: CriarContextoProps) {
 
     if (data.tipo === "ASSEMBLEIA") {
       contexto = {
+        id: user.id,
         nome: data.nome.trim(),
         participantes: Number(data.participantes) || 0,
       } as Assembleia;
     } else if (data.tipo === "CONDOMINIO") {
       contexto = {
+        id: user.id,
         nome: data.nome.trim(),
         total_moradores: Number(data.total_moradores) || 0,
       } as Condominio;
     } else {
       contexto = {
+        id: user.id,
         nome: data.nome.trim(),
         tempo_vigencia: Number(data.tempo_vigencia) || 0,
       } as CentroAcademico;
@@ -82,15 +93,16 @@ export default function CriarContexto({}: CriarContextoProps) {
     console.log("contexto final:", contexto);
 
     try {
-      const resposta = await criarContexto(contexto, data.tipo);
-      if (resposta.ok) {
-        toast.success(`contexto ${contexto.nome} criado`);
-        router.refresh();
+      const resposta: ContextoDTO = await criarContexto(contexto, data.tipo!);
+      if (resposta) {
+        toast.success(`contexto ${contexto.nome} criado ${resposta.id}`);
       }
     } catch (err) {
       console.error("Erro inesperado:", err);
     } finally {
       setCadastrarContexto(false);
+      setCriarContexto(false);
+      window.location.reload();
     }
   };
 
@@ -113,6 +125,15 @@ export default function CriarContexto({}: CriarContextoProps) {
             />
           ))}
         </div>
+        <button
+          className="flex flex-row gap-1 px-3 py-2 text-xs font-semibold uppercase text-red-500"
+          onClick={() => {
+            setCriarContexto(false);
+          }}
+        >
+          <div>Fechar </div>
+          <MdOutlineClose color="red" size={16} />
+        </button>
       </div>
 
       {/* O <form> envolve toda a etapa 2 para que o botão de submit funcione corretamente */}

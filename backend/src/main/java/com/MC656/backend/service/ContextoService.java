@@ -38,7 +38,7 @@ public class ContextoService {
 
     public Assembleia criarAssembleia(
             AssembleiaRequestDTO dto) {
-        Usuario usuario = usuarioRepository.findById(3L)
+        Usuario usuario = usuarioRepository.findById(dto.id())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         // Criar a entidade concreta
         Assembleia assembleia = new Assembleia(dto.nome(), dto.participantes());
@@ -53,10 +53,9 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-    public CentroAcademico criarCentroAcademico(
-            CentroAcademicoRequestDTO dto) {
+    public CentroAcademico criarCentroAcademico(CentroAcademicoRequestDTO dto) {
 
-        Usuario usuario = usuarioRepository.findById(3L)
+        Usuario usuario = usuarioRepository.findById(dto.id())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         // Criar a entidade concreta
         CentroAcademico centroAcademico = new CentroAcademico(dto.nome(), dto.tempo_vigencia());
@@ -71,10 +70,9 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-    public Condominio criarCondominio(
-            CondominioRequestDTO dto) {
+    public Condominio criarCondominio(CondominioRequestDTO dto) {
 
-        Usuario usuario = usuarioRepository.findById(3L)
+        Usuario usuario = usuarioRepository.findById(dto.id())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         // Criar a entidade concreta
         Condominio condominio = new Condominio(dto.nome(), dto.total_moradores());
@@ -89,27 +87,28 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {
+    public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {
 
-    // Busca todas as participações associadas ao usuário informado.
-    // Cada participação relaciona um usuário a um contexto.
-    return participacaoRepository.findByUsuarioId(id).stream() // permitindo transformar cada elemento individualmente.
-            .map(participacao -> {// Para cada participação, executa a função abaixo (fazemos isso para construir um DTO com os dados que serão enviados ao frontend)
+        // Busca todas as participações associadas ao usuário informado.
+        // Cada participação relaciona um usuário a um contexto.
+        return participacaoRepository.findByUsuarioId(id).stream() // permitindo transformar cada elemento
+                                                                   // individualmente.
+                .map(participacao -> {// Para cada participação, executa a função abaixo (fazemos isso para construir
+                                      // um DTO com os dados que serão enviados ao frontend)
+                    Contexto contexto = participacao.getContexto(); // Obtém o contexto associado à participação atual.
+                                                                    // (Ele pode ser uma Assembleia, um Condominio ou um
+                                                                    // CentroAcademico.)
+                    return new ContextoResponseDTO(
+                            contexto.getId(),
+                            contexto.getNome(),
+                            contexto.getTipo().toString(),
+                            participacao.getPapel().toString(),
+                            contexto);
+                })
 
-                Contexto contexto = participacao.getContexto(); // Obtém o contexto associado à participação atual. (Ele pode ser uma Assembleia, um Condominio ou um CentroAcademico.)
-
-                return new ContextoResponseDTO(
-                        contexto.getId(),
-                        contexto.getNome(),
-                        contexto.getTipo().toString(),
-                        participacao.getPapel().toString(),          
-                        contexto
-                );
-            })
-
-            // Reúne todos os DTOs produzidos em uma nova lista.
-            .toList();
-}
+                // Reúne todos os DTOs produzidos em uma nova lista.
+                .toList();
+    }
 
     // Retorna a participacao que habilita o usuario a votar no contexto, se existir
     public Optional<Participacao> buscarParticipacaoVotante(Long usuarioId, Long contextoId) {
