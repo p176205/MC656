@@ -7,10 +7,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useRouter } from 'next/navigation'
 
 export default function Cadastro() {
   // Aqui ficam function, estados (usamos o useState para isso), efeitos colaterais (usamos useEffect para isso)
-
+  const router = useRouter();
   const [cadastrar, setCadastrar] = useState<boolean>(false);
   const [errors, setErrors] = useState<CadastroErrors>({
     nome: { message: "", status: false },
@@ -54,7 +55,9 @@ export default function Cadastro() {
       const resposta: ResultadoApi = await cadastrarUsuario(usuario);
 
       if (resposta.ok) {
+        router.push('/')
         toast.success(`Usuário ${usuario.nome} cadastrado!`);
+        
       } else {
         console.log("res:", resposta.message);
         toast.error(`Erro ao cadastrar o usuário ${usuario.nome}.`);

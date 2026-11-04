@@ -6,13 +6,15 @@ import SeletorContexto from "@/components/seletorContextos";
 import {
   Aba,
   ContextoDTO,
-  Usuario,
   UsuarioResponse,
 } from "@/entities/entities";
-import { getContextos, getIdUser } from "@/services/apiFacade";
+import { getContextos, getIdUser, logoutUsuario } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   const [carregando, setCarregando] = useState(true);
   const [user, setUser] = useState<UsuarioResponse>();
   const [contextos, setContextos] = useState<ContextoDTO[]>([]);
@@ -21,6 +23,7 @@ export default function Home() {
   const [abaSelecionada, setAbaSelecionada] = useState<Aba>("comunidade");
   const [criarContexto, setCriarContexto] = useState(false);
   const [entrarContexto, setEntrarContexto] = useState(false);
+  const [logout, setLogout] = useState<boolean>(false);
 
   useEffect(() => {
     async function carregarDados() {
@@ -61,51 +64,40 @@ export default function Home() {
     carregarDados();
   }, []);
 
+  useEffect(() => {
+    if (!user && !carregando) {
+      toast.warning(
+        "Você precisa estar logado para criar ou entrar em um contexto.",
+      );
+    }
+  }, [user, carregando]); // Só dispara se contextoAtual ou user mudarem
+
+  useEffect(() => {
+    if (!logout) return;
+
+    async function executarLogout() {
+      try {
+        const resultado = await logoutUsuario();
+
+        if (resultado.ok) {
+          router.push("/");
+        } else {
+          console.error("Erro ao fazer logout:", resultado.message);
+        }
+      } catch (err) {
+        console.error("Erro", err);
+      } finally {
+        setLogout(false);
+      }
+    }
+
+    executarLogout();
+  }, [logout, router]);
+
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center text-[#376DF1]">
         Carregando...
-      </main>
-    );
-  }
-
-  if (!contextoAtual) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
-        <header className="flex w-full max-w-8xl items-center justify-between gap-8 px-12 pb-6 pt-0">
-          <h1 className="text-2xl font-bold text-indigo-500">
-            Olá, {user?.nome}!
-          </h1>
-          <button className="bg-white border-2 border-indigo-500 rounded-xl text-gray-700 w-24 h-12">
-            Sair
-          </button>
-        </header>
-        <h1 className="text-xl font-semibold text-gray-800">
-          Você ainda não está em nenhum contexto
-        </h1>
-        <img src="image.png" alt="image" width={600} />
-        <p className="text-gray-500">
-          Crie um contexto ou entre em um existente para continuar.
-        </p>
-        <div className="flex flex-row gap-4">
-          <button
-            onClick={() => {
-              setCriarContexto(true);
-            }}
-            className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-indigo-600"
-          >
-            Criar novo contexto
-          </button>
-
-          <button
-            onClick={() => {
-              setEntrarContexto(true);
-            }}
-            className="rounded-xl bg-indigo-500 px-5 py-3 text-white hover:bg-indigo-600"
-          >
-            Entrar em um contexto existente
-          </button>
-        </div>
       </main>
     );
   }
@@ -122,6 +114,55 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
         <EntrarContexto user={user} setEntrarContexto={setEntrarContexto} />
+      </main>
+    );
+  }
+
+  if (!contextoAtual) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
+        <header className="flex w-full max-w-8xl items-center justify-between gap-8 px-12 pb-6 pt-0">
+          <h1 className="text-2xl font-bold text-indigo-500">
+            Olá, {user?.nome}!
+          </h1>
+          <button
+            className="bg-white border-2 border-indigo-500 rounded-xl text-gray-700 w-24 h-12"
+            onClick={() => {
+              setLogout(true);
+            }}
+            disabled={!user}
+          >
+            Sair
+          </button>
+        </header>
+        <h1 className="text-xl font-semibold text-gray-800">
+          Você ainda não está em nenhum contexto
+        </h1>
+        <img src="image.png" alt="image" width={600} />
+        <p className="text-gray-500">
+          Crie um contexto ou entre em um existente para continuar.
+        </p>
+        <div className="flex flex-row gap-4">
+          <button
+            onClick={() => {
+              setCriarContexto(true);
+            }}
+            className={`rounded-xl px-5 py-3 text-white ${!user ? `bg-gray-400` : `bg-indigo-500  hover:bg-indigo-600`}`}
+            disabled={!user}
+          >
+            Criar novo contexto
+          </button>
+
+          <button
+            onClick={() => {
+              setEntrarContexto(true);
+            }}
+            className={`rounded-xl px-5 py-3 text-white ${!user ? `bg-gray-400` : `bg-indigo-500  hover:bg-indigo-600`}`}
+            disabled={!user}
+          >
+            Entrar em um contexto existente
+          </button>
+        </div>
       </main>
     );
   }
@@ -168,20 +209,22 @@ export default function Home() {
         return (
           <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen shadow-sm">
             <h2 className="text-xl font-semibold">
-              {contextoAtual!.tipo === "ASSEMBLEIA" ? "Chapas" : "Propostas"}
+              {contextoAtual!.tipo === "CENTRO_ACADEMICO"
+                ? "Chapas"
+                : "Propostas"}
             </h2>
             <p className="mt-2 text-gray-600">
-              Consulte as informações deste contexto.
+              Consulte as propostas deste contexto.
             </p>
           </section>
         );
 
       case "configurar-votacao":
         return (
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
+          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen shadow-sm">
             <h2 className="text-xl font-semibold">Configurar votação</h2>
             <p className="mt-2 text-gray-600">
-              Crie e gerencie as votações deste contexto.
+              Configure as regras de votação deste contexto.
             </p>
           </section>
         );
@@ -193,9 +236,13 @@ export default function Home() {
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
         <div>
           <h1 className="text-2xl font-bold">
-            Olá, {user?.nome}! Você está no contexto {contextoAtual?.nome}.
+            Olá, {user?.nome}! Você está no contexto {contextoAtual?.nome}
           </h1>
-          <p className="mt-1 text-lg text-gray-700">Link do contexto:</p>
+          <div className="flex flex-row gap-1">
+            <p className="mt-1 text-lg text-gray-700">Link do contexto: </p>
+            <p className="mt-1 text-lg text-indigo-500 ">exemplo1234</p>
+          </div>
+          
         </div>
         <div className="flex flex-row gap-3">
           <SeletorContexto
@@ -214,7 +261,12 @@ export default function Home() {
               setEntrarContexto(true);
             }}
           />
-          <button className="bg-white border-2 border-indigo-500 rounded-xl text-gray-700 w-24 h-12">
+          <button
+            className="bg-white border-2 border-indigo-500 rounded-xl text-gray-700 w-24 h-12"
+            onClick={() => {
+              setLogout(true);
+            }}
+          >
             Sair
           </button>
         </div>
@@ -224,7 +276,7 @@ export default function Home() {
         <Navbar
           abaSelecionada={abaSelecionada}
           setAbaSelecionada={setAbaSelecionada}
-          ehAdmin={false}
+          ehAdmin={contextoAtual.papel === "ADMINISTRADOR"}
           tipoContexto={contextoAtual.tipo}
         />
 

@@ -1,19 +1,10 @@
 "use client";
 
 import {
-  Assembleia,
-  CentroAcademico,
-  Condominio,
-  Contexto,
-  ContextoDTO,
-  TipoContexto,
   UsuarioResponse,
 } from "@/entities/entities";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { FiArrowLeft, FiArrowRight, FiCheckCircle } from "react-icons/fi";
-import { toast } from "sonner";
-import { criarContexto } from "@/services/apiFacade";
 import { MdOutlineClose } from "react-icons/md";
 
 interface EntrarContextoProps {

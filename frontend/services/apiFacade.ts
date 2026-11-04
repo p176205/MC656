@@ -58,6 +58,17 @@ export async function getIdUser(): Promise<UsuarioResponse> {
   return usuarioId;
 }
 
+// POST /api/usuarios/logout
+export async function logoutUsuario(): Promise<ResultadoApi> {
+  const resposta = await fetch(`${API_URL}/api/usuarios/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const message = await resposta.text();
+  return { ok: resposta.ok, status: resposta.status, message: message };
+}
+
 // POST /api/contextos
 export async function criarContexto(contexto: Contexto, tipo: TipoContexto): Promise<ContextoDTO> {
   const rotasPorTipo = {

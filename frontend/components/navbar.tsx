@@ -1,12 +1,12 @@
 "use client";
 
-import { Aba } from "@/entities/entities";
+import { Aba, TipoContexto } from "@/entities/entities";
 
 interface NavbarProps {
   abaSelecionada: Aba;
   setAbaSelecionada: (aba: Aba) => void;
   ehAdmin: boolean;
-  tipoContexto: string;
+  tipoContexto: TipoContexto;
 }
 
 export default function Navbar({
@@ -20,10 +20,10 @@ export default function Navbar({
     { id: "comunidade", nome: "Comunidade" },
     { id: "votacao", nome: "Votações" },
     {
-      id: tipoContexto === "ASSEMBLEIA" ? "propostas" : "propostas",
-      nome: tipoContexto === "ASSEMBLEIA" ? "Chapas" : "Propostas",
+      id: tipoContexto === "CENTRO_ACADEMICO" ? "propostas" : "propostas",
+      nome: tipoContexto === "CENTRO_ACADEMICO" ? "Chapas" : "Propostas",
     },
-    ...(ehAdmin
+    ...(ehAdmin == true
       ? [{ id: "configurar-votacao" as Aba, nome: "Configurar votações" }]
       : []),
   ];

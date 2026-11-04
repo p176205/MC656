@@ -5,13 +5,14 @@ import com.MC656.backend.dto.UsuarioLoginDTO;
 import com.MC656.backend.dto.UsuarioResponseDTO;
 import com.MC656.backend.dto.UsuarioResponseLoginDTO;
 import com.MC656.backend.service.UsuarioService;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.Duration;
 
 // Aqui é o endpoint (rota) que o front vai usar para mandar e pegar dados
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
@@ -38,37 +39,37 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody UsuarioLoginDTO dto, HttpServletRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody UsuarioLoginDTO dto, HttpServletResponse response) {
         try {
-            UsuarioResponseLoginDTO response = usuarioService.login(dto);
-            HttpSession sessao = request.getSession(true);
-            sessao.setAttribute("usuarioId", response.id());
-            return ResponseEntity.ok(response);
+            UsuarioResponseLoginDTO usuario = usuarioService.login(dto);
+
+            ResponseCookie cookie = ResponseCookie.from("usuarioId", usuario.id().toString())
+                    .httpOnly(true)
+                    .secure(false) // true em produção, com HTTPS
+                    .path("/")
+                    .sameSite("Lax")
+                    .maxAge(Duration.ofDays(7))
+                    .build();
+
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+            return ResponseEntity.ok(usuario);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getId(HttpServletRequest request) {
+    public ResponseEntity<?> getId(@CookieValue(value = "usuarioId", required = false) String usuarioId) {
         try {
-            // Recupera a sessão existente, sem criar uma nova
-            HttpSession sessao = request.getSession(false);
-            System.out.println("Sessão: " + sessao);
+            // Recupera o cookie existente
+            System.out.println("Cookie: " + usuarioId);
             // Verifica se existe uma sessão
-            if (sessao == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-            // Recupera o ID do usuário armazenado na sessão
-            Long usuarioId = (Long) sessao.getAttribute("usuarioId");
-
-            // Verifica se o ID está armazenado
             if (usuarioId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-
-            UsuarioResponseDTO response = usuarioService.getUser(usuarioId);
+            Long id = Long.valueOf(usuarioId);
+            UsuarioResponseDTO response = usuarioService.getUser(id);
 
             // Retorna o usuario
             return ResponseEntity.ok(response);
@@ -76,6 +77,25 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        try {
+            ResponseCookie cookie = ResponseCookie.from("usuarioId", "")
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .sameSite("Lax")
+                    .maxAge(0)
+                    .build();
+
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
 }
