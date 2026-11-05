@@ -35,7 +35,7 @@ export default function Cadastro() {
     const formularioValido: CadastroErrors = validarCadastro(data);
 
     const temErros = Object.entries(formularioValido).some(
-      ([chave, valor]) => valor.status === true,
+      ([_, valor]) => valor.status === true,
     );
 
     if (temErros) {

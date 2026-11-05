@@ -31,7 +31,7 @@ export default function Login() {
     const formularioValido: LoginErrors = validarLogin(data);
 
     const temErros = Object.entries(formularioValido).some(
-      ([chave, valor]) => valor.status === true,
+      ([_, valor]) => valor.status === true,
     );
     if (temErros) {
       setErrors(formularioValido);

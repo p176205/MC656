@@ -264,8 +264,8 @@ export default function Home() {
 
             {/* Exibir as votações disponiveis: Deixei um exemplo para visualizarmos apenas */}
             <section className="flex flex-col gap-3 py-3">
-              {votacoes.map((votacao) => (
-                <div className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60">
+              {votacoes.map((votacao, index) => (
+                <div key={index} className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60">
                   <div className="flex items-center justify-between gap-4">
                     <h3 className="font-semibold text-indigo-950 line-clamp-1">
                       {votacao.titulo}
