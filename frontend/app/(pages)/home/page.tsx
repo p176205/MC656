@@ -195,11 +195,64 @@ export default function Home() {
     switch (abaSelecionada) {
       case "COMUNIDADE":
         return (
-          <section className="rounded-2xl border-2 border-indigo-500 p-6 h-[74vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-900">{}</h2>
+          <section className="rounded-2xl border-2 border-indigo-500 p-6 h-[74vh] justify-center items-center">
+            <h2 className="text-xl font-semibold text-gray-900">Comunidade</h2>
             <p className="mt-2 text-gray-600">
               Acompanhe as conversas e novidades.
             </p>
+            {/* Simulação de um chat */}
+            <section className="h-[54vh] overflow-y-auto">
+              {[
+                { id: 1, mensagem: "It is a long established fact that a reader will be distracted by the readable " },
+                { id: 2, mensagem: "It is a long established fact that a reader will be distracted by the readable " },
+                { id: 3, mensagem: "It is a long established fact that a reader will be distracted by the readable " },
+                {
+                  id: 1,
+                  mensagem:
+                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
+                },
+                {
+                  id: 1,
+                  mensagem:
+                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
+                },
+                {
+                  id: 1,
+                  mensagem:
+                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
+                },
+                {
+                  id: 2,
+                  mensagem:
+                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
+                },
+              ].map((elem, index) =>
+                elem.id === user?.id ? (
+                  <div className="flex justify-end">
+                    <div
+                      key={index}
+                      className="flex rounded-lg p-2 my-2 w-[50vh] bg-indigo-300 text-black"
+                    >
+                      {elem.mensagem}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    key={index}
+                    className="flex rounded-lg p-2  my-2 w-[50vh] bg-indigo-200 text-black"
+                  >
+                    {elem.mensagem}
+                  </div>
+                ),
+              )}
+            </section>
+            <div className="flex justify-center">
+              <input
+                className="bg-white rounded-2xl h-[5vh] w-[80vh] justify-end items-end text-black border-2 border-indigo-500 hover:border-indigo-500 mt-4 p-3"
+                placeholder="Digite a mensagem..."
+                type="text"
+              ></input>
+            </div>
           </section>
         );
 
@@ -207,9 +260,7 @@ export default function Home() {
         return (
           <section className="rounded-2xl border-2 border-indigo-500 p-6 h-[74vh] overflow-y-auto">
             <h2 className="text-xl font-semibold">Votações</h2>
-            <p className="mt-2 text-gray-600">
-              Consulte as votações disponíveis.
-            </p>
+            <p className="mt-2 text-gray-600">Consulte todas as votações.</p>
 
             {/* Exibir as votações disponiveis: Deixei um exemplo para visualizarmos apenas */}
             <section className="flex flex-col gap-3 py-3">
