@@ -228,9 +228,8 @@ export default function Home() {
                 },
               ].map((elem, index) =>
                 elem.id === user?.id ? (
-                  <div className="flex justify-end">
+                  <div key={index} className="flex justify-end">
                     <div
-                      key={index}
                       className="flex rounded-lg p-2 my-2 w-[50vh] bg-indigo-300 text-black"
                     >
                       {elem.mensagem}
