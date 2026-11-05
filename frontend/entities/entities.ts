@@ -84,5 +84,29 @@ export interface ContextoDTO {
 }
 
 export type Aba =
-  | "comunidade"
-  | "votacao"
+  | "COMUNIDADE"
+  | "VOTACAO"
+  | "MEMBROS"
+
+export type TipoVotacao =
+  "DELIBERACAO"
+
+export type RegraAprovacao =
+  | "MAIORIA_SIMPLES"
+  | "PERCENTUAL_MINIMO"
+
+export type StatusVotacao =
+  | "ENCERRADA"
+  | "ABERTA"
+
+export interface Votacao {
+    titulo: string,
+    descricao: string,
+    //contexto: Contexto,
+    tipo: TipoVotacao,
+    regra_aprovacao: RegraAprovacao,
+    quorum_minimo: number,
+    status: StatusVotacao,
+    data_inicio: string,
+    data_fim: string
+}

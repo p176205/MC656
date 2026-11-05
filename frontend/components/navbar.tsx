@@ -13,8 +13,9 @@ export default function Navbar({
 }: NavbarProps) {
 
   const abas: { id: Aba; nome: string }[] = [
-    { id: "comunidade", nome: "Comunidade" },
-    { id: "votacao", nome: "Votações" },
+    { id: "COMUNIDADE", nome: "Comunidade" },
+    { id: "VOTACAO", nome: "Votações" },
+    { id: "MEMBROS", nome: "Membros" },
   ];
 
   return (

@@ -3,7 +3,12 @@ import CriarContexto from "@/components/criarContexto";
 import EntrarContexto from "@/components/entrarContexto";
 import Navbar from "@/components/navbar";
 import SeletorContexto from "@/components/seletorContextos";
-import { Aba, ContextoDTO, UsuarioResponse } from "@/entities/entities";
+import {
+  Aba,
+  ContextoDTO,
+  UsuarioResponse,
+  Votacao,
+} from "@/entities/entities";
 import { getContextos, getIdUser, logoutUsuario } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -16,11 +21,34 @@ export default function Home() {
   const [contextos, setContextos] = useState<ContextoDTO[]>([]);
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
   const [open, setOpen] = useState(false);
-  const [abaSelecionada, setAbaSelecionada] = useState<Aba>("comunidade");
+  const [abaSelecionada, setAbaSelecionada] = useState<Aba>("COMUNIDADE");
   const [criarContexto, setCriarContexto] = useState(false);
   const [entrarContexto, setEntrarContexto] = useState(false);
   const [logout, setLogout] = useState<boolean>(false);
-
+  const [votacoes, setVotacoes] = useState<Votacao[]>([
+    {
+      titulo: "Votacao 1",
+      descricao: "Votacao descricao",
+      //contexto: ,
+      tipo: "DELIBERACAO",
+      regra_aprovacao: "MAIORIA_SIMPLES",
+      quorum_minimo: 100,
+      status: "ENCERRADA",
+      data_inicio: "11-02-2026",
+      data_fim: "11-22-2026",
+    },
+    {
+      titulo: "Votacao 2",
+      descricao: "Votacao descricao 2",
+      //contexto: ,
+      tipo: "DELIBERACAO",
+      regra_aprovacao: "MAIORIA_SIMPLES",
+      quorum_minimo: 100,
+      status: "ABERTA",
+      data_inicio: "11-02-2026",
+      data_fim: "11-22-2026",
+    },
+  ]);
   useEffect(() => {
     async function carregarDados() {
       setCarregando(true);
@@ -165,19 +193,19 @@ export default function Home() {
 
   function renderizarConteudo() {
     switch (abaSelecionada) {
-      case "comunidade":
+      case "COMUNIDADE":
         return (
-          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen">
-            <h2 className="text-xl font-semibold text-gray-900">Comunidade</h2>
+          <section className="rounded-2xl border-2 border-indigo-500 p-6 h-[74vh] overflow-y-auto">
+            <h2 className="text-xl font-semibold text-gray-900">{}</h2>
             <p className="mt-2 text-gray-600">
               Acompanhe as conversas e novidades.
             </p>
           </section>
         );
 
-      case "votacao":
+      case "VOTACAO":
         return (
-          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen">
+          <section className="rounded-2xl border-2 border-indigo-500 p-6 h-[74vh] overflow-y-auto">
             <h2 className="text-xl font-semibold">Votações</h2>
             <p className="mt-2 text-gray-600">
               Consulte as votações disponíveis.
@@ -185,18 +213,69 @@ export default function Home() {
 
             {/* Exibir as votações disponiveis: Deixei um exemplo para visualizarmos apenas */}
             <section className="flex flex-col gap-3 py-3">
-              <div className="bg-white rounded-2xl h-24 px-4 py-3">
-                Votação 1
+              {votacoes.map((votacao) => (
+                <div className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60">
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="font-semibold text-indigo-950 line-clamp-1">
+                      {votacao.titulo}
+                    </h3>
+                    <span
+                      className={`flex flex-row items-center gap-2 shrink-0 rounded-full border-2 px-3 py-1 text-xs font-medium border-indigo-500`}
+                    >
+                      <span>{votacao.status}</span>
+                      <span
+                        className={`w-2 h-2 rounded-full ${votacao.status === "ENCERRADA" ? "bg-red-500" : "bg-green-500"}`}
+                      ></span>
+                    </span>
+                  </div>
+                  <p className="text-sm text-indigo-900/80 line-clamp-2">
+                    {votacao.descricao}
+                  </p>
+                  <div className="flex items-center justify-between border-t border-indigo-300/90 pt-2 text-xs text-indigo-700">
+                    <span>
+                      Início:{" "}
+                      {new Date(votacao.data_inicio).toLocaleDateString()}
+                    </span>
+                    <span>
+                      Fim: {new Date(votacao.data_fim).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </section>
+          </section>
+        );
+
+      case "MEMBROS":
+        return (
+          <section className="rounded-2xl border-2 border-indigo-500 p-6 h-[74vh] overflow-y-auto">
+            <h2 className="text-xl font-semibold text-gray-900">Membros</h2>
+            <p className="mt-2 text-gray-600">
+              Lista completa de todos os membros.
+            </p>
+
+            <section className="flex flex-col gap-3 py-3">
+              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
+                Membro 1
               </div>
-              <div className="bg-white rounded-2xl h-24 px-4 py-3">
-                Votação 2
+              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
+                Membro 2
               </div>
-              <div className="bg-white rounded-2xl h-24 px-4 py-3">
-                Votação 3
+              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
+                Membro 3
               </div>
-              <div className="bg-white rounded-2xl h-24 px-4 py-3">
-                Votação 4
+              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
+                Membro 4
               </div>
+              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
+                Membro 4
+              </div>
+              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
+                Membro 4
+              </div>{" "}
+              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
+                Membro 4
+              </div>{" "}
             </section>
           </section>
         );
@@ -231,7 +310,7 @@ export default function Home() {
             setOpen={setOpen}
             onSelecionar={(contexto) => {
               setContextoAtual(contexto);
-              setAbaSelecionada("comunidade");
+              setAbaSelecionada("COMUNIDADE");
             }}
             onCriar={() => {
               setCriarContexto(true);
