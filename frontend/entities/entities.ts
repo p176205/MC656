@@ -5,6 +5,12 @@ export type Usuario = {
     senha: string; 
 };
 
+export type LoginUsuario = {
+    id?: string; 
+    email: string;
+    senha: string; 
+};
+
 type Error = {
     message: string;
     status: boolean;
@@ -12,6 +18,11 @@ type Error = {
 
 export type CadastroErrors = {
     nome: Error;
+    email: Error;
+    senha: Error;
+};
+
+export type LoginErrors = {
     email: Error;
     senha: Error;
 };
@@ -24,19 +35,22 @@ export interface UsuarioResponse{
 }
 
 export interface Assembleia {
-    id: number;
+    id?: number;
+    codigo?: string; // O codigo chegará do back como string
     nome: string;
     participantes: number;
 }
 
 export interface Condominio {
-    id: number;
+    id?: number;
+    codigo?: string; // O codigo chegará do back como string
     nome: string;
     total_moradores: number;
 }
 
 export interface CentroAcademico {
-    id: number;
+    id?: number;
+    codigo?: string; // O codigo chegará do back como string
     nome: string;
     tempo_vigencia: number;
 }
@@ -67,4 +81,32 @@ export interface ContextoDTO {
     tipo: TipoContexto;
     papel: Papel;
     contexto: Contexto;
+}
+
+export type Aba =
+  | "COMUNIDADE"
+  | "VOTACAO"
+  | "MEMBROS"
+
+export type TipoVotacao =
+  "DELIBERACAO"
+
+export type RegraAprovacao =
+  | "MAIORIA_SIMPLES"
+  | "PERCENTUAL_MINIMO"
+
+export type StatusVotacao =
+  | "ENCERRADA"
+  | "ABERTA"
+
+export interface Votacao {
+    titulo: string,
+    descricao: string,
+    //contexto: Contexto,
+    tipo: TipoVotacao,
+    regra_aprovacao: RegraAprovacao,
+    quorum_minimo: number,
+    status: StatusVotacao,
+    data_inicio: string,
+    data_fim: string
 }
