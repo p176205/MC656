@@ -11,8 +11,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        // Pega a mensagem personalizada configurada nas anotações do DTO (ex: @NotBlank)
+        // Pega a mensagem personalizada configurada nas anotações do DTO (ex:
+        // @NotBlank)
         String mensagem = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mensagem);
+    }
+
+    // Erros lançados pelos Services (RuntimeException)
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleRuntimeExceptions(RuntimeException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
     }
 }

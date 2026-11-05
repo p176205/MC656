@@ -100,6 +100,33 @@ export async function criarContexto(contexto: Contexto, tipo: TipoContexto): Pro
   return contexto_res;
 }
 
+
+// POST /api/contextos/entrar
+export async function entrarContexto(codigo: string, id_user: number): Promise<ContextoDTO> {
+  const request = {
+    codigo,
+    id_user
+  }
+  
+  const resposta = await fetch(`${API_URL}/api/contextos/entrar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(request), 
+  });
+
+if (!resposta.ok) {
+  const message = await resposta.text();
+
+  throw new Error(
+    message || "Erro ao entrar no contexto."
+  );
+}
+
+  const contexto_res = await resposta.json();
+  return contexto_res;
+}
+
 // GET /api/contextos/{id}
 export async function getContextos(usuarioId: number): Promise<Response> {
   const resposta = await fetch(

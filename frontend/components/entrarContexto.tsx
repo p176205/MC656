@@ -1,11 +1,11 @@
 "use client";
 
-import {
-  UsuarioResponse,
-} from "@/entities/entities";
+import { ContextoDTO, UsuarioResponse } from "@/entities/entities";
+import { entrarContexto } from "@/services/apiFacade";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { MdOutlineClose } from "react-icons/md";
+import { toast } from "sonner";
 
 interface EntrarContextoProps {
   user: UsuarioResponse;
@@ -13,7 +13,7 @@ interface EntrarContextoProps {
 }
 
 interface EntrarContextoFormData {
-  link: string;
+  codigo: string;
 }
 
 export default function EntrarContexto({
@@ -24,26 +24,33 @@ export default function EntrarContexto({
 
   const { register, handleSubmit } = useForm<EntrarContextoFormData>({
     defaultValues: {
-      link: "",
+      codigo: "",
     },
     mode: "onChange",
   });
 
   const onSubmit = async (data: EntrarContextoFormData) => {
-    console.log("Enviando formulario", data.link);
+    console.log("Enviando formulario", data.codigo);
     setEntrar(true);
 
     try {
-      //   const resposta: ContextoDTO = await entrarContexto(link, user.id);
-      //   if (resposta) {
-      //     toast.success(`Você entrou no contexto`);
-      //   }
+      const resposta: ContextoDTO = await entrarContexto(data.codigo, user.id);
+      if (resposta) {
+        console.log("contexto_entrar", resposta);
+        toast.success(`Você entrou no contexto`);
+        setEntrarContexto(false);
+        window.location.reload();
+      }
     } catch (err) {
       console.error("Erro inesperado:", err);
+
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error("Erro inesperado ao entrar no contexto.");
+      }
     } finally {
-      setEntrarContexto(false);
       setEntrar(false);
-      window.location.reload();
     }
   };
 
@@ -73,16 +80,16 @@ export default function EntrarContexto({
         <div className="min-h-[200px]">
           <div className="space-y-4 animate-fadeIn">
             <h2 className="text-xl font-bold text-gray-800">
-              Insira o link do contexto
+              Insira o Código do contexto
             </h2>
             <div className="flex flex-col gap-1.5">
               <label className="font-semibold text-sm text-indigo-900">
-                Link:
+                Código:
               </label>
               <input
                 className="rounded-xl border border-indigo-200 bg-white/80 backdrop-blur-sm p-3 text-slate-800 outline-none transition-all duration-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/20"
                 type="text"
-                {...register("link")}
+                {...register("codigo")}
               />
             </div>
           </div>

@@ -1,5 +1,7 @@
 package com.MC656.backend.controller;
 
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -12,10 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
+import com.MC656.backend.dto.EntrarContextoRequestDTO;
 import com.MC656.backend.service.ContextoService;
 
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
-@RequestMapping("/api/contextos") // endereco base (esse é o endereco completo q o front deve usar para fazer requisição: http://localhost:8080/api/contextos)
+@RequestMapping("/api/contextos") // endereco base (esse é o endereco completo q o front deve usar para fazer
+                                  // requisição: http://localhost:8080/api/contextos)
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class ContextoController {
     private final ContextoService contextoService;
@@ -30,6 +34,7 @@ public class ContextoController {
 
         try {
             var resposta = contextoService.criarAssembleia(dto);
+            System.out.printf("contextouuid" + resposta);
             return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -42,7 +47,7 @@ public class ContextoController {
             @RequestBody CondominioRequestDTO dto) {
 
         try {
-            System.err.printf("stooo"+ dto);
+            System.err.printf("stooo" + dto);
             var resposta = contextoService.criarCondominio(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
         } catch (IllegalArgumentException e) {
@@ -57,6 +62,22 @@ public class ContextoController {
 
         try {
             var resposta = contextoService.criarCentroAcademico(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    
+
+    // Entrar em contexto existente
+    @PostMapping("/entrar")
+    public ResponseEntity<?> entrarContexto(
+            @RequestBody EntrarContextoRequestDTO dto) {
+
+        try {
+            UUID codigo = UUID.fromString(dto.codigo());
+            var resposta = contextoService.entrarContexto(dto.id_user(), codigo);
             return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

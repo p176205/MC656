@@ -36,18 +36,21 @@ export interface UsuarioResponse{
 
 export interface Assembleia {
     id?: number;
+    codigo?: string; // O codigo chegará do back como string
     nome: string;
     participantes: number;
 }
 
 export interface Condominio {
     id?: number;
+    codigo?: string; // O codigo chegará do back como string
     nome: string;
     total_moradores: number;
 }
 
 export interface CentroAcademico {
     id?: number;
+    codigo?: string; // O codigo chegará do back como string
     nome: string;
     tempo_vigencia: number;
 }
@@ -83,5 +86,3 @@ export interface ContextoDTO {
 export type Aba =
   | "comunidade"
   | "votacao"
-  | "propostas"
-  | "configurar-votacao";

@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import com.MC656.backend.dto.AssembleiaRequestDTO;
@@ -16,10 +17,13 @@ import com.MC656.backend.entity.Condominio;
 import com.MC656.backend.entity.Contexto;
 import com.MC656.backend.entity.Papel;
 import com.MC656.backend.entity.Participacao;
+import com.MC656.backend.entity.TipoContexto;
 import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.repository.ContextoRepository;
 import com.MC656.backend.repository.ParticipacaoRepository;
 import com.MC656.backend.repository.UsuarioRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class ContextoService {
@@ -85,6 +89,59 @@ public class ContextoService {
         participacaoRepository.save(participacao);
 
         return contextoSalvo;
+    }
+
+    @Transactional  // para executar todas as operacoes em conjunto
+    public ContextoResponseDTO entrarContexto(Long id_user, UUID codigo) {
+
+        // 1. Buscar contexto pelo UUID
+        Contexto contexto = contextoRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new RuntimeException("Contexto não encontrado"));
+
+        // 2. Buscar usuário pelo ID
+        Usuario usuario = usuarioRepository.findById(id_user)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // 3. Verificar se o usuário já participa do contexto
+        if (participacaoRepository.existsByUsuario_IdAndContexto_Id(
+                id_user, contexto.getId())) {
+
+            throw new RuntimeException("Usuário já participa deste contexto.");
+        }
+
+        // 4. Definir o papel inicial
+        Papel papel;
+
+        switch (contexto.getTipo()) {
+            case ASSEMBLEIA:
+                papel = Papel.PARTICIPANTE_ASSEMBLEIA;
+                break;
+
+            case CONDOMINIO:
+                papel = Papel.CONDOMINO;
+                break;
+
+            case CENTRO_ACADEMICO:
+                papel = Papel.MEMBRO;
+                break;
+
+            default:
+                throw new IllegalArgumentException("Tipo de contexto inválido.");
+        }
+
+        // 5. Criar participação
+        Participacao participacao = new Participacao(usuario, contexto, papel);
+
+        // 6. Salvar participação
+        participacaoRepository.save(participacao);
+
+        // 7. Retornar DTO
+        return new ContextoResponseDTO(
+                contexto.getId(),
+                contexto.getNome(),
+                contexto.getTipo().toString(),
+                participacao.getPapel().toString(),
+                contexto);
     }
 
     public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {

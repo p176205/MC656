@@ -3,11 +3,7 @@ import CriarContexto from "@/components/criarContexto";
 import EntrarContexto from "@/components/entrarContexto";
 import Navbar from "@/components/navbar";
 import SeletorContexto from "@/components/seletorContextos";
-import {
-  Aba,
-  ContextoDTO,
-  UsuarioResponse,
-} from "@/entities/entities";
+import { Aba, ContextoDTO, UsuarioResponse } from "@/entities/entities";
 import { getContextos, getIdUser, logoutUsuario } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -204,30 +200,6 @@ export default function Home() {
             </section>
           </section>
         );
-
-      case "propostas":
-        return (
-          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen shadow-sm">
-            <h2 className="text-xl font-semibold">
-              {contextoAtual!.tipo === "CENTRO_ACADEMICO"
-                ? "Chapas"
-                : "Propostas"}
-            </h2>
-            <p className="mt-2 text-gray-600">
-              Consulte as propostas deste contexto.
-            </p>
-          </section>
-        );
-
-      case "configurar-votacao":
-        return (
-          <section className="rounded-2xl bg-indigo-100 p-6 min-h-screen shadow-sm">
-            <h2 className="text-xl font-semibold">Configurar votação</h2>
-            <p className="mt-2 text-gray-600">
-              Configure as regras de votação deste contexto.
-            </p>
-          </section>
-        );
     }
   }
   // front basico só para teste
@@ -238,13 +210,20 @@ export default function Home() {
           <h1 className="text-2xl font-bold">
             Olá, {user?.nome}! Você está no contexto {contextoAtual?.nome}
           </h1>
-          <div className="flex flex-row gap-1">
-            <p className="mt-1 text-lg text-gray-700">Link do contexto: </p>
-            <p className="mt-1 text-lg text-indigo-500 ">exemplo1234</p>
+          <div
+            className="flex flex-row gap-1"
+            hidden={contextoAtual.papel != "ADMINISTRADOR"}
+          >
+            <p className="mt-1 text-lg text-gray-700">Código do contexto: </p>
+            <p className="mt-1 text-lg text-indigo-500 ">
+              {contextoAtual.contexto.codigo}
+            </p>
           </div>
-          
         </div>
         <div className="flex flex-row gap-3">
+          <div className="flex flex-col gap-1 justify-center items-center border-b-indigo-400 border-b-2 p-1 text-sm">
+            {contextoAtual.papel}
+          </div>
           <SeletorContexto
             contextos={contextos}
             contextoAtual={contextoAtual}
@@ -276,8 +255,6 @@ export default function Home() {
         <Navbar
           abaSelecionada={abaSelecionada}
           setAbaSelecionada={setAbaSelecionada}
-          ehAdmin={contextoAtual.papel === "ADMINISTRADOR"}
-          tipoContexto={contextoAtual.tipo}
         />
 
         <div className="py-8">{renderizarConteudo()}</div>
