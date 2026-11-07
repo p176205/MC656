@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import com.MC656.backend.dto.AssembleiaRequestDTO;
@@ -16,10 +17,13 @@ import com.MC656.backend.entity.Condominio;
 import com.MC656.backend.entity.Contexto;
 import com.MC656.backend.entity.Papel;
 import com.MC656.backend.entity.Participacao;
+import com.MC656.backend.entity.TipoContexto;
 import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.repository.ContextoRepository;
 import com.MC656.backend.repository.ParticipacaoRepository;
 import com.MC656.backend.repository.UsuarioRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class ContextoService {
@@ -38,7 +42,7 @@ public class ContextoService {
 
     public Assembleia criarAssembleia(
             AssembleiaRequestDTO dto) {
-        Usuario usuario = usuarioRepository.findById(3L)
+        Usuario usuario = usuarioRepository.findById(dto.id())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         // Criar a entidade concreta
         Assembleia assembleia = new Assembleia(dto.nome(), dto.participantes());
@@ -53,10 +57,9 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-    public CentroAcademico criarCentroAcademico(
-            CentroAcademicoRequestDTO dto) {
+    public CentroAcademico criarCentroAcademico(CentroAcademicoRequestDTO dto) {
 
-        Usuario usuario = usuarioRepository.findById(3L)
+        Usuario usuario = usuarioRepository.findById(dto.id())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         // Criar a entidade concreta
         CentroAcademico centroAcademico = new CentroAcademico(dto.nome(), dto.tempo_vigencia());
@@ -71,10 +74,9 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-    public Condominio criarCondominio(
-            CondominioRequestDTO dto) {
+    public Condominio criarCondominio(CondominioRequestDTO dto) {
 
-        Usuario usuario = usuarioRepository.findById(3L)
+        Usuario usuario = usuarioRepository.findById(dto.id())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         // Criar a entidade concreta
         Condominio condominio = new Condominio(dto.nome(), dto.total_moradores());
@@ -89,27 +91,81 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {
+    @Transactional  // para executar todas as operacoes em conjunto
+    public ContextoResponseDTO entrarContexto(Long id_user, UUID codigo) {
 
-    // Busca todas as participações associadas ao usuário informado.
-    // Cada participação relaciona um usuário a um contexto.
-    return participacaoRepository.findByUsuarioId(id).stream() // permitindo transformar cada elemento individualmente.
-            .map(participacao -> {// Para cada participação, executa a função abaixo (fazemos isso para construir um DTO com os dados que serão enviados ao frontend)
+        // 1. Buscar contexto pelo UUID
+        Contexto contexto = contextoRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new RuntimeException("Contexto não encontrado"));
 
-                Contexto contexto = participacao.getContexto(); // Obtém o contexto associado à participação atual. (Ele pode ser uma Assembleia, um Condominio ou um CentroAcademico.)
+        // 2. Buscar usuário pelo ID
+        Usuario usuario = usuarioRepository.findById(id_user)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-                return new ContextoResponseDTO(
-                        contexto.getId(),
-                        contexto.getNome(),
-                        contexto.getTipo().toString(),
-                        participacao.getPapel().toString(),          
-                        contexto
-                );
-            })
+        // 3. Verificar se o usuário já participa do contexto
+        if (participacaoRepository.existsByUsuario_IdAndContexto_Id(
+                id_user, contexto.getId())) {
 
-            // Reúne todos os DTOs produzidos em uma nova lista.
-            .toList();
-}
+            throw new RuntimeException("Usuário já participa deste contexto.");
+        }
+
+        // 4. Definir o papel inicial
+        Papel papel;
+
+        switch (contexto.getTipo()) {
+            case ASSEMBLEIA:
+                papel = Papel.PARTICIPANTE_ASSEMBLEIA;
+                break;
+
+            case CONDOMINIO:
+                papel = Papel.CONDOMINO;
+                break;
+
+            case CENTRO_ACADEMICO:
+                papel = Papel.MEMBRO;
+                break;
+
+            default:
+                throw new IllegalArgumentException("Tipo de contexto inválido.");
+        }
+
+        // 5. Criar participação
+        Participacao participacao = new Participacao(usuario, contexto, papel);
+
+        // 6. Salvar participação
+        participacaoRepository.save(participacao);
+
+        // 7. Retornar DTO
+        return new ContextoResponseDTO(
+                contexto.getId(),
+                contexto.getNome(),
+                contexto.getTipo().toString(),
+                participacao.getPapel().toString(),
+                contexto);
+    }
+
+    public List<ContextoResponseDTO> listarContextosDoUsuario(Long id) {
+
+        // Busca todas as participações associadas ao usuário informado.
+        // Cada participação relaciona um usuário a um contexto.
+        return participacaoRepository.findByUsuarioId(id).stream() // permitindo transformar cada elemento
+                                                                   // individualmente.
+                .map(participacao -> {// Para cada participação, executa a função abaixo (fazemos isso para construir
+                                      // um DTO com os dados que serão enviados ao frontend)
+                    Contexto contexto = participacao.getContexto(); // Obtém o contexto associado à participação atual.
+                                                                    // (Ele pode ser uma Assembleia, um Condominio ou um
+                                                                    // CentroAcademico.)
+                    return new ContextoResponseDTO(
+                            contexto.getId(),
+                            contexto.getNome(),
+                            contexto.getTipo().toString(),
+                            participacao.getPapel().toString(),
+                            contexto);
+                })
+
+                // Reúne todos os DTOs produzidos em uma nova lista.
+                .toList();
+    }
 
     // Retorna a participacao que habilita o usuario a votar no contexto, se existir
     public Optional<Participacao> buscarParticipacaoVotante(Long usuarioId, Long contextoId) {
