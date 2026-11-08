@@ -63,28 +63,46 @@ public class Votacao {
     public Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
             Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
             LocalDateTime dataFim) {
-        this(titulo, descricao, contexto, regraAprovacao, percentualMinimo, quorumMinimo,
-                dataInicio, dataFim, null, null, null, null, null, null, false);
+        this(titulo, descricao, contexto, TipoVotacao.DELIBERACAO, regraAprovacao,
+                percentualMinimo, quorumMinimo, dataInicio, dataFim, null, null, null, null,
+                null, null, false);
     }
 
     public Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
             Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
             LocalDateTime dataFim, String pauta, Integer participantesAptos, BigDecimal pesoVoto,
             String unidadeApartamento, String categoriaSegmento, String elegibilidade) {
-        this(titulo, descricao, contexto, regraAprovacao, percentualMinimo, quorumMinimo, dataInicio,
-                dataFim, pauta, participantesAptos, pesoVoto, unidadeApartamento, categoriaSegmento,
-                elegibilidade, true);
+        this(titulo, descricao, contexto, TipoVotacao.DELIBERACAO, regraAprovacao, percentualMinimo,
+                quorumMinimo, dataInicio, dataFim, pauta, participantesAptos, pesoVoto,
+                unidadeApartamento, categoriaSegmento, elegibilidade, true);
     }
 
-    private Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
-            Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
-            LocalDateTime dataFim, String pauta, Integer participantesAptos, BigDecimal pesoVoto,
-            String unidadeApartamento, String categoriaSegmento, String elegibilidade,
-            boolean validarCamposEspecificos) {
+    public Votacao(String titulo, String descricao, Contexto contexto, TipoVotacao tipo,
+            RegraAprovacao regraAprovacao, Double percentualMinimo, Double quorumMinimo,
+            LocalDateTime dataInicio, LocalDateTime dataFim) {
+        this(titulo, descricao, contexto, tipo, regraAprovacao, percentualMinimo, quorumMinimo,
+                dataInicio, dataFim, null, null, null, null, null, null, false);
+    }
+
+    public Votacao(String titulo, String descricao, Contexto contexto, TipoVotacao tipo,
+            RegraAprovacao regraAprovacao, Double percentualMinimo, Double quorumMinimo,
+            LocalDateTime dataInicio, LocalDateTime dataFim, String pauta,
+            Integer participantesAptos, BigDecimal pesoVoto, String unidadeApartamento,
+            String categoriaSegmento, String elegibilidade) {
+        this(titulo, descricao, contexto, tipo, regraAprovacao, percentualMinimo, quorumMinimo,
+                dataInicio, dataFim, pauta, participantesAptos, pesoVoto, unidadeApartamento,
+                categoriaSegmento, elegibilidade, true);
+    }
+
+    private Votacao(String titulo, String descricao, Contexto contexto, TipoVotacao tipo,
+            RegraAprovacao regraAprovacao, Double percentualMinimo, Double quorumMinimo,
+            LocalDateTime dataInicio, LocalDateTime dataFim, String pauta,
+            Integer participantesAptos, BigDecimal pesoVoto, String unidadeApartamento,
+            String categoriaSegmento, String elegibilidade, boolean validarCamposEspecificos) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.contexto = contexto;
-        this.tipo = TipoVotacao.DELIBERACAO;
+        this.tipo = tipo;
         this.regraAprovacao = regraAprovacao;
         this.percentualMinimo = regraAprovacao == RegraAprovacao.PERCENTUAL_MINIMO ? percentualMinimo : null;
         this.quorumMinimo = quorumMinimo;
@@ -112,6 +130,9 @@ public class Votacao {
         }
         if (contexto == null) {
             throw new IllegalArgumentException("A votação deve pertencer a um contexto.");
+        }
+        if (tipo == null) {
+            throw new IllegalArgumentException("O tipo da votação deve ser informado.");
         }
         if (regraAprovacao == null) {
             throw new IllegalArgumentException("A regra de aprovação deve ser informada.");
