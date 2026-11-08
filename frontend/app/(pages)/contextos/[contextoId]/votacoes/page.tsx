@@ -8,6 +8,7 @@ import { buscarVotacoesPorContexto } from "@/services/apiFacade";
 
 const statusLabels: Record<string, string> = {
   AGENDADA: "Agendada",
+  ABERTA: "Aberta",
   EM_ANDAMENTO: "Em andamento",
   ENCERRADA: "Encerrada",
   CANCELADA: "Cancelada",
@@ -116,33 +117,40 @@ export default function VotacoesPage() {
         <ul className="space-y-4">
           {votacoes.map((votacao) => (
             <li key={votacao.id} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <h2 className="text-xl font-semibold text-gray-900">{votacao.nome}</h2>
-                <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800">
-                  {statusLabels[votacao.status] ?? votacao.status}
-                </span>
-              </div>
-              <p className="mt-2 text-gray-700">{votacao.descricao}</p>
-              <dl className="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
-                <div>
-                  <dt className="font-medium text-gray-800">Regra de aprovação</dt>
-                  <dd>{votacao.regraAprovacao}</dd>
+              <Link
+                href={`/contextos/${contextoIdParam}/votacoes/${votacao.id}`}
+                className="block rounded-md outline-none focus-visible:ring-2 focus-visible:ring-purple-700"
+                aria-label={`Ver detalhes da votação ${votacao.nome}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <h2 className="text-xl font-semibold text-gray-900">{votacao.nome}</h2>
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800">
+                    {statusLabels[votacao.status] ?? votacao.status}
+                  </span>
                 </div>
-                <div>
-                  <dt className="font-medium text-gray-800">Percentual mínimo</dt>
-                  <dd>{votacao.percentualMinimo}%</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-gray-800">Quórum mínimo</dt>
-                  <dd>{votacao.quorumMinimo}%</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-gray-800">Período</dt>
-                  <dd>
-                    {formatarData(votacao.dataInicio)} – {formatarData(votacao.dataFim)}
-                  </dd>
-                </div>
-              </dl>
+                <p className="mt-2 text-gray-700">{votacao.descricao}</p>
+                <dl className="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
+                  <div>
+                    <dt className="font-medium text-gray-800">Regra de aprovação</dt>
+                    <dd>{votacao.regraAprovacao}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">Percentual mínimo</dt>
+                    <dd>{votacao.percentualMinimo}%</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">Quórum mínimo</dt>
+                    <dd>{votacao.quorumMinimo}%</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">Período</dt>
+                    <dd>
+                      {formatarData(votacao.dataInicio)} – {formatarData(votacao.dataFim)}
+                    </dd>
+                  </div>
+                </dl>
+                <span className="mt-4 inline-block text-sm font-medium text-purple-700">Ver detalhes →</span>
+              </Link>
             </li>
           ))}
         </ul>

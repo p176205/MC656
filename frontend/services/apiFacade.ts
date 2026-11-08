@@ -51,6 +51,19 @@ export async function buscarVotacoesPorContexto(contextoId: number): Promise<Vot
   return (await resposta.json()) as VotacaoResponse[];
 }
 
+// GET /api/votacoes/{id}
+export async function buscarVotacaoPorId(id: number): Promise<VotacaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${id}`, {
+    method: "GET",
+  });
+
+  if (!resposta.ok) {
+    throw new Error(`Falha ao buscar votação: HTTP ${resposta.status}`);
+  }
+
+  return (await resposta.json()) as VotacaoResponse;
+}
+
 // GET /api/contextos/{contextoId}
 export async function buscarContexto(contextoId: number): Promise<ContextoResponse> {
   const resposta = await fetch(`${API_URL}/api/contextos/${contextoId}`, {

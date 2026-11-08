@@ -22,7 +22,7 @@ export type RegraAprovacao =
     | "MAIORIA_QUALIFICADA"
     | "UNANIMIDADE";
 
-export type StatusVotacao = "AGENDADA" | "EM_ANDAMENTO" | "ENCERRADA" | "CANCELADA";
+export type StatusVotacao = "AGENDADA" | "ABERTA" | "EM_ANDAMENTO" | "ENCERRADA" | "CANCELADA";
 
 export type TipoContexto = "ASSEMBLEIA" | "CONDOMINIO" | "CENTRO_ACADEMICO";
 

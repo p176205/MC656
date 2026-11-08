@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buscarContexto, buscarVotacoesPorContexto, cadastrarUsuario, cadastrarVotacao } from "../services/apiFacade";
+import {
+  buscarContexto,
+  buscarVotacaoPorId,
+  buscarVotacoesPorContexto,
+  cadastrarUsuario,
+  cadastrarVotacao,
+} from "../services/apiFacade";
 
 const usuario = { nome: "Maria", email: "maria@email.com", senha: "123456" };
 const votacoes = [{
@@ -67,6 +73,30 @@ describe("buscarVotacoesPorContexto (fachada da API)", () => {
     const [url, opcoes] = fetchMock.mock.calls[0];
     expect(url).toMatch(/\/api\/votacoes\/contexto\/12$/);
     expect(opcoes.method).toBe("GET");
+  });
+
+  describe("buscarVotacaoPorId (fachada da API)", () => {
+    it("faz GET pelo identificador e retorna os dados da votação", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(votacoes[0]),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(buscarVotacaoPorId(8)).resolves.toEqual(votacoes[0]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/votacoes\/8$/);
+      expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+    });
+
+    it("propaga falhas HTTP e de rede", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+      await expect(buscarVotacaoPorId(999)).rejects.toThrow("Falha ao buscar votação: HTTP 404");
+
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("rede indisponível")));
+      await expect(buscarVotacaoPorId(8)).rejects.toThrow("rede indisponível");
+    });
   });
 
   it("propaga falhas HTTP e de rede", async () => {
