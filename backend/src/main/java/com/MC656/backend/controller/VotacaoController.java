@@ -44,4 +44,9 @@ public class VotacaoController {
     public ResponseEntity<List<VotacaoResponseDTO>> listarPorContexto(@PathVariable Long contextoId) {
         return ResponseEntity.ok(votacaoService.listarPorContexto(contextoId));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<VotacaoResponseDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(votacaoService.buscarPorId(id));
+    }
 }

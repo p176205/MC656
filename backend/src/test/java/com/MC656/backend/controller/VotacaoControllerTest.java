@@ -78,6 +78,38 @@ class VotacaoControllerTest {
     }
 
     @Test
+    void deveRetornarVotacaoExistentePorId() throws Exception {
+        when(votacaoService.buscarPorId(12L)).thenReturn(criarResponse());
+
+        mockMvc.perform(get("/api/votacoes/12"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(12))
+                .andExpect(jsonPath("$.contextoId").value(42))
+                .andExpect(jsonPath("$.nome").value("Eleição de representante"))
+                .andExpect(jsonPath("$.descricao").value("Escolha do representante."))
+                .andExpect(jsonPath("$.regraAprovacao").value("MAIORIA_SIMPLES"))
+                .andExpect(jsonPath("$.percentualMinimo").value(60.5))
+                .andExpect(jsonPath("$.quorumMinimo").value(25.25))
+                .andExpect(jsonPath("$.dataInicio").value("2026-11-01T10:00:00"))
+                .andExpect(jsonPath("$.dataFim").value("2026-11-02T10:00:00"))
+                .andExpect(jsonPath("$.status").value("AGENDADA"))
+                .andExpect(jsonPath("$.pesoVoto").value(1.5))
+                .andExpect(jsonPath("$.unidadeApartamento").value("Apto 12"));
+    }
+
+    @Test
+    void deveRetornar404QuandoIdentificadorDaVotacaoNaoExiste() throws Exception {
+        when(votacaoService.buscarPorId(999L))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Votação não encontrada."));
+
+        mockMvc.perform(get("/api/votacoes/999"))
+                .andExpect(status().isNotFound());
+
+        verify(votacaoService).buscarPorId(999L);
+    }
+
+    @Test
     void deveCadastrarVotacaoComNumerosEDatasISO8601() throws Exception {
         when(votacaoService.cadastrar(any(VotacaoCadastroDTO.class)))
                 .thenReturn(criarResponse());

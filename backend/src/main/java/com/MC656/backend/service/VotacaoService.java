@@ -57,6 +57,12 @@ public class VotacaoService {
                 .toList();
     }
 
+    public VotacaoResponseDTO buscarPorId(Long id) {
+        Votacao votacao = votacaoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votação não encontrada."));
+        return toResponseDTO(votacao);
+    }
+
     private VotacaoResponseDTO toResponseDTO(Votacao votacao) {
         return new VotacaoResponseDTO(
                 votacao.getId(),
