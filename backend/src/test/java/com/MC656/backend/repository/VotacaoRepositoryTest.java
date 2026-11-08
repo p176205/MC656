@@ -45,6 +45,6 @@ class VotacaoRepositoryTest {
                 new BigDecimal("50"), new BigDecimal("25"),
                 LocalDateTime.of(2026, 11, 1, 10, 0),
                 LocalDateTime.of(2026, 11, 2, 10, 0),
-                StatusVotacao.AGENDADA);
+                StatusVotacao.AGENDADA, null, null, BigDecimal.ONE, "Apto 1", null, null);
     }
 }

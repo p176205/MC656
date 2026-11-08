@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buscarVotacoesPorContexto, cadastrarUsuario, cadastrarVotacao } from "../services/apiFacade";
+import { buscarContexto, buscarVotacoesPorContexto, cadastrarUsuario, cadastrarVotacao } from "../services/apiFacade";
 
 const usuario = { nome: "Maria", email: "maria@email.com", senha: "123456" };
 const votacoes = [{
@@ -91,6 +91,8 @@ describe("cadastrarVotacao (fachada da API)", () => {
     dataInicio: "2026-11-01T10:00:00",
     dataFim: "2026-11-02T10:00:00",
     status: "AGENDADA" as const,
+    pesoVoto: 1.5,
+    unidadeApartamento: "Apto 12",
   };
 
   it("envia POST com os dados do contrato e retorna a votação criada", async () => {
@@ -120,5 +122,21 @@ describe("cadastrarVotacao (fachada da API)", () => {
     }));
 
     await expect(cadastrarVotacao(cadastro)).rejects.toThrow("Contexto não encontrado.");
+  });
+});
+
+describe("buscarContexto (fachada da API)", () => {
+  it("busca o tipo do contexto para decidir os campos do formulário", async () => {
+    const contexto = { id: 12, nome: "Condomínio", tipo: "CONDOMINIO" };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(contexto),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(buscarContexto(12)).resolves.toEqual(contexto);
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/contextos\/12$/);
+    expect(fetchMock.mock.calls[0][1].method).toBe("GET");
   });
 });

@@ -24,7 +24,15 @@ export type RegraAprovacao =
 
 export type StatusVotacao = "AGENDADA" | "EM_ANDAMENTO" | "ENCERRADA" | "CANCELADA";
 
-export type VotacaoCadastro = {
+export type TipoContexto = "ASSEMBLEIA" | "CONDOMINIO" | "CENTRO_ACADEMICO";
+
+export type ContextoResponse = {
+    id: number;
+    nome: string;
+    tipo: TipoContexto;
+};
+
+type VotacaoCadastroBase = {
     contextoId: number;
     nome: string;
     descricao: string;
@@ -36,6 +44,46 @@ export type VotacaoCadastro = {
     status: StatusVotacao;
 };
 
-export type VotacaoResponse = VotacaoCadastro & {
+type CamposAssembleia = {
+    pauta: string;
+    participantesAptos: number;
+    pesoVoto?: never;
+    unidadeApartamento?: never;
+    categoriaSegmento?: never;
+    elegibilidade?: never;
+};
+
+type CamposCondominio = {
+    pauta?: never;
+    participantesAptos?: never;
+    pesoVoto: number;
+    unidadeApartamento: string;
+    categoriaSegmento?: never;
+    elegibilidade?: never;
+};
+
+type CamposCentroAcademico = {
+    pauta?: never;
+    participantesAptos?: never;
+    pesoVoto?: never;
+    unidadeApartamento?: never;
+    categoriaSegmento: string;
+    elegibilidade: string;
+};
+
+export type VotacaoCadastro = VotacaoCadastroBase & (
+    | CamposAssembleia
+    | CamposCondominio
+    | CamposCentroAcademico
+);
+
+export type VotacaoResponse = Omit<VotacaoCadastroBase, "status"> & {
     id: number;
+    status: StatusVotacao;
+    pauta: string | null;
+    participantesAptos: number | null;
+    pesoVoto: number | null;
+    unidadeApartamento: string | null;
+    categoriaSegmento: string | null;
+    elegibilidade: string | null;
 };

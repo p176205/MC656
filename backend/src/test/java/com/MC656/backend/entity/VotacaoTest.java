@@ -35,16 +35,20 @@ class VotacaoTest {
                 () -> criarVotacao(null, new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim));
         assertThrows(IllegalArgumentException.class,
                 () -> new Votacao(contexto, " ", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
-                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA));
+                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA,
+                        null, null, BigDecimal.ONE, "Apto 1", null, null));
         assertThrows(IllegalArgumentException.class,
                 () -> new Votacao(contexto, "Nome", " ", RegraAprovacao.MAIORIA_SIMPLES,
-                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA));
+                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA,
+                        null, null, BigDecimal.ONE, "Apto 1", null, null));
         assertThrows(IllegalArgumentException.class,
                 () -> new Votacao(contexto, "Nome", "Descrição", null,
-                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA));
+                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA,
+                        null, null, BigDecimal.ONE, "Apto 1", null, null));
         assertThrows(IllegalArgumentException.class,
                 () -> new Votacao(contexto, "Nome", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
-                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, null));
+                        new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, null,
+                        null, null, BigDecimal.ONE, "Apto 1", null, null));
     }
 
     @Test
@@ -67,10 +71,50 @@ class VotacaoTest {
                 () -> criarVotacao(contexto, BigDecimal.ZERO, BigDecimal.ZERO, dataFim, dataInicio));
     }
 
+    @Test
+    void deveExigirCamposEspecificosDoTipoDeContexto() {
+        Assembleia assembleia = new Assembleia("Assembleia", 10);
+        CentroAcademico centro = new CentroAcademico("Centro", 1);
+
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                assembleia, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                BigDecimal.ZERO, BigDecimal.ZERO, dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, 10, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                assembleia, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                BigDecimal.ZERO, BigDecimal.ZERO, dataInicio, dataFim, StatusVotacao.AGENDADA,
+                "Pauta", 0, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                contexto, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                BigDecimal.ZERO, BigDecimal.ZERO, dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, BigDecimal.ZERO, "Apto 1", null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                contexto, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                BigDecimal.ZERO, BigDecimal.ZERO, dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, BigDecimal.ONE, " ", null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                centro, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                BigDecimal.ZERO, BigDecimal.ZERO, dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, null, null, "", "Elegível"));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                centro, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                BigDecimal.ZERO, BigDecimal.ZERO, dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, null, null, "Estudante", " "));
+    }
+
+    @Test
+    void naoDeveAceitarCamposEspecificosDeOutroTipoDeContexto() {
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                contexto, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                BigDecimal.ZERO, BigDecimal.ZERO, dataInicio, dataFim, StatusVotacao.AGENDADA,
+                "Pauta", null, BigDecimal.ONE, "Apto 1", null, null));
+    }
+
     private Votacao criarVotacao(Contexto contexto, BigDecimal percentualMinimo, BigDecimal quorumMinimo,
             LocalDateTime dataInicio, LocalDateTime dataFim) {
         return new Votacao(contexto, "Eleição de representante", "Escolha do representante do condomínio.",
                 RegraAprovacao.MAIORIA_SIMPLES, percentualMinimo, quorumMinimo,
-                dataInicio, dataFim, StatusVotacao.AGENDADA);
+                dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, BigDecimal.ONE, "Apto 1", null, null);
     }
 }

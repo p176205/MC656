@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.MC656.backend.dto.VotacaoCadastroDTO;
 import com.MC656.backend.dto.VotacaoResponseDTO;
@@ -28,9 +29,15 @@ public class VotacaoController {
     }
 
     @PostMapping
-    public ResponseEntity<VotacaoResponseDTO> cadastrar(@Valid @RequestBody VotacaoCadastroDTO dto) {
-        VotacaoResponseDTO response = votacaoService.cadastrar(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<?> cadastrar(@Valid @RequestBody VotacaoCadastroDTO dto) {
+        try {
+            VotacaoResponseDTO response = votacaoService.cadastrar(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        }
     }
 
     @GetMapping("/contexto/{contextoId}")

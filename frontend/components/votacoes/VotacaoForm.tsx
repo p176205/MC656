@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { VotacaoCadastro, VotacaoResponse } from "../../entities/entities";
+import type {
+  RegraAprovacao,
+  TipoContexto,
+  VotacaoCadastro,
+  VotacaoResponse,
+} from "../../entities/entities";
 import { cadastrarVotacao } from "../../services/apiFacade";
 
 export type VotacaoFormValues = {
@@ -12,15 +17,42 @@ export type VotacaoFormValues = {
   quorumMinimo: string;
   dataInicio: string;
   dataFim: string;
+  pauta: string;
+  participantesAptos: string;
+  pesoVoto: string;
+  unidadeApartamento: string;
+  categoriaSegmento: string;
+  elegibilidade: string;
 };
 
 export type VotacaoFormErrors = Partial<Record<keyof VotacaoFormValues, string>>;
 
-export function validarVotacaoForm(valores: VotacaoFormValues): VotacaoFormErrors {
+export const camposEspecificosPorTipoContexto: Record<
+  TipoContexto,
+  readonly ("pauta" | "participantesAptos" | "pesoVoto" | "unidadeApartamento" | "categoriaSegmento" | "elegibilidade")[]
+> = {
+  ASSEMBLEIA: ["pauta", "participantesAptos"],
+  CONDOMINIO: ["pesoVoto", "unidadeApartamento"],
+  CENTRO_ACADEMICO: ["categoriaSegmento", "elegibilidade"],
+};
+
+const regrasAprovacao: RegraAprovacao[] = [
+  "MAIORIA_SIMPLES",
+  "MAIORIA_ABSOLUTA",
+  "MAIORIA_QUALIFICADA",
+  "UNANIMIDADE",
+];
+
+export function validarVotacaoForm(
+  tipoContexto: TipoContexto,
+  valores: VotacaoFormValues,
+): VotacaoFormErrors {
   const erros: VotacaoFormErrors = {};
   if (!valores.nome.trim()) erros.nome = "Informe o nome.";
   if (!valores.descricao.trim()) erros.descricao = "Informe a descrição.";
-  if (!valores.regraAprovacao) erros.regraAprovacao = "Selecione a regra de aprovação.";
+  if (!regrasAprovacao.includes(valores.regraAprovacao as RegraAprovacao)) {
+    erros.regraAprovacao = "Selecione a regra de aprovação.";
+  }
 
   const percentual = Number(valores.percentualMinimo);
   if (!valores.percentualMinimo.trim() || !Number.isFinite(percentual) || percentual < 0 || percentual > 100) {
@@ -44,21 +76,77 @@ export function validarVotacaoForm(valores: VotacaoFormValues): VotacaoFormError
     erros.dataFim = "A data de fim deve ser posterior à data de início.";
   }
 
+  if (tipoContexto === "ASSEMBLEIA") {
+    if (!valores.pauta.trim()) erros.pauta = "Informe a pauta.";
+    const participantes = Number(valores.participantesAptos);
+    if (!Number.isSafeInteger(participantes) || participantes <= 0) {
+      erros.participantesAptos = "Informe uma quantidade inteira positiva de participantes aptos.";
+    }
+  } else if (tipoContexto === "CONDOMINIO") {
+    const peso = Number(valores.pesoVoto);
+    if (!valores.pesoVoto.trim() || !Number.isFinite(peso) || peso <= 0) {
+      erros.pesoVoto = "Informe um peso de voto positivo.";
+    }
+    if (!valores.unidadeApartamento.trim()) {
+      erros.unidadeApartamento = "Informe a unidade ou apartamento.";
+    }
+  } else {
+    if (!valores.categoriaSegmento.trim()) {
+      erros.categoriaSegmento = "Informe a categoria ou segmento.";
+    }
+    if (!valores.elegibilidade.trim()) {
+      erros.elegibilidade = "Informe a elegibilidade.";
+    }
+  }
+
   return erros;
 }
 
-export function criarCadastroVotacao(contextoId: number, valores: VotacaoFormValues): VotacaoCadastro {
-  return {
+function dataIsoLocal(valor: string): string {
+  return valor.length === 16 ? `${valor}:00` : valor;
+}
+
+export function criarCadastroVotacao(
+  contextoId: number,
+  tipoContexto: TipoContexto,
+  valores: VotacaoFormValues,
+): VotacaoCadastro {
+  if (!regrasAprovacao.includes(valores.regraAprovacao as RegraAprovacao)) {
+    throw new Error("Selecione uma regra de aprovação válida.");
+  }
+
+  const camposComuns = {
     contextoId,
     nome: valores.nome.trim(),
     descricao: valores.descricao.trim(),
-    regraAprovacao: valores.regraAprovacao as VotacaoCadastro["regraAprovacao"],
+    regraAprovacao: valores.regraAprovacao as RegraAprovacao,
     percentualMinimo: Number(valores.percentualMinimo),
     quorumMinimo: Number(valores.quorumMinimo),
-    dataInicio: valores.dataInicio.length === 16 ? `${valores.dataInicio}:00` : valores.dataInicio,
-    dataFim: valores.dataFim.length === 16 ? `${valores.dataFim}:00` : valores.dataFim,
-    status: "AGENDADA",
+    dataInicio: dataIsoLocal(valores.dataInicio),
+    dataFim: dataIsoLocal(valores.dataFim),
+    status: "AGENDADA" as const,
   };
+
+  switch (tipoContexto) {
+    case "ASSEMBLEIA":
+      return {
+        ...camposComuns,
+        pauta: valores.pauta.trim(),
+        participantesAptos: Number(valores.participantesAptos),
+      };
+    case "CONDOMINIO":
+      return {
+        ...camposComuns,
+        pesoVoto: Number(valores.pesoVoto),
+        unidadeApartamento: valores.unidadeApartamento.trim(),
+      };
+    case "CENTRO_ACADEMICO":
+      return {
+        ...camposComuns,
+        categoriaSegmento: valores.categoriaSegmento.trim(),
+        elegibilidade: valores.elegibilidade.trim(),
+      };
+  }
 }
 
 const valoresIniciais: VotacaoFormValues = {
@@ -69,13 +157,20 @@ const valoresIniciais: VotacaoFormValues = {
   quorumMinimo: "",
   dataInicio: "",
   dataFim: "",
+  pauta: "",
+  participantesAptos: "",
+  pesoVoto: "",
+  unidadeApartamento: "",
+  categoriaSegmento: "",
+  elegibilidade: "",
 };
 
 type Props = {
   contextoId: number;
+  tipoContexto: TipoContexto;
 };
 
-export default function VotacaoForm({ contextoId }: Props) {
+export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
   const [valores, setValores] = useState<VotacaoFormValues>(valoresIniciais);
   const [erros, setErros] = useState<VotacaoFormErrors>({});
   const [erroApi, setErroApi] = useState<string | null>(null);
@@ -91,7 +186,7 @@ export default function VotacaoForm({ contextoId }: Props) {
 
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    const errosValidacao = validarVotacaoForm(valores);
+    const errosValidacao = validarVotacaoForm(tipoContexto, valores);
     setErros(errosValidacao);
     setErroApi(null);
     setVotacaoCriada(null);
@@ -99,7 +194,7 @@ export default function VotacaoForm({ contextoId }: Props) {
 
     setEnviando(true);
     try {
-      const resposta = await cadastrarVotacao(criarCadastroVotacao(contextoId, valores));
+      const resposta = await cadastrarVotacao(criarCadastroVotacao(contextoId, tipoContexto, valores));
       setVotacaoCriada(resposta);
     } catch (erro) {
       setErroApi(erro instanceof Error ? erro.message : "Não foi possível cadastrar a votação.");
@@ -108,7 +203,7 @@ export default function VotacaoForm({ contextoId }: Props) {
     }
   }
 
-  function campoTexto(campo: "nome" | "descricao", rotulo: string, multiline = false) {
+  function campoTexto(campo: "nome" | "descricao" | "pauta" | "unidadeApartamento" | "categoriaSegmento" | "elegibilidade", rotulo: string, multiline = false) {
     const controle = multiline ? (
       <textarea
         id={campo}
@@ -144,17 +239,21 @@ export default function VotacaoForm({ contextoId }: Props) {
     );
   }
 
-  function campoNumero(campo: "percentualMinimo" | "quorumMinimo", rotulo: string) {
+  function campoNumero(
+    campo: "percentualMinimo" | "quorumMinimo" | "participantesAptos" | "pesoVoto",
+    rotulo: string,
+  ) {
+    const percentual = campo === "percentualMinimo" || campo === "quorumMinimo";
     return (
       <label htmlFor={campo} className="flex flex-col gap-1 font-medium text-gray-800">
-        {rotulo} (%)
+        {rotulo}{percentual ? " (%)" : ""}
         <input
           id={campo}
           name={campo}
           type="number"
-          min="0"
-          max="100"
-          step="0.01"
+          min={percentual ? "0" : campo === "participantesAptos" ? "1" : "0"}
+          max={percentual ? "100" : undefined}
+          step={campo === "participantesAptos" ? "1" : percentual ? "0.01" : "any"}
           required
           value={valores[campo]}
           onChange={(evento) => atualizarCampo(campo, evento.target.value)}
@@ -187,6 +286,8 @@ export default function VotacaoForm({ contextoId }: Props) {
     );
   }
 
+  const camposEspecificos = camposEspecificosPorTipoContexto[tipoContexto];
+
   return (
     <form onSubmit={enviarFormulario} noValidate className="flex w-full max-w-2xl flex-col gap-5 rounded-lg border p-6 shadow-md">
       {campoTexto("nome", "Nome")}
@@ -215,6 +316,14 @@ export default function VotacaoForm({ contextoId }: Props) {
 
       {campoNumero("percentualMinimo", "Percentual mínimo")}
       {campoNumero("quorumMinimo", "Quórum mínimo")}
+
+      {camposEspecificos.includes("pauta") && campoTexto("pauta", "Pauta")}
+      {camposEspecificos.includes("participantesAptos") && campoNumero("participantesAptos", "Participantes aptos a votar")}
+      {camposEspecificos.includes("pesoVoto") && campoNumero("pesoVoto", "Peso do voto")}
+      {camposEspecificos.includes("unidadeApartamento") && campoTexto("unidadeApartamento", "Unidade/apartamento")}
+      {camposEspecificos.includes("categoriaSegmento") && campoTexto("categoriaSegmento", "Categoria/segmento")}
+      {camposEspecificos.includes("elegibilidade") && campoTexto("elegibilidade", "Elegibilidade", true)}
+
       {campoData("dataInicio", "Data e hora de início")}
       {campoData("dataFim", "Data e hora de fim")}
 

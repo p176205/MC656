@@ -43,7 +43,21 @@ public record VotacaoCadastroDTO(
         LocalDateTime dataFim,
 
         @NotNull(message = "O status é obrigatório")
-        StatusVotacao status
+        StatusVotacao status,
+
+        String pauta,
+
+        @Positive(message = "A quantidade de participantes aptos deve ser positiva")
+        Integer participantesAptos,
+
+        @DecimalMin(value = "0.0", inclusive = false, message = "O peso do voto deve ser positivo")
+        BigDecimal pesoVoto,
+
+        String unidadeApartamento,
+
+        String categoriaSegmento,
+
+        String elegibilidade
 ) {
     public VotacaoCadastroDTO {
         if (dataInicio != null && dataFim != null && !dataFim.isAfter(dataInicio)) {

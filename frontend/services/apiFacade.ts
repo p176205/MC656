@@ -1,4 +1,4 @@
-import type { Usuario, VotacaoCadastro, VotacaoResponse } from "@/entities/entities";
+import type { ContextoResponse, Usuario, VotacaoCadastro, VotacaoResponse } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -49,6 +49,20 @@ export async function buscarVotacoesPorContexto(contextoId: number): Promise<Vot
   }
 
   return (await resposta.json()) as VotacaoResponse[];
+}
+
+// GET /api/contextos/{contextoId}
+export async function buscarContexto(contextoId: number): Promise<ContextoResponse> {
+  const resposta = await fetch(`${API_URL}/api/contextos/${contextoId}`, {
+    method: "GET",
+  });
+
+  if (!resposta.ok) {
+    const corpoErro = await resposta.text();
+    throw new Error(extrairMensagemErro(corpoErro) ?? `Falha ao buscar contexto: HTTP ${resposta.status}`);
+  }
+
+  return (await resposta.json()) as ContextoResponse;
 }
 
 function extrairMensagemErro(corpo: string): string | null {

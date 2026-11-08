@@ -52,13 +52,26 @@ public class Votacao {
     @Column(nullable = false)
     private StatusVotacao status;
 
+    private String pauta;
+
+    private Integer participantesAptos;
+
+    private BigDecimal pesoVoto;
+
+    private String unidadeApartamento;
+
+    private String categoriaSegmento;
+
+    private String elegibilidade;
+
     protected Votacao() {
         // Construtor utilizado pelo JPA.
     }
 
     public Votacao(Contexto contexto, String nome, String descricao, RegraAprovacao regraAprovacao,
             BigDecimal percentualMinimo, BigDecimal quorumMinimo, LocalDateTime dataInicio,
-            LocalDateTime dataFim, StatusVotacao status) {
+            LocalDateTime dataFim, StatusVotacao status, String pauta, Integer participantesAptos,
+            BigDecimal pesoVoto, String unidadeApartamento, String categoriaSegmento, String elegibilidade) {
         this.contexto = contexto;
         this.nome = nome;
         this.descricao = descricao;
@@ -68,6 +81,12 @@ public class Votacao {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.status = status;
+        this.pauta = pauta;
+        this.participantesAptos = participantesAptos;
+        this.pesoVoto = pesoVoto;
+        this.unidadeApartamento = unidadeApartamento;
+        this.categoriaSegmento = categoriaSegmento;
+        this.elegibilidade = elegibilidade;
         validar();
     }
 
@@ -111,8 +130,33 @@ public class Votacao {
         return status;
     }
 
+    public String getPauta() {
+        return pauta;
+    }
+
+    public Integer getParticipantesAptos() {
+        return participantesAptos;
+    }
+
+    public BigDecimal getPesoVoto() {
+        return pesoVoto;
+    }
+
+    public String getUnidadeApartamento() {
+        return unidadeApartamento;
+    }
+
+    public String getCategoriaSegmento() {
+        return categoriaSegmento;
+    }
+
+    public String getElegibilidade() {
+        return elegibilidade;
+    }
+
     public void setContexto(Contexto contexto) {
         validarContexto(contexto);
+        validarCamposPorTipoContexto(contexto);
         this.contexto = contexto;
     }
 
@@ -165,6 +209,7 @@ public class Votacao {
         validarPercentual(quorumMinimo, "O quórum mínimo");
         validarDatas(dataInicio, dataFim);
         validarStatus(status);
+        validarCamposPorTipoContexto(contexto);
     }
 
     private void validarContexto(Contexto contexto) {
@@ -206,6 +251,47 @@ public class Votacao {
     private void validarPercentual(BigDecimal valor, String campo) {
         if (valor == null || valor.compareTo(BigDecimal.ZERO) < 0 || valor.compareTo(PERCENTUAL_MAXIMO) > 0) {
             throw new IllegalArgumentException(campo + " deve estar entre 0 e 100.");
+        }
+    }
+
+    private void validarCamposPorTipoContexto(Contexto contexto) {
+        if (contexto.getTipo() == null) {
+            throw new IllegalArgumentException("O tipo do contexto da votação deve ser informado.");
+        }
+        switch (contexto.getTipo()) {
+            case ASSEMBLEIA -> {
+                validarTextoObrigatorio(pauta, "A pauta");
+                if (participantesAptos == null || participantesAptos <= 0) {
+                    throw new IllegalArgumentException("A quantidade de participantes aptos deve ser positiva.");
+                }
+                rejeitarCamposNaoAplicaveis(pesoVoto, unidadeApartamento, categoriaSegmento, elegibilidade);
+            }
+            case CONDOMINIO -> {
+                if (pesoVoto == null || pesoVoto.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("O peso do voto deve ser positivo.");
+                }
+                validarTextoObrigatorio(unidadeApartamento, "A unidade ou apartamento");
+                rejeitarCamposNaoAplicaveis(pauta, participantesAptos, categoriaSegmento, elegibilidade);
+            }
+            case CENTRO_ACADEMICO -> {
+                validarTextoObrigatorio(categoriaSegmento, "A categoria ou segmento");
+                validarTextoObrigatorio(elegibilidade, "A elegibilidade");
+                rejeitarCamposNaoAplicaveis(pauta, participantesAptos, pesoVoto, unidadeApartamento);
+            }
+        }
+    }
+
+    private void validarTextoObrigatorio(String valor, String campo) {
+        if (valor == null || valor.isBlank()) {
+            throw new IllegalArgumentException(campo + " deve ser informado(a).");
+        }
+    }
+
+    private void rejeitarCamposNaoAplicaveis(Object... valores) {
+        for (Object valor : valores) {
+            if (valor != null) {
+                throw new IllegalArgumentException("A votação contém campos que não se aplicam ao tipo do contexto.");
+            }
         }
     }
 }

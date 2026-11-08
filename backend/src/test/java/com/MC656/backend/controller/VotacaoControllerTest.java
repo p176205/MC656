@@ -50,7 +50,9 @@ class VotacaoControllerTest {
                 .andExpect(jsonPath("$[0].quorumMinimo").value(25.25))
                 .andExpect(jsonPath("$[0].dataInicio").value("2026-11-01T10:00:00"))
                 .andExpect(jsonPath("$[0].dataFim").value("2026-11-02T10:00:00"))
-                .andExpect(jsonPath("$[0].status").value("AGENDADA"));
+                .andExpect(jsonPath("$[0].status").value("AGENDADA"))
+                .andExpect(jsonPath("$[0].pesoVoto").value(1.5))
+                .andExpect(jsonPath("$[0].unidadeApartamento").value("Apto 12"));
     }
 
     @Test
@@ -92,7 +94,9 @@ class VotacaoControllerTest {
                           "quorumMinimo": 25.25,
                           "dataInicio": "2026-11-01T10:00:00",
                           "dataFim": "2026-11-02T10:00:00",
-                          "status": "AGENDADA"
+                          "status": "AGENDADA",
+                          "pesoVoto": 1.5,
+                          "unidadeApartamento": "Apto 12"
                         }
                         """))
                 .andExpect(status().isCreated())
@@ -104,12 +108,16 @@ class VotacaoControllerTest {
                 .andExpect(jsonPath("$.quorumMinimo").value(25.25))
                 .andExpect(jsonPath("$.dataInicio").value("2026-11-01T10:00:00"))
                 .andExpect(jsonPath("$.dataFim").value("2026-11-02T10:00:00"))
-                .andExpect(jsonPath("$.status").value("AGENDADA"));
+                .andExpect(jsonPath("$.status").value("AGENDADA"))
+                .andExpect(jsonPath("$.pesoVoto").value(1.5))
+                .andExpect(jsonPath("$.unidadeApartamento").value("Apto 12"));
 
         verify(votacaoService).cadastrar(argThat(dto ->
                 dto.contextoId().equals(42L)
                         && dto.percentualMinimo().compareTo(new BigDecimal("60.5")) == 0
                         && dto.quorumMinimo().compareTo(new BigDecimal("25.25")) == 0
+                        && dto.pesoVoto().compareTo(new BigDecimal("1.5")) == 0
+                        && dto.unidadeApartamento().equals("Apto 12")
                         && dto.dataInicio().equals(LocalDateTime.of(2026, 11, 1, 10, 0))
                         && dto.dataFim().equals(LocalDateTime.of(2026, 11, 2, 10, 0))));
     }
@@ -164,6 +172,7 @@ class VotacaoControllerTest {
                 RegraAprovacao.MAIORIA_SIMPLES, new BigDecimal("60.5"), new BigDecimal("25.25"),
                 LocalDateTime.of(2026, 11, 1, 10, 0),
                 LocalDateTime.of(2026, 11, 2, 10, 0),
-                StatusVotacao.AGENDADA);
+                StatusVotacao.AGENDADA,
+                null, null, new BigDecimal("1.5"), "Apto 12", null, null);
     }
 }

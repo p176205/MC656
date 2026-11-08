@@ -16,5 +16,11 @@ public record VotacaoResponseDTO(
         BigDecimal quorumMinimo,
         LocalDateTime dataInicio,
         LocalDateTime dataFim,
-        StatusVotacao status
+        StatusVotacao status,
+        String pauta,
+        Integer participantesAptos,
+        BigDecimal pesoVoto,
+        String unidadeApartamento,
+        String categoriaSegmento,
+        String elegibilidade
 ) {}

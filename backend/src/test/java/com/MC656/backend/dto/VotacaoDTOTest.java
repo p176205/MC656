@@ -37,7 +37,8 @@ class VotacaoDTOTest {
     @Test
     void deveValidarCamposObrigatoriosDoCadastro() {
         VotacaoCadastroDTO dto = new VotacaoCadastroDTO(
-                null, " ", " ", null, null, null, null, null, null);
+                null, " ", " ", null, null, null, null, null, null,
+                null, null, null, null, null, null);
 
         Set<ConstraintViolation<VotacaoCadastroDTO>> violacoes = validator.validate(dto);
 
@@ -54,7 +55,8 @@ class VotacaoDTOTest {
         VotacaoCadastroDTO dto = new VotacaoCadastroDTO(
                 1L, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
                 new BigDecimal("-0.01"), new BigDecimal("100.01"),
-                dataInicio, dataFim, StatusVotacao.AGENDADA);
+                dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, null, null, null, null);
 
         Set<ConstraintViolation<VotacaoCadastroDTO>> violacoes = validator.validate(dto);
 
@@ -62,6 +64,21 @@ class VotacaoDTOTest {
                 violacao.getPropertyPath().toString().equals("percentualMinimo")));
         assertTrue(violacoes.stream().anyMatch(violacao ->
                 violacao.getPropertyPath().toString().equals("quorumMinimo")));
+    }
+
+    @Test
+    void deveValidarValoresNumericosEspecificosQuandoInformados() {
+        VotacaoCadastroDTO dto = new VotacaoCadastroDTO(
+                1L, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim,
+                StatusVotacao.AGENDADA, null, 0, BigDecimal.ZERO, null, null, null);
+
+        Set<ConstraintViolation<VotacaoCadastroDTO>> violacoes = validator.validate(dto);
+
+        assertTrue(violacoes.stream().anyMatch(violacao ->
+                violacao.getPropertyPath().toString().equals("participantesAptos")));
+        assertTrue(violacoes.stream().anyMatch(violacao ->
+                violacao.getPropertyPath().toString().equals("pesoVoto")));
     }
 
     @Test
@@ -77,7 +94,8 @@ class VotacaoDTOTest {
         VotacaoResponseDTO dto = new VotacaoResponseDTO(
                 10L, 1L, "Votação", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
                 new BigDecimal("50"), new BigDecimal("25"),
-                dataInicio, dataFim, StatusVotacao.AGENDADA);
+                dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, null, null, null, null);
 
         assertEquals(10L, dto.id());
         assertEquals(1L, dto.contextoId());
@@ -90,6 +108,7 @@ class VotacaoDTOTest {
     private VotacaoCadastroDTO criarCadastro(Long contextoId, String nome, String descricao,
             LocalDateTime dataInicio, LocalDateTime dataFim) {
         return new VotacaoCadastroDTO(contextoId, nome, descricao, RegraAprovacao.MAIORIA_SIMPLES,
-                new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA);
+                new BigDecimal("50"), new BigDecimal("25"), dataInicio, dataFim, StatusVotacao.AGENDADA,
+                null, null, null, null, null, null);
     }
 }
