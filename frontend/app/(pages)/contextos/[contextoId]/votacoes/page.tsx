@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { VotacaoResponse } from "@/entities/entities";
 import { buscarVotacoesPorContexto } from "@/services/apiFacade";
@@ -72,8 +73,18 @@ export default function VotacoesPage() {
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-10">
       <header className="mb-8">
-        <p className="text-sm font-medium text-purple-700">Contexto {contextoIdParam}</p>
-        <h1 className="mt-1 text-3xl font-bold text-gray-900">Votações</h1>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-purple-700">Contexto {contextoIdParam}</p>
+            <h1 className="mt-1 text-3xl font-bold text-gray-900">Votações</h1>
+          </div>
+          <Link
+            href={`/contextos/${contextoIdParam}/votacoes/nova`}
+            className="rounded-md bg-purple-700 px-4 py-2 font-medium text-white hover:bg-purple-800"
+          >
+            Criar votação
+          </Link>
+        </div>
       </header>
 
       {carregando && (
