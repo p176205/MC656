@@ -1,31 +1,27 @@
 package com.MC656.backend.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-
+import com.MC656.backend.dto.ApuracaoResponseDTO;
+import com.MC656.backend.dto.VotacaoCreateDTO;
+import com.MC656.backend.dto.VotacaoResponseDTO;
+import com.MC656.backend.dto.VotoRequestDTO;
+import com.MC656.backend.entity.*;
+import com.MC656.backend.service.VotacaoService;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
-import com.MC656.backend.dto.VotacaoCadastroDTO;
-import com.MC656.backend.dto.VotacaoResponseDTO;
-import com.MC656.backend.entity.RegraAprovacao;
-import com.MC656.backend.entity.StatusVotacao;
-import com.MC656.backend.service.VotacaoService;
+import java.util.NoSuchElementException;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(VotacaoController.class)
 class VotacaoControllerTest {
@@ -36,207 +32,142 @@ class VotacaoControllerTest {
     @MockitoBean
     private VotacaoService votacaoService;
 
-    @Test
-    void deveRetornarListaDeVotacoesDoContextoComCamposCamelCase() throws Exception {
-        when(votacaoService.listarPorContexto(42L)).thenReturn(List.of(criarResponse()));
+    private final JsonMapper jsonMapper = new JsonMapper();
 
-        mockMvc.perform(get("/api/votacoes/contexto/42"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].contextoId").value(42))
-                .andExpect(jsonPath("$[0].nome").value("Eleição de representante"))
-                .andExpect(jsonPath("$[0].descricao").value("Escolha do representante."))
-                .andExpect(jsonPath("$[0].regraAprovacao").value("MAIORIA_SIMPLES"))
-                .andExpect(jsonPath("$[0].percentualMinimo").value(60.5))
-                .andExpect(jsonPath("$[0].quorumMinimo").value(25.25))
-                .andExpect(jsonPath("$[0].dataInicio").value("2026-11-01T10:00:00"))
-                .andExpect(jsonPath("$[0].dataFim").value("2026-11-02T10:00:00"))
-                .andExpect(jsonPath("$[0].status").value("AGENDADA"))
-                .andExpect(jsonPath("$[0].pesoVoto").value(1.5))
-                .andExpect(jsonPath("$[0].unidadeApartamento").value("Apto 12"));
+    private VotacaoResponseDTO resposta(StatusVotacao status) {
+        return new VotacaoResponseDTO(100L, "Reforma", "Aprovar reforma", 1L, "Assembleia Geral",
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, status, null, null,
+                "Obras", 10, null, null, null, null);
     }
 
     @Test
-    void deveRetornarListaVaziaQuandoContextoNaoTemVotacoes() throws Exception {
-        when(votacaoService.listarPorContexto(42L)).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/votacoes/contexto/42"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
-    }
-
-    @Test
-    void deveRetornar404QuandoContextoNaoExiste() throws Exception {
-        when(votacaoService.listarPorContexto(99L))
-                .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                        org.springframework.http.HttpStatus.NOT_FOUND));
-
-        mockMvc.perform(get("/api/votacoes/contexto/99"))
-                .andExpect(status().isNotFound());
-
-        verify(votacaoService).listarPorContexto(99L);
-    }
-
-    @Test
-    void deveRetornarVotacaoExistentePorId() throws Exception {
-        when(votacaoService.buscarPorId(12L)).thenReturn(criarResponse());
-
-        mockMvc.perform(get("/api/votacoes/12"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(12))
-                .andExpect(jsonPath("$.contextoId").value(42))
-                .andExpect(jsonPath("$.nome").value("Eleição de representante"))
-                .andExpect(jsonPath("$.descricao").value("Escolha do representante."))
-                .andExpect(jsonPath("$.regraAprovacao").value("MAIORIA_SIMPLES"))
-                .andExpect(jsonPath("$.percentualMinimo").value(60.5))
-                .andExpect(jsonPath("$.quorumMinimo").value(25.25))
-                .andExpect(jsonPath("$.dataInicio").value("2026-11-01T10:00:00"))
-                .andExpect(jsonPath("$.dataFim").value("2026-11-02T10:00:00"))
-                .andExpect(jsonPath("$.status").value("AGENDADA"))
-                .andExpect(jsonPath("$.pesoVoto").value(1.5))
-                .andExpect(jsonPath("$.unidadeApartamento").value("Apto 12"));
-    }
-
-    @Test
-    void deveRetornar404QuandoIdentificadorDaVotacaoNaoExiste() throws Exception {
-        when(votacaoService.buscarPorId(999L))
-                .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                        org.springframework.http.HttpStatus.NOT_FOUND, "Votação não encontrada."));
-
-        mockMvc.perform(get("/api/votacoes/999"))
-                .andExpect(status().isNotFound());
-
-        verify(votacaoService).buscarPorId(999L);
-    }
-
-    @Test
-    void deveCadastrarVotacaoComNumerosEDatasISO8601() throws Exception {
-        when(votacaoService.cadastrar(any(VotacaoCadastroDTO.class)))
-                .thenReturn(criarResponse());
+    void abrir_Retorna201() throws Exception {
+        VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null);
+        Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class))).thenReturn(resposta(StatusVotacao.ABERTA));
 
         mockMvc.perform(post("/api/votacoes")
-                .contentType(APPLICATION_JSON)
-                .content("""
-                        {
-                          "contextoId": 42,
-                          "nome": "Eleição de representante",
-                          "descricao": "Escolha do representante.",
-                          "regraAprovacao": "MAIORIA_SIMPLES",
-                          "percentualMinimo": 60.5,
-                          "quorumMinimo": 25.25,
-                          "dataInicio": "2026-11-01T10:00:00",
-                          "dataFim": "2026-11-02T10:00:00",
-                          "status": "AGENDADA",
-                          "pesoVoto": 1.5,
-                          "unidadeApartamento": "Apto 12"
-                        }
-                        """))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(12))
-                .andExpect(jsonPath("$.contextoId").value(42))
-                .andExpect(jsonPath("$.nome").value("Eleição de representante"))
-                .andExpect(jsonPath("$.regraAprovacao").value("MAIORIA_SIMPLES"))
-                .andExpect(jsonPath("$.percentualMinimo").value(60.5))
-                .andExpect(jsonPath("$.quorumMinimo").value(25.25))
-                .andExpect(jsonPath("$.dataInicio").value("2026-11-01T10:00:00"))
-                .andExpect(jsonPath("$.dataFim").value("2026-11-02T10:00:00"))
-                .andExpect(jsonPath("$.status").value("AGENDADA"))
-                .andExpect(jsonPath("$.pesoVoto").value(1.5))
-                .andExpect(jsonPath("$.unidadeApartamento").value("Apto 12"));
-
-        verify(votacaoService).cadastrar(argThat(dto ->
-                dto.contextoId().equals(42L)
-                        && dto.percentualMinimo().compareTo(new BigDecimal("60.5")) == 0
-                        && dto.quorumMinimo().compareTo(new BigDecimal("25.25")) == 0
-                        && dto.pesoVoto().compareTo(new BigDecimal("1.5")) == 0
-                        && dto.unidadeApartamento().equals("Apto 12")
-                        && dto.dataInicio().equals(LocalDateTime.of(2026, 11, 1, 10, 0))
-                        && dto.dataFim().equals(LocalDateTime.of(2026, 11, 2, 10, 0))));
+                .andExpect(jsonPath("$.id").value(100))
+                .andExpect(jsonPath("$.status").value("ABERTA"))
+                .andExpect(jsonPath("$.tipo").value("DELIBERACAO"));
     }
 
     @Test
-    void deveAceitarStatusAbertaNoCadastro() throws Exception {
-        VotacaoResponseDTO respostaAberta = new VotacaoResponseDTO(
-                12L, 42L, "Eleição aberta", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
-                new BigDecimal("60"), new BigDecimal("25"),
-                LocalDateTime.of(2026, 11, 1, 10, 0),
-                LocalDateTime.of(2026, 11, 2, 10, 0),
-                StatusVotacao.ABERTA,
-                null, null, new BigDecimal("1.5"), "Apto 12", null, null);
-        when(votacaoService.cadastrar(any(VotacaoCadastroDTO.class))).thenReturn(respostaAberta);
+    void abrir_SemTitulo_Retorna400() throws Exception {
+        VotacaoCreateDTO dto = new VotacaoCreateDTO("", "Aprovar reforma", 1L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null);
 
         mockMvc.perform(post("/api/votacoes")
-                .contentType(APPLICATION_JSON)
-                .content("""
-                        {
-                          "contextoId": 42,
-                          "nome": "Eleição aberta",
-                          "descricao": "Descrição",
-                          "regraAprovacao": "MAIORIA_SIMPLES",
-                          "percentualMinimo": 60,
-                          "quorumMinimo": 25,
-                          "dataInicio": "2026-11-01T10:00:00",
-                          "dataFim": "2026-11-02T10:00:00",
-                          "status": "ABERTA",
-                          "pesoVoto": 1.5,
-                          "unidadeApartamento": "Apto 12"
-                        }
-                        """))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+        Mockito.verifyNoInteractions(votacaoService);
+    }
+
+    @Test
+    void abrir_RegraInvalidaNaEntidade_Retorna400() throws Exception {
+        VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
+                RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null);
+        Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class)))
+                .thenThrow(new IllegalArgumentException("O percentual mínimo deve estar entre 0 (exclusivo) e 100."));
+
+        mockMvc.perform(post("/api/votacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void buscar_Inexistente_Retorna404() throws Exception {
+        Mockito.when(votacaoService.buscar(99L)).thenThrow(new NoSuchElementException("Votação não encontrada."));
+
+        mockMvc.perform(get("/api/votacoes/99"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listarPorContexto_RetornaLista() throws Exception {
+        Mockito.when(votacaoService.listarPorContexto(1L)).thenReturn(List.of(resposta(StatusVotacao.ABERTA)));
+
+        mockMvc.perform(get("/api/votacoes/contexto/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].contextoId").value(1))
+                .andExpect(jsonPath("$[0].titulo").value("Reforma"));
+    }
+
+    @Test
+    void listarPorContexto_ContextoInexistente_Retorna404() throws Exception {
+        Mockito.when(votacaoService.listarPorContexto(999L))
+                .thenThrow(new NoSuchElementException("Contexto não encontrado."));
+
+        mockMvc.perform(get("/api/votacoes/contexto/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void votar_Retorna201SemCorpo() throws Exception {
+        mockMvc.perform(post("/api/votacoes/100/votos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(new VotoRequestDTO(7L, OpcaoVoto.SIM))))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("ABERTA"));
+                .andExpect(content().string(""));
+
+        Mockito.verify(votacaoService).votar(eq(100L), any(VotoRequestDTO.class));
     }
 
     @Test
-    void deveRejeitarCadastroComCamposObrigatoriosOuPercentuaisInvalidos() throws Exception {
-        mockMvc.perform(post("/api/votacoes")
-                .contentType(APPLICATION_JSON)
-                .content("""
-                        {
-                          "contextoId": 42,
-                          "nome": " ",
-                          "descricao": "",
-                          "regraAprovacao": "MAIORIA_SIMPLES",
-                          "percentualMinimo": 101,
-                          "quorumMinimo": 25,
-                          "dataInicio": "2026-11-01T10:00:00",
-                          "dataFim": "2026-11-02T10:00:00",
-                          "status": "AGENDADA"
-                        }
-                        """))
+    void votar_SemOpcao_Retorna400() throws Exception {
+        mockMvc.perform(post("/api/votacoes/100/votos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"usuarioId\": 7}"))
                 .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(votacaoService);
+        Mockito.verifyNoInteractions(votacaoService);
     }
 
     @Test
-    void deveRejeitarCadastroQuandoDataFimNaoForPosterior() throws Exception {
-        mockMvc.perform(post("/api/votacoes")
-                .contentType(APPLICATION_JSON)
-                .content("""
-                        {
-                          "contextoId": 42,
-                          "nome": "Eleição",
-                          "descricao": "Descrição",
-                          "regraAprovacao": "MAIORIA_SIMPLES",
-                          "percentualMinimo": 60,
-                          "quorumMinimo": 25,
-                          "dataInicio": "2026-11-01T10:00:00",
-                          "dataFim": "2026-11-01T10:00:00",
-                          "status": "AGENDADA"
-                        }
-                        """))
-                .andExpect(status().isBadRequest());
+    void votar_Duplicado_Retorna409() throws Exception {
+        Mockito.doThrow(new IllegalStateException("O usuário já votou nesta votação."))
+                .when(votacaoService).votar(eq(100L), any(VotoRequestDTO.class));
 
-        verifyNoInteractions(votacaoService);
+        mockMvc.perform(post("/api/votacoes/100/votos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(new VotoRequestDTO(7L, OpcaoVoto.SIM))))
+                .andExpect(status().isConflict());
     }
 
-    private VotacaoResponseDTO criarResponse() {
-        return new VotacaoResponseDTO(
-                12L, 42L, "Eleição de representante", "Escolha do representante.",
-                RegraAprovacao.MAIORIA_SIMPLES, new BigDecimal("60.5"), new BigDecimal("25.25"),
-                LocalDateTime.of(2026, 11, 1, 10, 0),
-                LocalDateTime.of(2026, 11, 2, 10, 0),
-                StatusVotacao.AGENDADA,
-                null, null, new BigDecimal("1.5"), "Apto 12", null, null);
+    @Test
+    void encerrar_Retorna200() throws Exception {
+        Mockito.when(votacaoService.encerrar(100L)).thenReturn(resposta(StatusVotacao.ENCERRADA));
+
+        mockMvc.perform(patch("/api/votacoes/100/encerrar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ENCERRADA"));
+    }
+
+    @Test
+    void apurar_Retorna200() throws Exception {
+        Mockito.when(votacaoService.apurar(100L)).thenReturn(new ApuracaoResponseDTO(100L, "Reforma",
+                ResultadoVotacao.APROVADA, true, 2.0, 1.0, 0.0, 3,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 66.67));
+
+        mockMvc.perform(get("/api/votacoes/100/apuracao"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultado").value("APROVADA"))
+                .andExpect(jsonPath("$.totalVotantes").value(3));
+    }
+
+    @Test
+    void apurar_VotacaoAberta_Retorna409() throws Exception {
+        Mockito.when(votacaoService.apurar(100L))
+                .thenThrow(new IllegalStateException("O resultado só fica disponível após o encerramento da votação."));
+
+        mockMvc.perform(get("/api/votacoes/100/apuracao"))
+                .andExpect(status().isConflict());
     }
 }

@@ -1,4 +1,15 @@
-import type { ContextoResponse, Usuario, VotacaoCadastro, VotacaoResponse } from "@/entities/entities";
+import type {
+  ApuracaoResponse,
+  Contexto,
+  ContextoDetalhe,
+  ContextoDTO,
+  LoginUsuario,
+  TipoContexto,
+  Usuario,
+  UsuarioResponse,
+  VotacaoCadastro,
+  VotacaoResponse,
+} from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -9,6 +20,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 export type ResultadoApi = {
   ok: boolean;
   status: number;
+  message: string;
 };
 
 // POST /api/usuarios
@@ -16,89 +28,187 @@ export async function cadastrarUsuario(usuario: Usuario): Promise<ResultadoApi> 
   const resposta = await fetch(`${API_URL}/api/usuarios`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(usuario),
   });
 
-  return { ok: resposta.ok, status: resposta.status };
+  const message = await resposta.text();
+  return { ok: resposta.ok, status: resposta.status, message: message };
 }
 
-// POST /api/votacoes
-export async function cadastrarVotacao(votacao: VotacaoCadastro): Promise<VotacaoResponse> {
-  const resposta = await fetch(`${API_URL}/api/votacoes`, {
+// POST /api/usuarios/login
+export async function loginUsuario(usuario: LoginUsuario): Promise<ResultadoApi> {
+  const resposta = await fetch(`${API_URL}/api/usuarios/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(votacao),
+    credentials: "include",
+    body: JSON.stringify(usuario),
+  });
+
+  const message = await resposta.text();
+  return { ok: resposta.ok, status: resposta.status, message: message };
+}
+
+// GET /api/usuarios/id
+export async function getIdUser(): Promise<UsuarioResponse> {
+  const resposta = await fetch(`${API_URL}/api/usuarios/me`, {
+    method: "GET",
+    credentials: "include",
   });
 
   if (!resposta.ok) {
-    const corpoErro = await resposta.text();
-    throw new Error(extrairMensagemErro(corpoErro) ?? `Falha ao cadastrar votação: HTTP ${resposta.status}`);
+    if (resposta.status === 401) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    throw new Error("Erro ao buscar o ID do usuário.");
   }
 
-  return (await resposta.json()) as VotacaoResponse;
+  const usuarioId: UsuarioResponse = await resposta.json();
+
+  return usuarioId;
+}
+
+// POST /api/usuarios/logout
+export async function logoutUsuario(): Promise<ResultadoApi> {
+  const resposta = await fetch(`${API_URL}/api/usuarios/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const message = await resposta.text();
+  return { ok: resposta.ok, status: resposta.status, message: message };
+}
+
+// POST /api/contextos
+export async function criarContexto(contexto: Contexto, tipo: TipoContexto): Promise<ContextoDTO> {
+  const rotasPorTipo = {
+    ASSEMBLEIA: "assembleias",
+    CENTRO_ACADEMICO: "centros-academicos",
+    CONDOMINIO: "condominios",
+  };
+
+  const endpointTipo = rotasPorTipo[tipo];
+  console.log("endpoint",endpointTipo)
+  console.log(contexto)
+
+  const resposta = await fetch(`${API_URL}/api/contextos/${endpointTipo}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(contexto), 
+  });
+
+  if (!resposta.ok) {
+    if (resposta.status === 401) {
+      throw new Error("Não foi possivel criar o contexto.");
+    }
+
+    throw new Error("Erro ao criar o contexto.");
+  }
+
+  const contexto_res = await resposta.json();
+  return contexto_res;
+}
+
+
+// POST /api/contextos/entrar
+export async function entrarContexto(codigo: string, id_user: number): Promise<ContextoDTO> {
+  const request = {
+    codigo,
+    id_user
+  }
+  
+  const resposta = await fetch(`${API_URL}/api/contextos/entrar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(request), 
+  });
+
+if (!resposta.ok) {
+  const message = await resposta.text();
+
+  throw new Error(
+    message || "Erro ao entrar no contexto."
+  );
+}
+
+  const contexto_res = await resposta.json();
+  return contexto_res;
+}
+
+// GET /api/contextos/{id}
+export async function getContextos(usuarioId: number): Promise<Response> {
+  const resposta = await fetch(
+    `${API_URL}/api/contextos/${usuarioId}`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+
+  return resposta;
+}
+
+// GET /api/contextos/id/{contextoId}
+export async function buscarContexto(contextoId: number): Promise<ContextoDetalhe> {
+  const resposta = await fetch(`${API_URL}/api/contextos/id/${contextoId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar o contexto.");
+  }
+  return resposta.json();
 }
 
 // GET /api/votacoes/contexto/{contextoId}
 export async function buscarVotacoesPorContexto(contextoId: number): Promise<VotacaoResponse[]> {
   const resposta = await fetch(`${API_URL}/api/votacoes/contexto/${contextoId}`, {
     method: "GET",
+    credentials: "include",
   });
-
   if (!resposta.ok) {
-    throw new Error(`Falha ao buscar votações: HTTP ${resposta.status}`);
+    throw new Error((await resposta.text()) || "Erro ao buscar as votações.");
   }
-
-  return (await resposta.json()) as VotacaoResponse[];
+  return resposta.json();
 }
 
 // GET /api/votacoes/{id}
-export async function buscarVotacaoPorId(id: number): Promise<VotacaoResponse> {
-  const resposta = await fetch(`${API_URL}/api/votacoes/${id}`, {
+export async function buscarVotacaoPorId(votacaoId: number): Promise<VotacaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${votacaoId}`, {
     method: "GET",
+    credentials: "include",
   });
-
   if (!resposta.ok) {
-    throw new Error(`Falha ao buscar votação: HTTP ${resposta.status}`);
+    throw new Error((await resposta.text()) || "Erro ao buscar a votação.");
   }
-
-  return (await resposta.json()) as VotacaoResponse;
+  return resposta.json();
 }
 
-// GET /api/contextos/{contextoId}
-export async function buscarContexto(contextoId: number): Promise<ContextoResponse> {
-  const resposta = await fetch(`${API_URL}/api/contextos/${contextoId}`, {
-    method: "GET",
+// POST /api/votacoes
+export async function cadastrarVotacao(cadastro: VotacaoCadastro): Promise<VotacaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(cadastro),
   });
-
   if (!resposta.ok) {
-    const corpoErro = await resposta.text();
-    throw new Error(extrairMensagemErro(corpoErro) ?? `Falha ao buscar contexto: HTTP ${resposta.status}`);
+    throw new Error((await resposta.text()) || "Erro ao cadastrar a votação.");
   }
-
-  return (await resposta.json()) as ContextoResponse;
+  return resposta.json();
 }
 
-function extrairMensagemErro(corpo: string): string | null {
-  if (!corpo.trim()) {
-    return null;
+// GET /api/votacoes/{id}/apuracao
+export async function buscarApuracao(votacaoId: number): Promise<ApuracaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${votacaoId}/apuracao`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar a apuração.");
   }
-
-  try {
-    const erro = JSON.parse(corpo) as {
-      detail?: string;
-      message?: string;
-      title?: string;
-      errors?: string[] | Record<string, string>;
-    };
-
-    if (typeof erro.detail === "string" && erro.detail.trim()) return erro.detail;
-    if (typeof erro.message === "string" && erro.message.trim()) return erro.message;
-    if (typeof erro.title === "string" && erro.title.trim()) return erro.title;
-    if (Array.isArray(erro.errors)) return erro.errors.join(" ");
-    if (erro.errors && typeof erro.errors === "object") return Object.values(erro.errors).join(" ");
-  } catch {
-    return corpo;
-  }
-
-  return corpo;
+  return resposta.json();
 }

@@ -7,14 +7,12 @@ import type { VotacaoResponse } from "@/entities/entities";
 import { buscarVotacoesPorContexto } from "@/services/apiFacade";
 
 const statusLabels: Record<string, string> = {
-  AGENDADA: "Agendada",
   ABERTA: "Aberta",
-  EM_ANDAMENTO: "Em andamento",
   ENCERRADA: "Encerrada",
-  CANCELADA: "Cancelada",
 };
 
-function formatarData(data: string): string {
+function formatarData(data: string | null): string {
+  if (!data) return "Não definida";
   const dataObj = new Date(data);
   if (Number.isNaN(dataObj.getTime())) {
     return data;
@@ -120,10 +118,10 @@ export default function VotacoesPage() {
               <Link
                 href={`/contextos/${contextoIdParam}/votacoes/${votacao.id}`}
                 className="block rounded-md outline-none focus-visible:ring-2 focus-visible:ring-purple-700"
-                aria-label={`Ver detalhes da votação ${votacao.nome}`}
+                aria-label={`Ver detalhes da votação ${votacao.titulo}`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <h2 className="text-xl font-semibold text-gray-900">{votacao.nome}</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">{votacao.titulo}</h2>
                   <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800">
                     {statusLabels[votacao.status] ?? votacao.status}
                   </span>
@@ -136,7 +134,7 @@ export default function VotacoesPage() {
                   </div>
                   <div>
                     <dt className="font-medium text-gray-800">Percentual mínimo</dt>
-                    <dd>{votacao.percentualMinimo}%</dd>
+                    <dd>{votacao.percentualMinimo === null ? "Não se aplica" : `${votacao.percentualMinimo}%`}</dd>
                   </div>
                   <div>
                     <dt className="font-medium text-gray-800">Quórum mínimo</dt>

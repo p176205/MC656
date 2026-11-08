@@ -1,282 +1,153 @@
 package com.MC656.backend.entity;
 
-import java.math.BigDecimal;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-
+/* Processo de votacao dentro de um Contexto (1 Contexto : N Votacoes).
+   Por enquanto representa uma deliberacao: uma pauta votada com Sim/Nao/Abstencao. */
 @Entity
+@Table(name = "votacoes")
 public class Votacao {
-
-    private static final BigDecimal PERCENTUAL_MAXIMO = new BigDecimal("100");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String titulo;
+
+    @Column(nullable = false, length = 2000)
+    private String descricao;
+
+    // Toda votacao pertence a exatamente um contexto (define eleitorado e regra de quorum)
     @ManyToOne(optional = false)
     @JoinColumn(name = "contexto_id", nullable = false)
     private Contexto contexto;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String nome;
-
-    @Column(nullable = false)
-    private String descricao;
+    private TipoVotacao tipo;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RegraAprovacao regraAprovacao;
 
-    @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal percentualMinimo;
+    // So eh usado quando a regra eh PERCENTUAL_MINIMO (valor entre 0 e 100)
+    private Double percentualMinimo;
 
-    @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal quorumMinimo;
-
+    // Participacao minima do eleitorado (0 a 100) para o resultado ser valido; 0 = sem quorum
     @Column(nullable = false)
-    private LocalDateTime dataInicio;
-
-    @Column(nullable = false)
-    private LocalDateTime dataFim;
+    private Double quorumMinimo;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusVotacao status;
 
+    // Ambas opcionais: sem inicio, abre na criacao; sem fim, so encerra manualmente
+    private LocalDateTime dataInicio;
+    private LocalDateTime dataFim;
+
     private String pauta;
-
     private Integer participantesAptos;
-
     private BigDecimal pesoVoto;
-
     private String unidadeApartamento;
-
     private String categoriaSegmento;
-
     private String elegibilidade;
 
     protected Votacao() {
-        // Construtor utilizado pelo JPA.
+        // precisa pro JPA
     }
 
-    public Votacao(Contexto contexto, String nome, String descricao, RegraAprovacao regraAprovacao,
-            BigDecimal percentualMinimo, BigDecimal quorumMinimo, LocalDateTime dataInicio,
-            LocalDateTime dataFim, StatusVotacao status, String pauta, Integer participantesAptos,
-            BigDecimal pesoVoto, String unidadeApartamento, String categoriaSegmento, String elegibilidade) {
-        this.contexto = contexto;
-        this.nome = nome;
+    public Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
+            Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
+            LocalDateTime dataFim) {
+        this(titulo, descricao, contexto, regraAprovacao, percentualMinimo, quorumMinimo,
+                dataInicio, dataFim, null, null, null, null, null, null, false);
+    }
+
+    public Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
+            Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
+            LocalDateTime dataFim, String pauta, Integer participantesAptos, BigDecimal pesoVoto,
+            String unidadeApartamento, String categoriaSegmento, String elegibilidade) {
+        this(titulo, descricao, contexto, regraAprovacao, percentualMinimo, quorumMinimo, dataInicio,
+                dataFim, pauta, participantesAptos, pesoVoto, unidadeApartamento, categoriaSegmento,
+                elegibilidade, true);
+    }
+
+    private Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
+            Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
+            LocalDateTime dataFim, String pauta, Integer participantesAptos, BigDecimal pesoVoto,
+            String unidadeApartamento, String categoriaSegmento, String elegibilidade,
+            boolean validarCamposEspecificos) {
+        this.titulo = titulo;
         this.descricao = descricao;
+        this.contexto = contexto;
+        this.tipo = TipoVotacao.DELIBERACAO;
         this.regraAprovacao = regraAprovacao;
-        this.percentualMinimo = percentualMinimo;
+        this.percentualMinimo = regraAprovacao == RegraAprovacao.PERCENTUAL_MINIMO ? percentualMinimo : null;
         this.quorumMinimo = quorumMinimo;
+        this.status = StatusVotacao.ABERTA;
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
-        this.status = status;
         this.pauta = pauta;
         this.participantesAptos = participantesAptos;
         this.pesoVoto = pesoVoto;
         this.unidadeApartamento = unidadeApartamento;
         this.categoriaSegmento = categoriaSegmento;
         this.elegibilidade = elegibilidade;
-        validar();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Contexto getContexto() {
-        return contexto;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public String getDescricao() {
-        return descricao;
-    }
-
-    public RegraAprovacao getRegraAprovacao() {
-        return regraAprovacao;
-    }
-
-    public BigDecimal getPercentualMinimo() {
-        return percentualMinimo;
-    }
-
-    public BigDecimal getQuorumMinimo() {
-        return quorumMinimo;
-    }
-
-    public LocalDateTime getDataInicio() {
-        return dataInicio;
-    }
-
-    public LocalDateTime getDataFim() {
-        return dataFim;
-    }
-
-    public StatusVotacao getStatus() {
-        return status;
-    }
-
-    public String getPauta() {
-        return pauta;
-    }
-
-    public Integer getParticipantesAptos() {
-        return participantesAptos;
-    }
-
-    public BigDecimal getPesoVoto() {
-        return pesoVoto;
-    }
-
-    public String getUnidadeApartamento() {
-        return unidadeApartamento;
-    }
-
-    public String getCategoriaSegmento() {
-        return categoriaSegmento;
-    }
-
-    public String getElegibilidade() {
-        return elegibilidade;
-    }
-
-    public void setContexto(Contexto contexto) {
-        validarContexto(contexto);
-        validarCamposPorTipoContexto(contexto);
-        this.contexto = contexto;
-    }
-
-    public void setNome(String nome) {
-        validarNome(nome);
-        this.nome = nome;
-    }
-
-    public void setDescricao(String descricao) {
-        validarDescricao(descricao);
-        this.descricao = descricao;
-    }
-
-    public void setRegraAprovacao(RegraAprovacao regraAprovacao) {
-        validarRegraAprovacao(regraAprovacao);
-        this.regraAprovacao = regraAprovacao;
-    }
-
-    public void setPercentualMinimo(BigDecimal percentualMinimo) {
-        validarPercentual(percentualMinimo, "O percentual mínimo");
-        this.percentualMinimo = percentualMinimo;
-    }
-
-    public void setQuorumMinimo(BigDecimal quorumMinimo) {
-        validarPercentual(quorumMinimo, "O quórum mínimo");
-        this.quorumMinimo = quorumMinimo;
-    }
-
-    public void setDataInicio(LocalDateTime dataInicio) {
-        validarDatas(dataInicio, dataFim);
-        this.dataInicio = dataInicio;
-    }
-
-    public void setDataFim(LocalDateTime dataFim) {
-        validarDatas(dataInicio, dataFim);
-        this.dataFim = dataFim;
-    }
-
-    public void setStatus(StatusVotacao status) {
-        validarStatus(status);
-        this.status = status;
-    }
-
-    private void validar() {
-        validarContexto(contexto);
-        validarNome(nome);
-        validarDescricao(descricao);
-        validarRegraAprovacao(regraAprovacao);
-        validarPercentual(percentualMinimo, "O percentual mínimo");
-        validarPercentual(quorumMinimo, "O quórum mínimo");
-        validarDatas(dataInicio, dataFim);
-        validarStatus(status);
-        validarCamposPorTipoContexto(contexto);
-    }
-
-    private void validarContexto(Contexto contexto) {
-        if (contexto == null) {
-            throw new IllegalArgumentException("O contexto da votação deve ser informado.");
+        validar_votacao(percentualMinimo);
+        if (validarCamposEspecificos) {
+            validarCamposPorTipoContexto();
         }
     }
 
-    private void validarNome(String nome) {
-        if (nome == null || nome.isBlank()) {
-            throw new IllegalArgumentException("O nome da votação não pode ser vazio.");
+    private void validar_votacao(Double percentualInformado) {
+        if (titulo == null || titulo.isBlank()) {
+            throw new IllegalArgumentException("O título da votação não pode ser vazio.");
         }
-    }
-
-    private void validarDescricao(String descricao) {
         if (descricao == null || descricao.isBlank()) {
             throw new IllegalArgumentException("A descrição da votação não pode ser vazia.");
         }
-    }
-
-    private void validarRegraAprovacao(RegraAprovacao regraAprovacao) {
+        if (contexto == null) {
+            throw new IllegalArgumentException("A votação deve pertencer a um contexto.");
+        }
         if (regraAprovacao == null) {
             throw new IllegalArgumentException("A regra de aprovação deve ser informada.");
         }
-    }
-
-    private void validarDatas(LocalDateTime dataInicio, LocalDateTime dataFim) {
-        if (dataInicio == null || dataFim == null || !dataFim.isAfter(dataInicio)) {
-            throw new IllegalArgumentException("A data fim deve ser posterior à data início.");
+        if (regraAprovacao == RegraAprovacao.PERCENTUAL_MINIMO
+                && (percentualInformado == null || percentualInformado <= 0 || percentualInformado > 100)) {
+            throw new IllegalArgumentException("O percentual mínimo deve estar entre 0 (exclusivo) e 100.");
+        }
+        if (quorumMinimo == null || quorumMinimo < 0 || quorumMinimo > 100) {
+            throw new IllegalArgumentException("O quórum mínimo deve estar entre 0 e 100.");
+        }
+        if (dataInicio != null && dataFim != null && !dataFim.isAfter(dataInicio)) {
+            throw new IllegalArgumentException("A data de fim deve ser posterior à data de início.");
         }
     }
 
-    private void validarStatus(StatusVotacao status) {
-        if (status == null) {
-            throw new IllegalArgumentException("O status da votação deve ser informado.");
-        }
-    }
-
-    private void validarPercentual(BigDecimal valor, String campo) {
-        if (valor == null || valor.compareTo(BigDecimal.ZERO) < 0 || valor.compareTo(PERCENTUAL_MAXIMO) > 0) {
-            throw new IllegalArgumentException(campo + " deve estar entre 0 e 100.");
-        }
-    }
-
-    private void validarCamposPorTipoContexto(Contexto contexto) {
-        if (contexto.getTipo() == null) {
-            throw new IllegalArgumentException("O tipo do contexto da votação deve ser informado.");
-        }
+    private void validarCamposPorTipoContexto() {
         switch (contexto.getTipo()) {
             case ASSEMBLEIA -> {
                 validarTextoObrigatorio(pauta, "A pauta");
                 if (participantesAptos == null || participantesAptos <= 0) {
                     throw new IllegalArgumentException("A quantidade de participantes aptos deve ser positiva.");
                 }
-                rejeitarCamposNaoAplicaveis(pesoVoto, unidadeApartamento, categoriaSegmento, elegibilidade);
+                validarCamposNaoAplicaveis(pesoVoto, unidadeApartamento, categoriaSegmento, elegibilidade);
             }
             case CONDOMINIO -> {
                 if (pesoVoto == null || pesoVoto.compareTo(BigDecimal.ZERO) <= 0) {
                     throw new IllegalArgumentException("O peso do voto deve ser positivo.");
                 }
                 validarTextoObrigatorio(unidadeApartamento, "A unidade ou apartamento");
-                rejeitarCamposNaoAplicaveis(pauta, participantesAptos, categoriaSegmento, elegibilidade);
+                validarCamposNaoAplicaveis(pauta, participantesAptos, categoriaSegmento, elegibilidade);
             }
             case CENTRO_ACADEMICO -> {
                 validarTextoObrigatorio(categoriaSegmento, "A categoria ou segmento");
                 validarTextoObrigatorio(elegibilidade, "A elegibilidade");
-                rejeitarCamposNaoAplicaveis(pauta, participantesAptos, pesoVoto, unidadeApartamento);
+                validarCamposNaoAplicaveis(pauta, participantesAptos, pesoVoto, unidadeApartamento);
             }
         }
     }
@@ -287,11 +158,85 @@ public class Votacao {
         }
     }
 
-    private void rejeitarCamposNaoAplicaveis(Object... valores) {
+    private void validarCamposNaoAplicaveis(Object... valores) {
         for (Object valor : valores) {
             if (valor != null) {
                 throw new IllegalArgumentException("A votação contém campos que não se aplicam ao tipo do contexto.");
             }
         }
     }
+
+    // A votacao recebe votos se esta ABERTA e "agora" esta dentro da janela [dataInicio, dataFim)
+    public boolean aceitaVotos(LocalDateTime agora) {
+        if (status != StatusVotacao.ABERTA) {
+            return false;
+        }
+        if (dataInicio != null && agora.isBefore(dataInicio)) {
+            return false;
+        }
+        return dataFim == null || agora.isBefore(dataFim);
+    }
+
+    // Verdadeiro se o prazo acabou mas o status ainda nao foi atualizado
+    public boolean prazoExpirado(LocalDateTime agora) {
+        return status == StatusVotacao.ABERTA && dataFim != null && !agora.isBefore(dataFim);
+    }
+
+    public void encerrar() {
+        if (status == StatusVotacao.ENCERRADA) {
+            throw new IllegalStateException("A votação já está encerrada.");
+        }
+        this.status = StatusVotacao.ENCERRADA;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public Contexto getContexto() {
+        return contexto;
+    }
+
+    public TipoVotacao getTipo() {
+        return tipo;
+    }
+
+    public RegraAprovacao getRegraAprovacao() {
+        return regraAprovacao;
+    }
+
+    public Double getPercentualMinimo() {
+        return percentualMinimo;
+    }
+
+    public Double getQuorumMinimo() {
+        return quorumMinimo;
+    }
+
+    public StatusVotacao getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getDataInicio() {
+        return dataInicio;
+    }
+
+    public LocalDateTime getDataFim() {
+        return dataFim;
+    }
+
+    public String getPauta() { return pauta; }
+    public Integer getParticipantesAptos() { return participantesAptos; }
+    public BigDecimal getPesoVoto() { return pesoVoto; }
+    public String getUnidadeApartamento() { return unidadeApartamento; }
+    public String getCategoriaSegmento() { return categoriaSegmento; }
+    public String getElegibilidade() { return elegibilidade; }
 }

@@ -76,31 +76,30 @@ describe("formulário de votação", () => {
     const erros = validarVotacaoForm("CONDOMINIO", {
       ...valoresValidos,
       nome: " ",
-      regraAprovacao: "",
+      regraAprovacao: "PERCENTUAL_MINIMO",
       percentualMinimo: "100.1",
       quorumMinimo: "-1",
       dataFim: valoresValidos.dataInicio,
     });
 
     expect(erros.nome).toBeTruthy();
-    expect(erros.regraAprovacao).toBeTruthy();
     expect(erros.percentualMinimo).toBeTruthy();
     expect(erros.quorumMinimo).toBeTruthy();
     expect(erros.dataFim).toBeTruthy();
+    expect(validarVotacaoForm("CONDOMINIO", { ...valoresValidos, regraAprovacao: "" }).regraAprovacao).toBeTruthy();
   });
 
   it("monta payloads específicos sem incluir campos de outros tipos", () => {
     const assembleia = criarCadastroVotacao(42, "ASSEMBLEIA", valoresValidos);
     expect(assembleia).toMatchObject({
       contextoId: 42,
-      nome: "Eleição de representante",
+      titulo: "Eleição de representante",
       descricao: "Escolha do representante.",
       regraAprovacao: "MAIORIA_SIMPLES",
-      percentualMinimo: 60.5,
+      percentualMinimo: null,
       quorumMinimo: 25.25,
       dataInicio: "2026-11-01T10:00:00",
       dataFim: "2026-11-02T10:00:00",
-      status: "AGENDADA",
       pauta: "Escolha de representante",
       participantesAptos: 25,
     });

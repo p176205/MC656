@@ -1,22 +1,25 @@
 package com.MC656.backend.dto;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import com.MC656.backend.entity.RegraAprovacao;
 import com.MC656.backend.entity.StatusVotacao;
+import com.MC656.backend.entity.TipoVotacao;
+
+import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 public record VotacaoResponseDTO(
         Long id,
-        Long contextoId,
-        String nome,
+        String titulo,
         String descricao,
+        Long contextoId,
+        String contextoNome,
+        TipoVotacao tipo,
         RegraAprovacao regraAprovacao,
-        BigDecimal percentualMinimo,
-        BigDecimal quorumMinimo,
+        Double percentualMinimo,
+        Double quorumMinimo,
+        StatusVotacao status,
         LocalDateTime dataInicio,
         LocalDateTime dataFim,
-        StatusVotacao status,
         String pauta,
         Integer participantesAptos,
         BigDecimal pesoVoto,

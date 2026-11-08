@@ -3,18 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import type { VotacaoResponse } from "@/entities/entities";
-import { buscarVotacaoPorId } from "@/services/apiFacade";
+import type { ApuracaoResponse, VotacaoResponse } from "@/entities/entities";
+import { buscarApuracao, buscarVotacaoPorId } from "@/services/apiFacade";
 
 const statusLabels: Record<string, string> = {
-  AGENDADA: "Agendada",
   ABERTA: "Aberta",
-  EM_ANDAMENTO: "Em andamento",
   ENCERRADA: "Encerrada",
-  CANCELADA: "Cancelada",
 };
 
-function formatarData(data: string): string {
+function formatarData(data: string | null): string {
+  if (!data) return "Não definida";
   const dataObj = new Date(data);
   if (Number.isNaN(dataObj.getTime())) return data;
   return new Intl.DateTimeFormat("pt-BR", {
@@ -30,6 +28,8 @@ export default function VotacaoDetalhesPage() {
   const [votacao, setVotacao] = useState<VotacaoResponse | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [apuracao, setApuracao] = useState<ApuracaoResponse | null>(null);
+  const [erroApuracao, setErroApuracao] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -45,6 +45,16 @@ export default function VotacaoDetalhesPage() {
         const resultado = await buscarVotacaoPorId(votacaoId);
         if (!cancelado) {
           setVotacao(resultado);
+          if (resultado.status === "ENCERRADA") {
+            try {
+              const resultadoApuracao = await buscarApuracao(votacaoId);
+              if (!cancelado) setApuracao(resultadoApuracao);
+            } catch (erroApi) {
+              if (!cancelado) {
+                setErroApuracao(erroApi instanceof Error ? erroApi.message : "Não foi possível carregar a apuração.");
+              }
+            }
+          }
         }
       } catch (erroApi) {
         if (!cancelado) {
@@ -79,7 +89,7 @@ export default function VotacaoDetalhesPage() {
           <header className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-purple-700">Contexto {contextoIdParam}</p>
-              <h1 className="mt-1 text-3xl font-bold text-gray-900">{votacao.nome}</h1>
+              <h1 className="mt-1 text-3xl font-bold text-gray-900">{votacao.titulo}</h1>
             </div>
             <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800">
               {statusLabels[votacao.status] ?? votacao.status}
@@ -95,7 +105,9 @@ export default function VotacaoDetalhesPage() {
             </div>
             <div>
               <dt className="font-medium text-gray-800">Percentual mínimo</dt>
-              <dd className="text-gray-600">{votacao.percentualMinimo}%</dd>
+              <dd className="text-gray-600">
+                {votacao.percentualMinimo === null ? "Não se aplica" : `${votacao.percentualMinimo}%`}
+              </dd>
             </div>
             <div>
               <dt className="font-medium text-gray-800">Quórum mínimo</dt>
@@ -146,6 +158,24 @@ export default function VotacaoDetalhesPage() {
               </div>
             )}
           </dl>
+          {votacao.status === "ENCERRADA" && (
+            <section aria-labelledby="apuracao-titulo" className="mt-8 border-t pt-6">
+              <h2 id="apuracao-titulo" className="text-xl font-semibold text-gray-900">Apuração</h2>
+              {erroApuracao && <p role="alert" className="mt-3 text-red-700">{erroApuracao}</p>}
+              {!erroApuracao && !apuracao && <p role="status" className="mt-3 text-gray-600">Carregando apuração...</p>}
+              {apuracao && (
+                <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+                  <div><dt className="font-medium text-gray-800">Resultado</dt><dd className="text-gray-600">{apuracao.resultado}</dd></div>
+                  <div><dt className="font-medium text-gray-800">Quórum atingido</dt><dd className="text-gray-600">{apuracao.quorumAtingido ? "Sim" : "Não"}</dd></div>
+                  <div><dt className="font-medium text-gray-800">Votos sim</dt><dd className="text-gray-600">{apuracao.votosSim}</dd></div>
+                  <div><dt className="font-medium text-gray-800">Votos não</dt><dd className="text-gray-600">{apuracao.votosNao}</dd></div>
+                  <div><dt className="font-medium text-gray-800">Abstenções</dt><dd className="text-gray-600">{apuracao.abstencoes}</dd></div>
+                  <div><dt className="font-medium text-gray-800">Total de votantes</dt><dd className="text-gray-600">{apuracao.totalVotantes}</dd></div>
+                  <div><dt className="font-medium text-gray-800">Percentual de votos sim</dt><dd className="text-gray-600">{apuracao.percentualSimObtido === null ? "Não disponível" : `${apuracao.percentualSimObtido}%`}</dd></div>
+                </dl>
+              )}
+            </section>
+          )}
         </article>
       )}
     </main>

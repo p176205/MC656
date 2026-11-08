@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import type { ContextoResponse } from "@/entities/entities";
+import type { ContextoDetalhe } from "@/entities/entities";
 import { buscarContexto } from "@/services/apiFacade";
 import VotacaoForm from "@/components/votacoes/VotacaoForm";
 
 export default function NovaVotacaoPage() {
   const { contextoId: contextoIdParam } = useParams<{ contextoId: string }>();
   const contextoId = Number(contextoIdParam);
-  const [contexto, setContexto] = useState<ContextoResponse | null>(null);
+  const [contexto, setContexto] = useState<ContextoDetalhe | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 

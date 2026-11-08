@@ -1,10 +1,9 @@
 package com.MC656.backend.repository;
 
-import java.util.List;
-
+import com.MC656.backend.entity.Votacao;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.MC656.backend.entity.Votacao;
+import java.util.List;
 
 public interface VotacaoRepository extends JpaRepository<Votacao, Long> {
 

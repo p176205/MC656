@@ -38,9 +38,7 @@ export const camposEspecificosPorTipoContexto: Record<
 
 const regrasAprovacao: RegraAprovacao[] = [
   "MAIORIA_SIMPLES",
-  "MAIORIA_ABSOLUTA",
-  "MAIORIA_QUALIFICADA",
-  "UNANIMIDADE",
+  "PERCENTUAL_MINIMO",
 ];
 
 export function validarVotacaoForm(
@@ -54,9 +52,11 @@ export function validarVotacaoForm(
     erros.regraAprovacao = "Selecione a regra de aprovação.";
   }
 
-  const percentual = Number(valores.percentualMinimo);
-  if (!valores.percentualMinimo.trim() || !Number.isFinite(percentual) || percentual < 0 || percentual > 100) {
-    erros.percentualMinimo = "Informe um percentual entre 0 e 100.";
+  if (valores.regraAprovacao === "PERCENTUAL_MINIMO") {
+    const percentual = Number(valores.percentualMinimo);
+    if (!valores.percentualMinimo.trim() || !Number.isFinite(percentual) || percentual <= 0 || percentual > 100) {
+      erros.percentualMinimo = "Informe um percentual maior que 0 e até 100.";
+    }
   }
 
   const quorum = Number(valores.quorumMinimo);
@@ -117,14 +117,15 @@ export function criarCadastroVotacao(
 
   const camposComuns = {
     contextoId,
-    nome: valores.nome.trim(),
+    titulo: valores.nome.trim(),
     descricao: valores.descricao.trim(),
     regraAprovacao: valores.regraAprovacao as RegraAprovacao,
-    percentualMinimo: Number(valores.percentualMinimo),
+    percentualMinimo: valores.regraAprovacao === "PERCENTUAL_MINIMO"
+      ? Number(valores.percentualMinimo)
+      : null,
     quorumMinimo: Number(valores.quorumMinimo),
     dataInicio: dataIsoLocal(valores.dataInicio),
     dataFim: dataIsoLocal(valores.dataFim),
-    status: "AGENDADA" as const,
   };
 
   switch (tipoContexto) {
@@ -307,14 +308,12 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
         >
           <option value="">Selecione uma regra</option>
           <option value="MAIORIA_SIMPLES">Maioria simples</option>
-          <option value="MAIORIA_ABSOLUTA">Maioria absoluta</option>
-          <option value="MAIORIA_QUALIFICADA">Maioria qualificada</option>
-          <option value="UNANIMIDADE">Unanimidade</option>
+          <option value="PERCENTUAL_MINIMO">Percentual mínimo</option>
         </select>
         {erros.regraAprovacao && <span id="regraAprovacao-erro" className="text-sm font-normal text-red-700">{erros.regraAprovacao}</span>}
       </label>
 
-      {campoNumero("percentualMinimo", "Percentual mínimo")}
+      {valores.regraAprovacao === "PERCENTUAL_MINIMO" && campoNumero("percentualMinimo", "Percentual mínimo")}
       {campoNumero("quorumMinimo", "Quórum mínimo")}
 
       {camposEspecificos.includes("pauta") && campoTexto("pauta", "Pauta")}
@@ -330,7 +329,7 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
       {erroApi && <p role="alert" className="rounded-md bg-red-50 p-3 text-red-800">{erroApi}</p>}
       {votacaoCriada && (
         <p role="status" className="rounded-md bg-green-50 p-3 text-green-800">
-          Votação “{votacaoCriada.nome}” cadastrada com sucesso (ID {votacaoCriada.id}).
+          Votação “{votacaoCriada.titulo}” cadastrada com sucesso (ID {votacaoCriada.id}).
         </p>
       )}
 

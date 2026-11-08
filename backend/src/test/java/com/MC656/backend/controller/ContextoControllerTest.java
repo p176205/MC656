@@ -13,8 +13,10 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.MC656.backend.entity.Condominio;
-import com.MC656.backend.repository.ContextoRepository;
+import com.MC656.backend.dto.ContextoDetalheDTO;
+import com.MC656.backend.entity.TipoContexto;
+import com.MC656.backend.service.ContextoService;
+import java.util.NoSuchElementException;
 
 @WebMvcTest(ContextoController.class)
 class ContextoControllerTest {
@@ -23,13 +25,14 @@ class ContextoControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ContextoRepository contextoRepository;
+    private ContextoService contextoService;
 
     @Test
     void deveRetornarTipoDoContextoParaExibirCamposEspecificosDaVotacao() throws Exception {
-        when(contextoRepository.findById(12L)).thenReturn(Optional.of(new Condominio("Condomínio", 10)));
+        when(contextoService.buscarDetalhes(12L))
+                .thenReturn(new ContextoDetalheDTO(12L, "Condomínio", TipoContexto.CONDOMINIO));
 
-        mockMvc.perform(get("/api/contextos/12"))
+        mockMvc.perform(get("/api/contextos/id/12"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome").value("Condomínio"))
                 .andExpect(jsonPath("$.tipo").value("CONDOMINIO"));
@@ -37,9 +40,10 @@ class ContextoControllerTest {
 
     @Test
     void deveRetornar404ParaContextoInexistente() throws Exception {
-        when(contextoRepository.findById(999L)).thenReturn(Optional.empty());
+        when(contextoService.buscarDetalhes(999L))
+                .thenThrow(new NoSuchElementException("Contexto não encontrado."));
 
-        mockMvc.perform(get("/api/contextos/999"))
+        mockMvc.perform(get("/api/contextos/id/999"))
                 .andExpect(status().isNotFound());
     }
 }
