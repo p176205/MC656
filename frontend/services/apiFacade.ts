@@ -1,4 +1,15 @@
-import type { Contexto, ContextoDTO, LoginUsuario, TipoContexto, Usuario, UsuarioResponse } from "@/entities/entities";
+import type {
+  ApuracaoResponse,
+  Contexto,
+  ContextoDetalhe,
+  ContextoDTO,
+  LoginUsuario,
+  TipoContexto,
+  Usuario,
+  UsuarioResponse,
+  VotacaoCadastro,
+  VotacaoResponse,
+} from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -140,3 +151,64 @@ export async function getContextos(usuarioId: number): Promise<Response> {
   return resposta;
 }
 
+// GET /api/contextos/id/{contextoId}
+export async function buscarContexto(contextoId: number): Promise<ContextoDetalhe> {
+  const resposta = await fetch(`${API_URL}/api/contextos/id/${contextoId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar o contexto.");
+  }
+  return resposta.json();
+}
+
+// GET /api/votacoes/contexto/{contextoId}
+export async function buscarVotacoesPorContexto(contextoId: number): Promise<VotacaoResponse[]> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/contexto/${contextoId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar as votações.");
+  }
+  return resposta.json();
+}
+
+// GET /api/votacoes/{id}
+export async function buscarVotacaoPorId(votacaoId: number): Promise<VotacaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${votacaoId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar a votação.");
+  }
+  return resposta.json();
+}
+
+// POST /api/votacoes
+export async function cadastrarVotacao(cadastro: VotacaoCadastro): Promise<VotacaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(cadastro),
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao cadastrar a votação.");
+  }
+  return resposta.json();
+}
+
+// GET /api/votacoes/{id}/apuracao
+export async function buscarApuracao(votacaoId: number): Promise<ApuracaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${votacaoId}/apuracao`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar a apuração.");
+  }
+  return resposta.json();
+}

@@ -3,6 +3,7 @@ package com.MC656.backend.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 /* Processo de votacao dentro de um Contexto (1 Contexto : N Votacoes).
    Por enquanto representa uma deliberacao: uma pauta votada com Sim/Nao/Abstencao. */
@@ -48,6 +49,13 @@ public class Votacao {
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
 
+    private String pauta;
+    private Integer participantesAptos;
+    private BigDecimal pesoVoto;
+    private String unidadeApartamento;
+    private String categoriaSegmento;
+    private String elegibilidade;
+
     protected Votacao() {
         // precisa pro JPA
     }
@@ -55,6 +63,24 @@ public class Votacao {
     public Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
             Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
             LocalDateTime dataFim) {
+        this(titulo, descricao, contexto, regraAprovacao, percentualMinimo, quorumMinimo,
+                dataInicio, dataFim, null, null, null, null, null, null, false);
+    }
+
+    public Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
+            Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
+            LocalDateTime dataFim, String pauta, Integer participantesAptos, BigDecimal pesoVoto,
+            String unidadeApartamento, String categoriaSegmento, String elegibilidade) {
+        this(titulo, descricao, contexto, regraAprovacao, percentualMinimo, quorumMinimo, dataInicio,
+                dataFim, pauta, participantesAptos, pesoVoto, unidadeApartamento, categoriaSegmento,
+                elegibilidade, true);
+    }
+
+    private Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
+            Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
+            LocalDateTime dataFim, String pauta, Integer participantesAptos, BigDecimal pesoVoto,
+            String unidadeApartamento, String categoriaSegmento, String elegibilidade,
+            boolean validarCamposEspecificos) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.contexto = contexto;
@@ -65,7 +91,16 @@ public class Votacao {
         this.status = StatusVotacao.ABERTA;
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
+        this.pauta = pauta;
+        this.participantesAptos = participantesAptos;
+        this.pesoVoto = pesoVoto;
+        this.unidadeApartamento = unidadeApartamento;
+        this.categoriaSegmento = categoriaSegmento;
+        this.elegibilidade = elegibilidade;
         validar_votacao(percentualMinimo);
+        if (validarCamposEspecificos) {
+            validarCamposPorTipoContexto();
+        }
     }
 
     private void validar_votacao(Double percentualInformado) {
@@ -90,6 +125,44 @@ public class Votacao {
         }
         if (dataInicio != null && dataFim != null && !dataFim.isAfter(dataInicio)) {
             throw new IllegalArgumentException("A data de fim deve ser posterior à data de início.");
+        }
+    }
+
+    private void validarCamposPorTipoContexto() {
+        switch (contexto.getTipo()) {
+            case ASSEMBLEIA -> {
+                validarTextoObrigatorio(pauta, "A pauta");
+                if (participantesAptos == null || participantesAptos <= 0) {
+                    throw new IllegalArgumentException("A quantidade de participantes aptos deve ser positiva.");
+                }
+                validarCamposNaoAplicaveis(pesoVoto, unidadeApartamento, categoriaSegmento, elegibilidade);
+            }
+            case CONDOMINIO -> {
+                if (pesoVoto == null || pesoVoto.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("O peso do voto deve ser positivo.");
+                }
+                validarTextoObrigatorio(unidadeApartamento, "A unidade ou apartamento");
+                validarCamposNaoAplicaveis(pauta, participantesAptos, categoriaSegmento, elegibilidade);
+            }
+            case CENTRO_ACADEMICO -> {
+                validarTextoObrigatorio(categoriaSegmento, "A categoria ou segmento");
+                validarTextoObrigatorio(elegibilidade, "A elegibilidade");
+                validarCamposNaoAplicaveis(pauta, participantesAptos, pesoVoto, unidadeApartamento);
+            }
+        }
+    }
+
+    private void validarTextoObrigatorio(String valor, String campo) {
+        if (valor == null || valor.isBlank()) {
+            throw new IllegalArgumentException(campo + " deve ser informado(a).");
+        }
+    }
+
+    private void validarCamposNaoAplicaveis(Object... valores) {
+        for (Object valor : valores) {
+            if (valor != null) {
+                throw new IllegalArgumentException("A votação contém campos que não se aplicam ao tipo do contexto.");
+            }
         }
     }
 
@@ -159,4 +232,11 @@ public class Votacao {
     public LocalDateTime getDataFim() {
         return dataFim;
     }
+
+    public String getPauta() { return pauta; }
+    public Integer getParticipantesAptos() { return participantesAptos; }
+    public BigDecimal getPesoVoto() { return pesoVoto; }
+    public String getUnidadeApartamento() { return unidadeApartamento; }
+    public String getCategoriaSegmento() { return categoriaSegmento; }
+    public String getElegibilidade() { return elegibilidade; }
 }

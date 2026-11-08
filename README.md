@@ -150,12 +150,55 @@ cd backend
 
 ```bash
 cd frontend
+npm run test:run
 npm run lint
 npm run build
 npm run start
 ```
 
-Não há script de testes automatizados definido no `frontend/package.json`.
+O script `test:run` executa os testes automatizados do frontend sem modo
+interativo.
+
+## API de votações
+
+As rotas abaixo são servidas pelo backend em `http://localhost:8080`. Os nomes
+JSON seguem `camelCase`. Percentuais, quórum e peso do voto são números JSON;
+`participantesAptos` é um inteiro. `dataInicio` e `dataFim` são datas/hora
+locais no formato ISO-8601 `yyyy-MM-dd'T'HH:mm:ss`, por exemplo
+`2026-11-08T19:30:00`; não incluem fuso horário nem sufixo `Z`.
+
+| Método e rota | Resultado |
+| --- | --- |
+| `GET /api/contextos/id/{contextoId}` | Retorna `id`, `nome` e `tipo` do contexto; 404 se inexistente. A rota `/api/contextos/{id}` existente mantém a listagem de contextos do usuário. |
+| `POST /api/votacoes` | Abre uma votação e retorna seus dados com HTTP 201; contexto inexistente retorna 404 e dados inválidos retornam 400. |
+| `GET /api/votacoes/contexto/{contextoId}` | Retorna as votações daquele contexto; contexto inexistente retorna 404. |
+| `GET /api/votacoes/{id}` | Retorna os dados de uma votação; 404 se inexistente. |
+| `POST /api/votacoes/{id}/votos` | Registra o voto do usuário participante; conflito ou votação fechada retorna 409. |
+| `PATCH /api/votacoes/{id}/encerrar` | Encerra uma votação aberta. |
+| `GET /api/votacoes/{id}/apuracao` | Retorna a apuração depois do encerramento (ou do fim do prazo); para votação ainda aberta retorna 409. |
+
+O cadastro recebe `titulo`, `descricao`, `contextoId`, `regraAprovacao`,
+`percentualMinimo`, `quorumMinimo`, `dataInicio` e `dataFim`. As datas podem
+ser omitidas pela API; quando informadas, a data final precisa ser posterior à
+inicial. A interface de cadastro exige ambas. O status é controlado pelo
+servidor: toda votação nova começa como `ABERTA`. Os únicos status são
+`ABERTA` (aceita votos dentro da janela de datas) e `ENCERRADA` (não aceita
+novos votos; apuração disponível).
+
+As regras aceitas são `MAIORIA_SIMPLES` e `PERCENTUAL_MINIMO`. Para
+`PERCENTUAL_MINIMO`, `percentualMinimo` deve ser maior que 0 e até 100; para
+`MAIORIA_SIMPLES`, envie `null`. `quorumMinimo` fica entre 0 e 100, inclusive.
+Além desses campos comuns, o cadastro recebe somente os campos aplicáveis ao
+tipo do contexto:
+
+- `ASSEMBLEIA`: `pauta` (texto) e `participantesAptos` (inteiro positivo).
+- `CONDOMINIO`: `pesoVoto` (número positivo) e `unidadeApartamento` (texto).
+- `CENTRO_ACADEMICO`: `categoriaSegmento` e `elegibilidade` (texto).
+
+As respostas incluem `id`, `contextoNome`, `tipo`, `status` e os campos
+específicos; os campos que não se aplicam são `null`. A apuração expõe
+`resultado`, `quorumAtingido`, contagens/pesos de votos e
+`percentualSimObtido`.
 
 ## Limitações conhecidas
 

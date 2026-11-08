@@ -16,7 +16,7 @@ import java.util.NoSuchElementException;
 // Endpoints para abertura de pautas, votacao e apuracao
 @RestController
 @RequestMapping("/api/votacoes")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class VotacaoController {
 
     private final VotacaoService votacaoService;

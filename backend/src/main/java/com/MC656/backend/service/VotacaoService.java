@@ -53,7 +53,9 @@ public class VotacaoService {
                 .orElseThrow(() -> new NoSuchElementException("Contexto não encontrado."));
 
         Votacao votacao = new Votacao(dto.titulo(), dto.descricao(), contexto, dto.regraAprovacao(),
-                dto.percentualMinimo(), dto.quorumMinimo(), dto.dataInicio(), dto.dataFim());
+                dto.percentualMinimo(), dto.quorumMinimo(), dto.dataInicio(), dto.dataFim(),
+                dto.pauta(), dto.participantesAptos(), dto.pesoVoto(), dto.unidadeApartamento(),
+                dto.categoriaSegmento(), dto.elegibilidade());
 
         return toDTO(votacaoRepository.save(votacao));
     }
@@ -65,6 +67,8 @@ public class VotacaoService {
 
     @Transactional(readOnly = true)
     public List<VotacaoResponseDTO> listarPorContexto(Long contextoId) {
+        contextoRepository.findById(contextoId)
+                .orElseThrow(() -> new NoSuchElementException("Contexto não encontrado."));
         return votacaoRepository.findByContextoId(contextoId).stream()
                 .map(this::toDTO)
                 .toList();
@@ -169,6 +173,8 @@ public class VotacaoService {
         return new VotacaoResponseDTO(v.getId(), v.getTitulo(), v.getDescricao(),
                 v.getContexto().getId(), v.getContexto().getNome(), v.getTipo(),
                 v.getRegraAprovacao(), v.getPercentualMinimo(), v.getQuorumMinimo(),
-                v.getStatus(), v.getDataInicio(), v.getDataFim());
+                v.getStatus(), v.getDataInicio(), v.getDataFim(),
+                v.getPauta(), v.getParticipantesAptos(), v.getPesoVoto(), v.getUnidadeApartamento(),
+                v.getCategoriaSegmento(), v.getElegibilidade());
     }
 }

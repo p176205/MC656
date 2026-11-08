@@ -3,8 +3,10 @@ package com.MC656.backend.dto;
 import com.MC656.backend.entity.RegraAprovacao;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 // Dados para abrir uma pauta. Faixas de valores sao validadas na entidade Votacao.
 public record VotacaoCreateDTO(
@@ -27,5 +29,20 @@ public record VotacaoCreateDTO(
         Double quorumMinimo,
 
         LocalDateTime dataInicio,
-        LocalDateTime dataFim
+        LocalDateTime dataFim,
+
+        String pauta,
+
+        @Positive(message = "A quantidade de participantes aptos deve ser positiva")
+        Integer participantesAptos,
+
+        @jakarta.validation.constraints.DecimalMin(
+                value = "0.0", inclusive = false, message = "O peso do voto deve ser positivo")
+        BigDecimal pesoVoto,
+
+        String unidadeApartamento,
+
+        String categoriaSegmento,
+
+        String elegibilidade
 ) {}

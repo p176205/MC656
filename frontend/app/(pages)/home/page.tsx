@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import CriarContexto from "@/components/criarContexto";
 import EntrarContexto from "@/components/entrarContexto";
 import Navbar from "@/components/navbar";
@@ -7,9 +8,9 @@ import {
   Aba,
   ContextoDTO,
   UsuarioResponse,
-  Votacao,
+  VotacaoResponse,
 } from "@/entities/entities";
-import { getContextos, getIdUser, logoutUsuario } from "@/services/apiFacade";
+import { buscarVotacoesPorContexto, getContextos, getIdUser, logoutUsuario } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -20,35 +21,14 @@ export default function Home() {
   const [user, setUser] = useState<UsuarioResponse>();
   const [contextos, setContextos] = useState<ContextoDTO[]>([]);
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
+  const [votacoes, setVotacoes] = useState<VotacaoResponse[]>([]);
+  const [carregandoVotacoes, setCarregandoVotacoes] = useState(false);
+  const [erroVotacoes, setErroVotacoes] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState<Aba>("COMUNIDADE");
   const [criarContexto, setCriarContexto] = useState(false);
   const [entrarContexto, setEntrarContexto] = useState(false);
   const [logout, setLogout] = useState<boolean>(false);
-  const [votacoes, setVotacoes] = useState<Votacao[]>([
-    {
-      titulo: "Votacao 1",
-      descricao: "Votacao descricao",
-      //contexto: ,
-      tipo: "DELIBERACAO",
-      regra_aprovacao: "MAIORIA_SIMPLES",
-      quorum_minimo: 100,
-      status: "ENCERRADA",
-      data_inicio: "11-02-2026",
-      data_fim: "11-22-2026",
-    },
-    {
-      titulo: "Votacao 2",
-      descricao: "Votacao descricao 2",
-      //contexto: ,
-      tipo: "DELIBERACAO",
-      regra_aprovacao: "MAIORIA_SIMPLES",
-      quorum_minimo: 100,
-      status: "ABERTA",
-      data_inicio: "11-02-2026",
-      data_fim: "11-22-2026",
-    },
-  ]);
   useEffect(() => {
     async function carregarDados() {
       setCarregando(true);
@@ -87,6 +67,33 @@ export default function Home() {
 
     carregarDados();
   }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+    if (!contextoAtual) return;
+    const contextoId = contextoAtual.id;
+
+    async function carregarVotacoes() {
+      setCarregandoVotacoes(true);
+      setErroVotacoes(null);
+      try {
+        const resultado = await buscarVotacoesPorContexto(contextoId);
+        if (!cancelado) setVotacoes(resultado);
+      } catch (erro) {
+        if (!cancelado) {
+          setErroVotacoes(erro instanceof Error ? erro.message : "Não foi possível carregar as votações.");
+          setVotacoes([]);
+        }
+      } finally {
+        if (!cancelado) setCarregandoVotacoes(false);
+      }
+    }
+
+    void carregarVotacoes();
+    return () => {
+      cancelado = true;
+    };
+  }, [contextoAtual]);
 
   useEffect(() => {
     if (!user && !carregando) {
@@ -192,6 +199,8 @@ export default function Home() {
   }
 
   function renderizarConteudo() {
+    if (!contextoAtual) return null;
+
     switch (abaSelecionada) {
       case "COMUNIDADE":
         return (
@@ -261,36 +270,31 @@ export default function Home() {
             <h2 className="text-xl font-semibold">Votações</h2>
             <p className="mt-2 text-gray-600">Consulte todas as votações.</p>
 
-            {/* Exibir as votações disponiveis: Deixei um exemplo para visualizarmos apenas */}
             <section className="flex flex-col gap-3 py-3">
-              {votacoes.map((votacao, index) => (
-                <div key={index} className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60">
+              {carregandoVotacoes && <p role="status">Carregando votações...</p>}
+              {!carregandoVotacoes && erroVotacoes && <p role="alert" className="text-red-700">{erroVotacoes}</p>}
+              {!carregandoVotacoes && !erroVotacoes && votacoes.length === 0 && (
+                <p className="text-gray-600">Este contexto ainda não tem votações.</p>
+              )}
+              {!carregandoVotacoes && !erroVotacoes && votacoes.map((votacao) => (
+                <Link
+                  key={votacao.id}
+                  href={`/contextos/${contextoAtual.id}/votacoes/${votacao.id}`}
+                  className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60"
+                >
                   <div className="flex items-center justify-between gap-4">
-                    <h3 className="font-semibold text-indigo-950 line-clamp-1">
-                      {votacao.titulo}
-                    </h3>
-                    <span
-                      className={`flex flex-row items-center gap-2 shrink-0 rounded-full border-2 px-3 py-1 text-xs font-medium border-indigo-500`}
-                    >
+                    <h3 className="font-semibold text-indigo-950 line-clamp-1">{votacao.titulo}</h3>
+                    <span className="flex shrink-0 items-center gap-2 rounded-full border-2 border-indigo-500 px-3 py-1 text-xs font-medium">
                       <span>{votacao.status}</span>
-                      <span
-                        className={`w-2 h-2 rounded-full ${votacao.status === "ENCERRADA" ? "bg-red-500" : "bg-green-500"}`}
-                      ></span>
+                      <span className={`h-2 w-2 rounded-full ${votacao.status === "ENCERRADA" ? "bg-red-500" : "bg-green-500"}`} />
                     </span>
                   </div>
-                  <p className="text-sm text-indigo-900/80 line-clamp-2">
-                    {votacao.descricao}
-                  </p>
+                  <p className="line-clamp-2 text-sm text-indigo-900/80">{votacao.descricao}</p>
                   <div className="flex items-center justify-between border-t border-indigo-300/90 pt-2 text-xs text-indigo-700">
-                    <span>
-                      Início:{" "}
-                      {new Date(votacao.data_inicio).toLocaleDateString()}
-                    </span>
-                    <span>
-                      Fim: {new Date(votacao.data_fim).toLocaleDateString()}
-                    </span>
+                    <span>Início: {votacao.dataInicio ? new Date(votacao.dataInicio).toLocaleString() : "Não definido"}</span>
+                    <span>Fim: {votacao.dataFim ? new Date(votacao.dataFim).toLocaleString() : "Não definido"}</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </section>
           </section>

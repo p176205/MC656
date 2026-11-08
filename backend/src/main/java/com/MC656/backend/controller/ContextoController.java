@@ -15,6 +15,7 @@ import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.EntrarContextoRequestDTO;
+import com.MC656.backend.dto.ContextoDetalheDTO;
 import com.MC656.backend.service.ContextoService;
 
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
@@ -94,6 +95,16 @@ public class ContextoController {
             return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/id/{contextoId}")
+    public ResponseEntity<?> buscarDetalhes(@PathVariable Long contextoId) {
+        try {
+            ContextoDetalheDTO resposta = contextoService.buscarDetalhes(contextoId);
+            return ResponseEntity.ok(resposta);
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 }
