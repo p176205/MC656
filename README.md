@@ -150,12 +150,57 @@ cd backend
 
 ```bash
 cd frontend
+npm run test:run
 npm run lint
 npm run build
 npm run start
 ```
 
-Não há script de testes automatizados definido no `frontend/package.json`.
+O script `test:run` executa os testes automatizados do frontend sem modo
+interativo.
+
+## API de votações
+
+As rotas abaixo são servidas pelo backend em `http://localhost:8080`. Os nomes
+JSON seguem `camelCase`. Os percentuais, o quórum, o peso do voto e as
+quantidades são valores numéricos JSON (não strings). `dataInicio` e `dataFim`
+são datas/hora locais no formato ISO-8601 `yyyy-MM-dd'T'HH:mm:ss`, por exemplo
+`2026-11-08T19:30:00`; não incluem fuso horário nem sufixo `Z`.
+
+| Método e rota | Resultado |
+| --- | --- |
+| `GET /api/contextos/{contextoId}` | Retorna `id`, `nome` e `tipo` do contexto; 404 se inexistente. |
+| `POST /api/votacoes` | Cadastra uma votação e retorna seus dados com HTTP 201; contexto inexistente retorna 404 e dados inválidos retornam 400. |
+| `GET /api/votacoes/contexto/{contextoId}` | Retorna a lista daquele contexto (inclusive lista vazia); 404 se o contexto não existe. |
+| `GET /api/votacoes/{id}` | Retorna os dados de uma votação; 404 se inexistente. |
+
+O cadastro recebe `contextoId`, `nome`, `descricao`, `regraAprovacao`,
+`percentualMinimo`, `quorumMinimo`, `dataInicio`, `dataFim` e `status`. A regra
+de aprovação aceita `MAIORIA_SIMPLES`, `MAIORIA_ABSOLUTA`,
+`MAIORIA_QUALIFICADA` ou `UNANIMIDADE`. Percentuais e quórum ficam entre 0 e
+100, inclusive, e a data de fim deve ser posterior à de início.
+
+O cadastro também recebe somente os campos específicos do tipo do contexto:
+
+- `ASSEMBLEIA`: `pauta` (texto) e `participantesAptos` (inteiro positivo).
+- `CONDOMINIO`: `pesoVoto` (número positivo) e `unidadeApartamento` (texto).
+- `CENTRO_ACADEMICO`: `categoriaSegmento` e `elegibilidade` (texto livre).
+
+Uma resposta inclui os campos comuns, `id` e os campos específicos do contexto;
+os campos específicos não aplicáveis são serializados como `null`.
+
+Os status são distintos:
+
+- `AGENDADA`: prevista para começar; ainda não recebe votos.
+- `ABERTA`: janela de votação aberta e apta a receber votos.
+- `EM_ANDAMENTO`: processo em curso; por si só, não significa que o
+  recebimento de votos está habilitado. Use `ABERTA` para isso.
+- `ENCERRADA`: votação finalizada, sem novos votos.
+- `CANCELADA`: votação cancelada.
+
+O endpoint de cadastro aceita um status explícito; a interface de nova votação
+inicia o cadastro com `AGENDADA`. O backend ainda não fornece uma rota de
+apuração (`GET /api/votacoes/{id}/apuracao`).
 
 ## Limitações conhecidas
 

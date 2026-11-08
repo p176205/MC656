@@ -155,6 +155,38 @@ class VotacaoControllerTest {
     }
 
     @Test
+    void deveAceitarStatusAbertaNoCadastro() throws Exception {
+        VotacaoResponseDTO respostaAberta = new VotacaoResponseDTO(
+                12L, 42L, "Eleição aberta", "Descrição", RegraAprovacao.MAIORIA_SIMPLES,
+                new BigDecimal("60"), new BigDecimal("25"),
+                LocalDateTime.of(2026, 11, 1, 10, 0),
+                LocalDateTime.of(2026, 11, 2, 10, 0),
+                StatusVotacao.ABERTA,
+                null, null, new BigDecimal("1.5"), "Apto 12", null, null);
+        when(votacaoService.cadastrar(any(VotacaoCadastroDTO.class))).thenReturn(respostaAberta);
+
+        mockMvc.perform(post("/api/votacoes")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                        {
+                          "contextoId": 42,
+                          "nome": "Eleição aberta",
+                          "descricao": "Descrição",
+                          "regraAprovacao": "MAIORIA_SIMPLES",
+                          "percentualMinimo": 60,
+                          "quorumMinimo": 25,
+                          "dataInicio": "2026-11-01T10:00:00",
+                          "dataFim": "2026-11-02T10:00:00",
+                          "status": "ABERTA",
+                          "pesoVoto": 1.5,
+                          "unidadeApartamento": "Apto 12"
+                        }
+                        """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("ABERTA"));
+    }
+
+    @Test
     void deveRejeitarCadastroComCamposObrigatoriosOuPercentuaisInvalidos() throws Exception {
         mockMvc.perform(post("/api/votacoes")
                 .contentType(APPLICATION_JSON)
