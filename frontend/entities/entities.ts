@@ -15,3 +15,27 @@ export type CadastroErrors = {
     email: Error;
     senha: Error;
 };
+
+export type RegraAprovacao =
+    | "MAIORIA_SIMPLES"
+    | "MAIORIA_ABSOLUTA"
+    | "MAIORIA_QUALIFICADA"
+    | "UNANIMIDADE";
+
+export type StatusVotacao = "AGENDADA" | "EM_ANDAMENTO" | "ENCERRADA" | "CANCELADA";
+
+export type VotacaoCadastro = {
+    contextoId: number;
+    nome: string;
+    descricao: string;
+    regraAprovacao: RegraAprovacao;
+    percentualMinimo: number;
+    quorumMinimo: number;
+    dataInicio: string;
+    dataFim: string;
+    status: StatusVotacao;
+};
+
+export type VotacaoResponse = VotacaoCadastro & {
+    id: number;
+};

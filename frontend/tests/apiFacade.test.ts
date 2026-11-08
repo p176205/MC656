@@ -1,7 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cadastrarUsuario } from "../services/apiFacade";
+import { buscarVotacoesPorContexto, cadastrarUsuario } from "../services/apiFacade";
 
 const usuario = { nome: "Maria", email: "maria@email.com", senha: "123456" };
+const votacoes = [{
+  id: 8,
+  contextoId: 12,
+  nome: "Eleição de representante",
+  descricao: "Escolha do representante.",
+  regraAprovacao: "MAIORIA_SIMPLES",
+  percentualMinimo: 60,
+  quorumMinimo: 25,
+  dataInicio: "2026-11-01T10:00:00",
+  dataFim: "2026-11-02T10:00:00",
+  status: "AGENDADA",
+}];
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -36,5 +48,34 @@ describe("cadastrarUsuario (fachada da API)", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("rede indisponível")));
 
     await expect(cadastrarUsuario(usuario)).rejects.toThrow("rede indisponível");
+  });
+});
+
+describe("buscarVotacoesPorContexto (fachada da API)", () => {
+  it("envia GET para o contexto e retorna os itens da resposta", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(votacoes),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const resultado = await buscarVotacoesPorContexto(12);
+
+    expect(resultado).toEqual(votacoes);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/api\/votacoes\/contexto\/12$/);
+    expect(opcoes.method).toBe("GET");
+  });
+
+  it("propaga falhas HTTP e de rede", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+
+    await expect(buscarVotacoesPorContexto(999))
+      .rejects.toThrow("Falha ao buscar votações: HTTP 404");
+
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("rede indisponível")));
+    await expect(buscarVotacoesPorContexto(12)).rejects.toThrow("rede indisponível");
   });
 });

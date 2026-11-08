@@ -1,4 +1,4 @@
-import type { Usuario } from "@/entities/entities";
+import type { Usuario, VotacaoResponse } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
 // As páginas chamam apenas as funções deste módulo e não precisam conhecer
@@ -20,4 +20,17 @@ export async function cadastrarUsuario(usuario: Usuario): Promise<ResultadoApi> 
   });
 
   return { ok: resposta.ok, status: resposta.status };
+}
+
+// GET /api/votacoes/contexto/{contextoId}
+export async function buscarVotacoesPorContexto(contextoId: number): Promise<VotacaoResponse[]> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/contexto/${contextoId}`, {
+    method: "GET",
+  });
+
+  if (!resposta.ok) {
+    throw new Error(`Falha ao buscar votações: HTTP ${resposta.status}`);
+  }
+
+  return (await resposta.json()) as VotacaoResponse[];
 }
