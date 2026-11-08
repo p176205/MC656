@@ -4,51 +4,37 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.MC656.backend.dto.VotacaoCadastroDTO;
 import com.MC656.backend.dto.VotacaoResponseDTO;
-import com.MC656.backend.entity.Votacao;
-import com.MC656.backend.repository.ContextoRepository;
-import com.MC656.backend.repository.VotacaoRepository;
+import com.MC656.backend.service.VotacaoService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/votacoes")
 public class VotacaoController {
 
-    private final VotacaoRepository votacaoRepository;
-    private final ContextoRepository contextoRepository;
+    private final VotacaoService votacaoService;
 
-    public VotacaoController(VotacaoRepository votacaoRepository, ContextoRepository contextoRepository) {
-        this.votacaoRepository = votacaoRepository;
-        this.contextoRepository = contextoRepository;
+    public VotacaoController(VotacaoService votacaoService) {
+        this.votacaoService = votacaoService;
+    }
+
+    @PostMapping
+    public ResponseEntity<VotacaoResponseDTO> cadastrar(@Valid @RequestBody VotacaoCadastroDTO dto) {
+        VotacaoResponseDTO response = votacaoService.cadastrar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/contexto/{contextoId}")
     public ResponseEntity<List<VotacaoResponseDTO>> listarPorContexto(@PathVariable Long contextoId) {
-        if (!contextoRepository.existsById(contextoId)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-
-        List<VotacaoResponseDTO> votacoes = votacaoRepository.findByContextoId(contextoId).stream()
-                .map(votacao -> toResponseDTO(votacao, contextoId))
-                .toList();
-        return ResponseEntity.ok(votacoes);
-    }
-
-    private VotacaoResponseDTO toResponseDTO(Votacao votacao, Long contextoId) {
-        return new VotacaoResponseDTO(
-                votacao.getId(),
-                contextoId,
-                votacao.getNome(),
-                votacao.getDescricao(),
-                votacao.getRegraAprovacao(),
-                votacao.getPercentualMinimo(),
-                votacao.getQuorumMinimo(),
-                votacao.getDataInicio(),
-                votacao.getDataFim(),
-                votacao.getStatus());
+        return ResponseEntity.ok(votacaoService.listarPorContexto(contextoId));
     }
 }
