@@ -1,10 +1,8 @@
 package com.MC656.backend.service;
 
-import com.MC656.backend.dto.ApuracaoResponseDTO;
-import com.MC656.backend.dto.VotacaoCreateDTO;
-import com.MC656.backend.dto.VotacaoResponseDTO;
-import com.MC656.backend.dto.VotoRequestDTO;
+import com.MC656.backend.dto.*;
 import com.MC656.backend.entity.*;
+import com.MC656.backend.repository.ChapaRepository;
 import com.MC656.backend.repository.ContextoRepository;
 import com.MC656.backend.repository.RegistroVotanteRepository;
 import com.MC656.backend.repository.VotacaoRepository;
@@ -36,6 +34,7 @@ class VotacaoServiceTest {
     @Mock private RegistroVotanteRepository registroVotanteRepository;
     @Mock private ContextoRepository contextoRepository;
     @Mock private ContextoService contextoService;
+    @Mock private ChapaRepository chapaRepository;
 
     private VotacaoService votacaoService;
 
@@ -46,8 +45,9 @@ class VotacaoServiceTest {
     @BeforeEach
     void setUp() {
         QuorumService quorumService = new QuorumService(List.of(new QuorumPorCabecaStrategy(), new QuorumPorPesoStrategy()));
+        List<ApuracaoStrategy> apuracaoStrategies = List.of(new ApuracaoDeliberacaoStrategy(), new ApuracaoEleicaoStrategy());
         votacaoService = new VotacaoService(votacaoRepository, votoRepository, registroVotanteRepository,
-                contextoRepository, contextoService, quorumService);
+                contextoRepository, contextoService, quorumService, chapaRepository, apuracaoStrategies);
 
         assembleia = new Assembleia("Assembleia Geral", 10);
         ReflectionTestUtils.setField(assembleia, "id", 1L);
@@ -59,7 +59,8 @@ class VotacaoServiceTest {
     }
 
     private Votacao votacao(Contexto contexto, RegraAprovacao regra, Double percentual, double quorum) {
-        Votacao v = new Votacao("Pauta", "Descrição", contexto, regra, percentual, quorum, null, null,
+        Votacao v = new Votacao("Pauta", "Descrição", contexto, TipoVotacao.DELIBERACAO, regra,
+                percentual, quorum, null, null,
                 contexto instanceof Assembleia ? "Pauta" : null,
                 contexto instanceof Assembleia ? 10 : null,
                 contexto instanceof Condominio ? java.math.BigDecimal.ONE : null,
@@ -75,6 +76,7 @@ class VotacaoServiceTest {
     @Test
     void abrir_Sucesso() {
         when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(true);
         when(votacaoRepository.save(any(Votacao.class))).thenAnswer(inv -> {
             Votacao v = inv.getArgument(0);
             ReflectionTestUtils.setField(v, "id", 100L);
@@ -82,8 +84,9 @@ class VotacaoServiceTest {
         });
 
         VotacaoResponseDTO response = votacaoService.abrir(new VotacaoCreateDTO(
-                "Reforma", "Aprovar reforma", 1L, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null));
+                "Reforma", "Aprovar reforma", 1L, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null));
 
         assertEquals(100L, response.id());
         assertEquals(1L, response.contextoId());
@@ -93,12 +96,24 @@ class VotacaoServiceTest {
     }
 
     @Test
+    void abrir_DeliberacaoPorUsuarioNaoAdmin_LancaExcecao() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Reforma", "Aprovar reforma", 1L, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, null)));
+        verify(votacaoRepository, never()).save(any());
+    }
+
+    @Test
     void abrir_ContextoInexistente() {
         when(contextoRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(NoSuchElementException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
-                "Reforma", "Aprovar reforma", 99L, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null)));
+                "Reforma", "Aprovar reforma", 99L, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null)));
         verify(votacaoRepository, never()).save(any());
     }
 
@@ -132,7 +147,7 @@ class VotacaoServiceTest {
                 .thenReturn(Optional.of(new Participacao(usuario, condominio, Papel.CONDOMINO, 2.5)));
         when(registroVotanteRepository.existsByVotacaoIdAndUsuarioId(100L, 7L)).thenReturn(false);
 
-        votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM));
+        votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM, null));
 
         ArgumentCaptor<RegistroVotante> registro = ArgumentCaptor.forClass(RegistroVotante.class);
         verify(registroVotanteRepository).save(registro.capture());
@@ -151,7 +166,7 @@ class VotacaoServiceTest {
         when(contextoService.buscarParticipacaoVotante(7L, 1L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
-                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM)));
+                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM, null)));
         verifyNoInteractions(votoRepository);
     }
 
@@ -164,7 +179,7 @@ class VotacaoServiceTest {
         when(registroVotanteRepository.existsByVotacaoIdAndUsuarioId(100L, 7L)).thenReturn(true);
 
         assertThrows(IllegalStateException.class,
-                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.NAO)));
+                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.NAO, null)));
         verifyNoInteractions(votoRepository);
     }
 
@@ -178,7 +193,7 @@ class VotacaoServiceTest {
         when(registroVotanteRepository.save(any())).thenThrow(new DataIntegrityViolationException("unique"));
 
         assertThrows(IllegalStateException.class,
-                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.NAO)));
+                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.NAO, null)));
         verifyNoInteractions(votoRepository);
     }
 
@@ -189,18 +204,19 @@ class VotacaoServiceTest {
         when(votacaoRepository.findById(100L)).thenReturn(Optional.of(v));
 
         assertThrows(IllegalStateException.class,
-                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM)));
+                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM, null)));
         verifyNoInteractions(registroVotanteRepository, votoRepository);
     }
 
     @Test
     void votar_AntesDoInicio() {
-        Votacao v = new Votacao("Pauta", "Descrição", assembleia, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0,
-                LocalDateTime.now().plusDays(1), null, "Pauta", 10, null, null, null, null);
+        Votacao v = new Votacao("Pauta", "Descrição", assembleia, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, LocalDateTime.now().plusDays(1), null,
+                "Pauta", 10, null, null, null, null);
         when(votacaoRepository.findById(100L)).thenReturn(Optional.of(v));
 
         assertThrows(IllegalStateException.class,
-                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM)));
+                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM, null)));
     }
 
     @Test
@@ -208,7 +224,7 @@ class VotacaoServiceTest {
         when(votacaoRepository.findById(100L)).thenReturn(Optional.empty());
 
         assertThrows(NoSuchElementException.class,
-                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM)));
+                () -> votacaoService.votar(100L, new VotoRequestDTO(7L, OpcaoVoto.SIM, null)));
     }
 
     // ---------- encerramento e apuração ----------
@@ -233,7 +249,8 @@ class VotacaoServiceTest {
 
     @Test
     void apurar_PrazoExpiradoEncerraAutomaticamente() {
-        Votacao v = new Votacao("Pauta", "Descrição", assembleia, RegraAprovacao.MAIORIA_SIMPLES, null, 0.0,
+        Votacao v = new Votacao("Pauta", "Descrição", assembleia, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 0.0,
                 LocalDateTime.now().minusDays(2), LocalDateTime.now().minusDays(1));
         when(votacaoRepository.findById(100L)).thenReturn(Optional.of(v));
         when(votoRepository.findByVotacaoId(100L)).thenReturn(List.of());
@@ -334,5 +351,141 @@ class VotacaoServiceTest {
         when(votacaoRepository.findById(100L)).thenReturn(Optional.of(exigente));
 
         assertEquals(ResultadoVotacao.REJEITADA, votacaoService.apurar(100L).resultado());
+    }
+
+    // ---------- eleição de chapas ----------
+
+    @Test
+    void abrirEleicao_AdminCriaChapasComMembros_Sucesso() {
+        Usuario membro1 = new Usuario("Membro 1", "m1@email.com", "senha123");
+        membro1.setId(11L);
+        Usuario membro2 = new Usuario("Membro 2", "m2@email.com", "senha123");
+        membro2.setId(12L);
+
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(true);
+        when(contextoService.buscarMembroDoContexto(11L, 1L)).thenReturn(membro1);
+        when(contextoService.buscarMembroDoContexto(12L, 1L)).thenReturn(membro2);
+        when(votacaoRepository.save(any(Votacao.class))).thenAnswer(inv -> {
+            Votacao v = inv.getArgument(0);
+            ReflectionTestUtils.setField(v, "id", 200L);
+            return v;
+        });
+        when(chapaRepository.save(any(Chapa.class))).thenAnswer(inv -> {
+            Chapa c = inv.getArgument(0);
+            ReflectionTestUtils.setField(c, "id", c.getNome().equals("Chapa A") ? 10L : 20L);
+            return c;
+        });
+
+        VotacaoCreateDTO dto = new VotacaoCreateDTO(
+                "Eleição Diretoria", "Escolha a nova gestão", 1L, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                List.of(
+                        new ChapaCreateDTO("Chapa A", null, List.of(11L)),
+                        new ChapaCreateDTO("Chapa B", null, List.of(12L))
+                )
+        );
+
+        VotacaoResponseDTO response = votacaoService.abrir(dto);
+
+        assertEquals(TipoVotacao.ELEICAO, response.tipo());
+        assertEquals(2, response.chapas().size());
+        assertEquals("Chapa A", response.chapas().get(0).nome());
+        assertEquals(11L, response.chapas().get(0).membros().get(0).id());
+    }
+
+    @Test
+    void abrirEleicao_UsuarioNaoAdmin_LancaExcecao() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(false);
+
+        VotacaoCreateDTO dto = new VotacaoCreateDTO(
+                "Eleição Diretoria", "Escolha a nova gestão", 1L, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                List.of(new ChapaCreateDTO("Chapa A", null, List.of(11L)))
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(dto));
+        verify(votacaoRepository, never()).save(any());
+    }
+
+    @Test
+    void atualizarChapa_MembroDaChapaPodeAlterarNomeEProposta() {
+        Votacao eleicao = new Votacao("Eleição", "Descrição", assembleia, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null);
+        ReflectionTestUtils.setField(eleicao, "id", 200L);
+
+        Chapa chapa = new Chapa(eleicao, "Chapa 1", null, List.of(usuario));
+        ReflectionTestUtils.setField(chapa, "id", 10L);
+
+        when(votacaoRepository.findById(200L)).thenReturn(Optional.of(eleicao));
+        when(chapaRepository.findByIdAndVotacaoId(10L, 200L)).thenReturn(Optional.of(chapa));
+        when(chapaRepository.findByVotacaoId(200L)).thenReturn(List.of(chapa));
+        when(chapaRepository.save(any(Chapa.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ChapaResponseDTO atualizada = votacaoService.atualizarChapa(
+                200L, 10L, new ChapaUpdateDTO(7L, "Chapa Inovação", "Proposta de melhoria das salas"));
+
+        assertEquals("Chapa Inovação", atualizada.nome());
+        assertEquals("Proposta de melhoria das salas", atualizada.proposta());
+    }
+
+    @Test
+    void atualizarChapa_UsuarioForaDaChapa_Negado() {
+        Votacao eleicao = new Votacao("Eleição", "Descrição", assembleia, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null);
+        ReflectionTestUtils.setField(eleicao, "id", 200L);
+
+        Chapa chapa = new Chapa(eleicao, "Chapa 1", null, List.of(usuario));
+        ReflectionTestUtils.setField(chapa, "id", 10L);
+
+        when(votacaoRepository.findById(200L)).thenReturn(Optional.of(eleicao));
+        when(chapaRepository.findByIdAndVotacaoId(10L, 200L)).thenReturn(Optional.of(chapa));
+
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.atualizarChapa(
+                200L, 10L, new ChapaUpdateDTO(999L, "Tentativa", "Proposta invasora")));
+        verify(chapaRepository, never()).save(any());
+    }
+
+    @Test
+    void apurarEleicao_MaioriaSimplesEEmpate() {
+        Votacao eleicao = new Votacao("Eleição", "Descrição", assembleia, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null);
+        ReflectionTestUtils.setField(eleicao, "id", 200L);
+        eleicao.encerrar();
+
+        Chapa chapaA = new Chapa(eleicao, "Chapa A", "Proposta A", List.of(usuario));
+        ReflectionTestUtils.setField(chapaA, "id", 10L);
+        Chapa chapaB = new Chapa(eleicao, "Chapa B", "Proposta B", List.of(usuario));
+        ReflectionTestUtils.setField(chapaB, "id", 20L);
+
+        when(votacaoRepository.findById(200L)).thenReturn(Optional.of(eleicao));
+        when(chapaRepository.findByVotacaoId(200L)).thenReturn(List.of(chapaA, chapaB));
+        when(contextoService.pesosDoEleitorado(1L)).thenReturn(Map.of(1L, 1.0, 2L, 1.0, 3L, 1.0, 4L, 1.0));
+
+        // Cenário 1: Chapa A vence com 2 votos contra 1 da Chapa B e 1 abstenção
+        when(votoRepository.findByVotacaoId(200L)).thenReturn(List.of(
+                Voto.emChapa(eleicao, chapaA, 1.0),
+                Voto.emChapa(eleicao, chapaA, 1.0),
+                Voto.emChapa(eleicao, chapaB, 1.0),
+                new Voto(eleicao, OpcaoVoto.ABSTENCAO, 1.0)
+        ));
+
+        ApuracaoResponseDTO apuracao = votacaoService.apurar(200L);
+        assertEquals(ResultadoVotacao.ELEITA, apuracao.resultado());
+        assertNotNull(apuracao.chapaVencedora());
+        assertEquals("Chapa A", apuracao.chapaVencedora().nome());
+        assertEquals(2.0, apuracao.chapaVencedora().votos());
+        assertEquals(1.0, apuracao.abstencoes());
+
+        // Cenário 2: Empate entre Chapa A e Chapa B
+        when(votoRepository.findByVotacaoId(200L)).thenReturn(List.of(
+                Voto.emChapa(eleicao, chapaA, 1.0),
+                Voto.emChapa(eleicao, chapaB, 1.0)
+        ));
+
+        ApuracaoResponseDTO apuracaoEmpate = votacaoService.apurar(200L);
+        assertEquals(ResultadoVotacao.EMPATE, apuracaoEmpate.resultado());
+        assertNull(apuracaoEmpate.chapaVencedora());
     }
 }

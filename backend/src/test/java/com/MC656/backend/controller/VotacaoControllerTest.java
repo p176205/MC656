@@ -37,14 +37,14 @@ class VotacaoControllerTest {
     private VotacaoResponseDTO resposta(StatusVotacao status) {
         return new VotacaoResponseDTO(100L, "Reforma", "Aprovar reforma", 1L, "Assembleia Geral",
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, status, null, null,
-                "Obras", 10, null, null, null, null);
+                "Obras", 10, null, null, null, null, List.of());
     }
 
     @Test
     void abrir_Retorna201() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null);
         Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class))).thenReturn(resposta(StatusVotacao.ABERTA));
 
         mockMvc.perform(post("/api/votacoes")
@@ -59,8 +59,21 @@ class VotacaoControllerTest {
     @Test
     void abrir_SemTitulo_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("", "Aprovar reforma", 1L,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null);
+
+        mockMvc.perform(post("/api/votacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+        Mockito.verifyNoInteractions(votacaoService);
+    }
+
+    @Test
+    void abrir_SemAdminId_Retorna400() throws Exception {
+        VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/votacoes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,8 +85,8 @@ class VotacaoControllerTest {
     @Test
     void abrir_RegraInvalidaNaEntidade_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
-                RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null);
         Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class)))
                 .thenThrow(new IllegalArgumentException("O percentual mínimo deve estar entre 0 (exclusivo) e 100."));
 
@@ -114,7 +127,7 @@ class VotacaoControllerTest {
     void votar_Retorna201SemCorpo() throws Exception {
         mockMvc.perform(post("/api/votacoes/100/votos")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(new VotoRequestDTO(7L, OpcaoVoto.SIM))))
+                        .content(jsonMapper.writeValueAsString(new VotoRequestDTO(7L, OpcaoVoto.SIM, null))))
                 .andExpect(status().isCreated())
                 .andExpect(content().string(""));
 
@@ -137,7 +150,7 @@ class VotacaoControllerTest {
 
         mockMvc.perform(post("/api/votacoes/100/votos")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(new VotoRequestDTO(7L, OpcaoVoto.SIM))))
+                        .content(jsonMapper.writeValueAsString(new VotoRequestDTO(7L, OpcaoVoto.SIM, null))))
                 .andExpect(status().isConflict());
     }
 
@@ -154,7 +167,7 @@ class VotacaoControllerTest {
     void apurar_Retorna200() throws Exception {
         Mockito.when(votacaoService.apurar(100L)).thenReturn(new ApuracaoResponseDTO(100L, "Reforma",
                 ResultadoVotacao.APROVADA, true, 2.0, 1.0, 0.0, 3,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 66.67));
+                RegraAprovacao.MAIORIA_SIMPLES, null, 66.67, java.util.List.of(), null));
 
         mockMvc.perform(get("/api/votacoes/100/apuracao"))
                 .andExpect(status().isOk())
@@ -169,5 +182,25 @@ class VotacaoControllerTest {
 
         mockMvc.perform(get("/api/votacoes/100/apuracao"))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void atualizarChapa_Retorna200() throws Exception {
+        com.MC656.backend.dto.ChapaUpdateDTO updateDto =
+                new com.MC656.backend.dto.ChapaUpdateDTO(7L, "Chapa União", "Proposta de gestão participativa");
+        com.MC656.backend.dto.ChapaResponseDTO responseDto =
+                new com.MC656.backend.dto.ChapaResponseDTO(10L, 100L, "Chapa União",
+                        "Proposta de gestão participativa",
+                        java.util.List.of(new com.MC656.backend.dto.MembroChapaDTO(7L, "João", "joao@email.com")));
+
+        Mockito.when(votacaoService.atualizarChapa(eq(100L), eq(10L), any()))
+                .thenReturn(responseDto);
+
+        mockMvc.perform(put("/api/votacoes/100/chapas/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(updateDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nome").value("Chapa União"))
+                .andExpect(jsonPath("$.proposta").value("Proposta de gestão participativa"));
     }
 }

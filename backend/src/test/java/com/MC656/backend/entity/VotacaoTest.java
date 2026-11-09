@@ -13,7 +13,7 @@ class VotacaoTest {
 
     private Votacao maioriaSimples(LocalDateTime inicio, LocalDateTime fim) {
         return new Votacao("Reforma", "Aprovar reforma da portaria", assembleia,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, inicio, fim);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, inicio, fim);
     }
 
     @Test
@@ -28,27 +28,27 @@ class VotacaoTest {
     @Test
     void deveRejeitarTituloVazio() {
         assertThrows(IllegalArgumentException.class, () -> new Votacao(" ", "desc", assembleia,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
     }
 
     @Test
     void deveRejeitarVotacaoSemContexto() {
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", null,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
     }
 
     @Test
     void percentualMinimoDeveSerObrigatorioParaRegraPercentual() {
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
-                RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null));
+                TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null));
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
-                RegraAprovacao.PERCENTUAL_MINIMO, 120.0, 50.0, null, null));
+                TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, 120.0, 50.0, null, null));
     }
 
     @Test
     void percentualMinimoDeveSerIgnoradoNaMaioriaSimples() {
         Votacao votacao = new Votacao("Pauta", "desc", assembleia,
-                RegraAprovacao.MAIORIA_SIMPLES, 70.0, 50.0, null, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, 70.0, 50.0, null, null);
 
         assertNull(votacao.getPercentualMinimo());
     }
@@ -56,9 +56,9 @@ class VotacaoTest {
     @Test
     void deveRejeitarQuorumForaDaFaixa() {
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
-                RegraAprovacao.MAIORIA_SIMPLES, null, -1.0, null, null));
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, -1.0, null, null));
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 101.0, null, null));
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 101.0, null, null));
     }
 
     @Test
@@ -137,5 +137,34 @@ class VotacaoTest {
         assertEquals(1.0, new Participacao(usuario, assembleia, Papel.MEMBRO).getPeso());
         assertThrows(IllegalArgumentException.class,
                 () -> new Participacao(usuario, assembleia, Papel.MEMBRO, 0.0));
+    }
+
+    @Test
+    void deveCriarEleicaoChapaEPermitirEdicaoPelosMembros() {
+        Usuario membro = new Usuario("Carlos", "carlos@email.com", "senha123");
+        membro.setId(10L);
+        Usuario outro = new Usuario("Julia", "julia@email.com", "senha123");
+        outro.setId(20L);
+
+        Votacao eleicao = new Votacao("Eleição CA", "Eleição da diretoria", assembleia,
+                TipoVotacao.ELEICAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null);
+        Chapa chapa = new Chapa(eleicao, "Chapa 1", null, java.util.List.of(membro));
+
+        assertEquals(TipoVotacao.ELEICAO, eleicao.getTipo());
+        assertTrue(chapa.contemMembro(10L));
+        assertFalse(chapa.contemMembro(20L));
+
+        chapa.atualizarInformacoes("Chapa Renovação", "Proposta de transparência e eventos");
+        assertEquals("Chapa Renovação", chapa.getNome());
+        assertEquals("Proposta de transparência e eventos", chapa.getProposta());
+
+        Voto votoNaChapa = Voto.emChapa(eleicao, chapa, 1.0);
+        assertSame(chapa, votoNaChapa.getChapa());
+        assertNull(votoNaChapa.getOpcao());
+
+        Voto votoEmBranco = new Voto(eleicao, OpcaoVoto.ABSTENCAO, 1.0);
+        assertEquals(OpcaoVoto.ABSTENCAO, votoEmBranco.getOpcao());
+        assertNull(votoEmBranco.getChapa());
+        assertThrows(IllegalArgumentException.class, () -> new Voto(eleicao, OpcaoVoto.SIM, 1.0));
     }
 }
