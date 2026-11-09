@@ -173,6 +173,24 @@ public class ContextoService {
                 .max(Comparator.comparing(Participacao::getPeso));
     }
 
+    // Verifica se o usuario possui papel de administracao no contexto
+    public boolean isAdministradorDoContexto(Long usuarioId, Long contextoId) {
+        if (usuarioId == null || contextoId == null) {
+            return false;
+        }
+        return participacaoRepository.findByUsuarioIdAndContextoId(usuarioId, contextoId).stream()
+                .anyMatch(p -> p.getPapel() == Papel.ADMINISTRADOR || p.getPapel() == Papel.SINDICO);
+    }
+
+    // Busca um usuario garantindo que ele participa do contexto informado
+    public Usuario buscarMembroDoContexto(Long usuarioId, Long contextoId) {
+        return participacaoRepository.findByUsuarioIdAndContextoId(usuarioId, contextoId).stream()
+                .findFirst()
+                .map(Participacao::getUsuario)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "O usuário " + usuarioId + " não participa deste contexto."));
+    }
+
     // Eleitorado do contexto: id do usuário -> peso do seu voto
     public Map<Long, Double> pesosDoEleitorado(Long contextoId) {
         List<Participacao> participacoes = participacaoRepository.findByContextoId(contextoId);

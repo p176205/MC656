@@ -14,7 +14,7 @@ class QuorumServiceTest {
             new QuorumService(List.of(new QuorumPorCabecaStrategy(), new QuorumPorPesoStrategy()));
 
     private final Votacao votacao = new Votacao("Pauta", "desc", new Condominio("Edifício", 4),
-            RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null);
+            TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null);
 
     @Test
     void assembleiaContaPorCabeca() {
