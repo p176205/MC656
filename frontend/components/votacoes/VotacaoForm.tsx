@@ -8,6 +8,7 @@ import type {
   VotacaoResponse,
 } from "../../entities/entities";
 import { cadastrarVotacao } from "../../services/apiFacade";
+import { toast } from "sonner";
 
 export type VotacaoFormValues = {
   nome: string;
@@ -197,8 +198,10 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
     try {
       const resposta = await cadastrarVotacao(criarCadastroVotacao(contextoId, tipoContexto, valores));
       setVotacaoCriada(resposta);
+      toast.success("Votação cadastrada com sucesso!")
     } catch (erro) {
       setErroApi(erro instanceof Error ? erro.message : "Não foi possível cadastrar a votação.");
+      toast.error("Não foi possível cadastrar a votação!")
     } finally {
       setEnviando(false);
     }
@@ -215,7 +218,7 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
         onChange={(evento) => atualizarCampo(campo, evento.target.value)}
         aria-invalid={Boolean(erros[campo])}
         aria-describedby={erros[campo] ? `${campo}-erro` : undefined}
-        className="rounded-md border border-gray-300 p-2 outline-none focus:border-purple-600"
+        className="rounded-md border border-indigo-500 p-2 outline-none focus:border-purple-600"
       />
     ) : (
       <input
@@ -227,7 +230,7 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
         onChange={(evento) => atualizarCampo(campo, evento.target.value)}
         aria-invalid={Boolean(erros[campo])}
         aria-describedby={erros[campo] ? `${campo}-erro` : undefined}
-        className="rounded-md border border-gray-300 p-2 outline-none focus:border-purple-600"
+        className="rounded-md border border-indigo-500 p-2 outline-none focus:border-purple-600"
       />
     );
 
@@ -260,7 +263,7 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
           onChange={(evento) => atualizarCampo(campo, evento.target.value)}
           aria-invalid={Boolean(erros[campo])}
           aria-describedby={erros[campo] ? `${campo}-erro` : undefined}
-          className="rounded-md border border-gray-300 p-2 outline-none focus:border-purple-600"
+          className="rounded-md border border-indigo-500 p-2 outline-none focus:border-purple-600"
         />
         {erros[campo] && <span id={`${campo}-erro`} className="text-sm font-normal text-red-700">{erros[campo]}</span>}
       </label>
@@ -280,7 +283,7 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
           onChange={(evento) => atualizarCampo(campo, evento.target.value)}
           aria-invalid={Boolean(erros[campo])}
           aria-describedby={erros[campo] ? `${campo}-erro` : undefined}
-          className="rounded-md border border-gray-300 p-2 outline-none focus:border-purple-600"
+          className="rounded-md border border-indigo-500 p-2 outline-none focus:border-purple-600"
         />
         {erros[campo] && <span id={`${campo}-erro`} className="text-sm font-normal text-red-700">{erros[campo]}</span>}
       </label>
@@ -290,7 +293,8 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
   const camposEspecificos = camposEspecificosPorTipoContexto[tipoContexto];
 
   return (
-    <form onSubmit={enviarFormulario} noValidate className="flex w-full max-w-2xl flex-col gap-5 rounded-lg border p-6 shadow-md">
+    <section className="flex justify-center items-center">
+    <form onSubmit={enviarFormulario} noValidate className="flex w-full max-w-3xl border-indigo-500 border-r-8 border-r-indigo-500 flex-col gap-5 rounded-xl border px-8 py-10 shadow-md">
       {campoTexto("nome", "Nome")}
       {campoTexto("descricao", "Descrição", true)}
 
@@ -304,7 +308,7 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
           onChange={(evento) => atualizarCampo("regraAprovacao", evento.target.value)}
           aria-invalid={Boolean(erros.regraAprovacao)}
           aria-describedby={erros.regraAprovacao ? "regraAprovacao-erro" : undefined}
-          className="rounded-md border border-gray-300 p-2 outline-none focus:border-purple-600"
+          className="rounded-md border border-indigo-500 p-2 outline-none focus:border-indigo-600"
         >
           <option value="">Selecione uma regra</option>
           <option value="MAIORIA_SIMPLES">Maioria simples</option>
@@ -326,20 +330,14 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
       {campoData("dataInicio", "Data e hora de início")}
       {campoData("dataFim", "Data e hora de fim")}
 
-      {erroApi && <p role="alert" className="rounded-md bg-red-50 p-3 text-red-800">{erroApi}</p>}
-      {votacaoCriada && (
-        <p role="status" className="rounded-md bg-green-50 p-3 text-green-800">
-          Votação “{votacaoCriada.titulo}” cadastrada com sucesso (ID {votacaoCriada.id}).
-        </p>
-      )}
-
       <button
         type="submit"
         disabled={enviando}
-        className="rounded-md bg-purple-700 p-3 font-medium text-white hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-md bg-indigo-500 p-3 font-medium text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {enviando ? "Cadastrando..." : "Cadastrar votação"}
       </button>
     </form>
+    </section>
   );
 }

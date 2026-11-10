@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import type { ContextoDetalhe } from "@/entities/entities";
 import { buscarContexto } from "@/services/apiFacade";
 import VotacaoForm from "@/components/votacoes/VotacaoForm";
+import { MdArrowBack } from "react-icons/md";
 
 export default function NovaVotacaoPage() {
   const { contextoId: contextoIdParam } = useParams<{ contextoId: string }>();
@@ -29,7 +30,11 @@ export default function NovaVotacaoPage() {
         if (!cancelado) setContexto(resultado);
       } catch (erroApi) {
         if (!cancelado) {
-          setErro(erroApi instanceof Error ? erroApi.message : "Não foi possível carregar o contexto.");
+          setErro(
+            erroApi instanceof Error
+              ? erroApi.message
+              : "Não foi possível carregar o contexto.",
+          );
         }
       } finally {
         if (!cancelado) setCarregando(false);
@@ -43,21 +48,26 @@ export default function NovaVotacaoPage() {
   }, [contextoId]);
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 py-10">
-      <Link
-        href={`/contextos/${contextoIdParam}/votacoes`}
-        className="text-sm font-medium text-purple-700 hover:text-purple-900"
-      >
-        ← Voltar para votações
-      </Link>
-      <header className="mb-8 mt-4">
-        <p className="text-sm font-medium text-purple-700">Contexto {contextoIdParam}</p>
+    <main className="mx-auto w-full max-w-3xl px-6 py-10">
+      <header className="flex flex-row mb-8 mt-4 justify-between">
         <h1 className="mt-1 text-3xl font-bold text-gray-900">Nova votação</h1>
+        <Link
+          className="inline-flex items-center gap-2 text-indigo-800 bg-indigo-300 py-2 px-4 rounded-xl font-medium hover:bg-indigo-200 hover:shadow-sm"
+          href="/home"
+        >
+          <MdArrowBack size={20} />
+          Voltar
+        </Link>
       </header>
 
       {carregando && <p role="status">Carregando contexto...</p>}
       {!carregando && erro && (
-        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-800">{erro}</p>
+        <p
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-800"
+        >
+          {erro}
+        </p>
       )}
       {!carregando && contexto && (
         <VotacaoForm contextoId={contexto.id} tipoContexto={contexto.tipo} />

@@ -107,7 +107,7 @@ export default function CriarContexto({
   };
 
   return (
-    <div className="max-w-xl w-full mx-auto p-6 bg-white rounded-xl shadow-md border border-gray-100 my-8">
+    <div className="max-w-xl w-full mx-auto p-6 bg-white border-r-8 border-r-indigo-500 rounded-xl shadow-md border border-gray-100 my-8">
       {/* Indicador de Progresso */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-2">
