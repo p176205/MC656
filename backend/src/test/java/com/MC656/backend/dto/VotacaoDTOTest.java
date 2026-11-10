@@ -26,13 +26,14 @@ class VotacaoDTOTest {
     @Test
     void deveValidarCamposObrigatoriosDoCadastro() {
         VotacaoCreateDTO dto = new VotacaoCreateDTO(
-                " ", " ", null, null, null, null, null, null,
-                null, null, null, null, null, null);
+                " ", " ", null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null);
 
         Set<ConstraintViolation<VotacaoCreateDTO>> violacoes = validator.validate(dto);
 
         assertFalse(violacoes.isEmpty());
         assertTrue(violacoes.stream().anyMatch(violacao -> violacao.getPropertyPath().toString().equals("contextoId")));
+        assertTrue(violacoes.stream().anyMatch(violacao -> violacao.getPropertyPath().toString().equals("tipo")));
         assertTrue(violacoes.stream().anyMatch(violacao -> violacao.getPropertyPath().toString().equals("titulo")));
         assertTrue(violacoes.stream().anyMatch(violacao -> violacao.getPropertyPath().toString().equals("descricao")));
         assertTrue(violacoes.stream().anyMatch(violacao -> violacao.getPropertyPath().toString().equals("regraAprovacao")));
@@ -42,9 +43,9 @@ class VotacaoDTOTest {
     @Test
     void deveValidarCamposEspecificosNumericosQuandoInformados() {
         VotacaoCreateDTO dto = new VotacaoCreateDTO(
-                "Votação", "Descrição", 1L, RegraAprovacao.MAIORIA_SIMPLES,
-                null, 25.0, dataInicio, dataFim,
-                "Pauta", 0, java.math.BigDecimal.ZERO, null, null, null);
+                "Votação", "Descrição", 1L, TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES,
+                null, 25.0, dataInicio, dataFim, "Pauta", 0,
+                java.math.BigDecimal.ZERO, null, null, null, 1L, null);
 
         Set<ConstraintViolation<VotacaoCreateDTO>> violacoes = validator.validate(dto);
 
@@ -59,7 +60,7 @@ class VotacaoDTOTest {
         VotacaoResponseDTO dto = new VotacaoResponseDTO(
                 10L, "Votação", "Descrição", 1L, "Assembleia", TipoVotacao.DELIBERACAO,
                 RegraAprovacao.MAIORIA_SIMPLES, null, 25.0, StatusVotacao.ABERTA,
-                dataInicio, dataFim, "Pauta", 25, null, null, null, null);
+                dataInicio, dataFim, "Pauta", 25, null, null, null, null, java.util.List.of());
 
         assertEquals(10L, dto.id());
         assertEquals("Votação", dto.titulo());

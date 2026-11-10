@@ -116,7 +116,7 @@ public class Votacao {
         this.categoriaSegmento = categoriaSegmento;
         this.elegibilidade = elegibilidade;
         validar_votacao(percentualMinimo);
-        if (validarCamposEspecificos) {
+        if (validarCamposEspecificos && tipo == TipoVotacao.DELIBERACAO) {
             validarCamposPorTipoContexto();
         }
     }

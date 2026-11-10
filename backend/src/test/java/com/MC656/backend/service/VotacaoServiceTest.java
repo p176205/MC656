@@ -102,7 +102,8 @@ class VotacaoServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
                 "Reforma", "Aprovar reforma", 1L, TipoVotacao.DELIBERACAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, null)));
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L, null)));
         verify(votacaoRepository, never()).save(any());
     }
 
@@ -379,7 +380,8 @@ class VotacaoServiceTest {
 
         VotacaoCreateDTO dto = new VotacaoCreateDTO(
                 "Eleição Diretoria", "Escolha a nova gestão", 1L, TipoVotacao.ELEICAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
                 List.of(
                         new ChapaCreateDTO("Chapa A", null, List.of(11L)),
                         new ChapaCreateDTO("Chapa B", null, List.of(12L))
@@ -401,7 +403,8 @@ class VotacaoServiceTest {
 
         VotacaoCreateDTO dto = new VotacaoCreateDTO(
                 "Eleição Diretoria", "Escolha a nova gestão", 1L, TipoVotacao.ELEICAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
                 List.of(new ChapaCreateDTO("Chapa A", null, List.of(11L)))
         );
 
