@@ -12,6 +12,14 @@ export type ResultadoApi = {
   message: string;
 };
 
+// Mensagem retornada pelo backend
+export type Mensagem = {
+  id: number;
+  usuarioId: number;
+  texto: string;
+  dataEnvio: string;
+};
+
 // POST /api/usuarios
 export async function cadastrarUsuario(usuario: Usuario): Promise<ResultadoApi> {
   const resposta = await fetch(`${API_URL}/api/usuarios`, {
@@ -138,5 +146,52 @@ export async function getContextos(usuarioId: number): Promise<Response> {
   );
 
   return resposta;
+}
+
+// GET /api/contextos/{contextoId}/mensagens?usuarioId={usuarioId}
+// Busca as mensagens de um contexto
+export async function buscarMensagens(
+  contextoId: number,
+  usuarioId: number
+): Promise<Mensagem[]> {
+  const resposta = await fetch(
+    `${API_URL}/api/contextos/${contextoId}/mensagens?usuarioId=${usuarioId}`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+
+  if (!resposta.ok) {
+    const message = await resposta.text();
+    throw new Error(message || "Erro ao buscar mensagens.");
+  }
+
+  return (await resposta.json()) as Mensagem[];
+}
+
+// POST /api/contextos/{contextoId}/mensagens?usuarioId={usuarioId}
+// Envia uma mensagem para um contexto
+export async function enviarMensagem(
+  contextoId: number,
+  usuarioId: number,
+  texto: string
+): Promise<Mensagem> {
+  const resposta = await fetch(
+    `${API_URL}/api/contextos/${contextoId}/mensagens?usuarioId=${usuarioId}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ texto }),
+    }
+  );
+
+  if (!resposta.ok) {
+    const message = await resposta.text();
+    throw new Error(message || "Erro ao enviar mensagem.");
+  }
+
+  return (await resposta.json()) as Mensagem;
 }
 

@@ -9,10 +9,19 @@ import {
   UsuarioResponse,
   Votacao,
 } from "@/entities/entities";
-import { getContextos, getIdUser, logoutUsuario } from "@/services/apiFacade";
+import {
+  buscarMensagens,
+  enviarMensagem,
+  getContextos,
+  getIdUser,
+  logoutUsuario,
+  Mensagem,
+} from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { MdMessage, MdSend } from "react-icons/md";
+import { LuMessagesSquare } from "react-icons/lu";
 
 export default function Home() {
   const router = useRouter();
@@ -25,6 +34,8 @@ export default function Home() {
   const [criarContexto, setCriarContexto] = useState(false);
   const [entrarContexto, setEntrarContexto] = useState(false);
   const [logout, setLogout] = useState<boolean>(false);
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [textoMensagem, setTextoMensagem] = useState("");
   const [votacoes, setVotacoes] = useState<Votacao[]>([
     {
       titulo: "Votacao 1",
@@ -89,6 +100,25 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    async function carregarMensagens() {
+      if (!contextoAtual || !user) return;
+
+      try {
+        const mensagens: Mensagem[] = await buscarMensagens(
+          contextoAtual.id,
+          user.id,
+        );
+        console.log(mensagens)
+        setMensagens(mensagens);
+      } catch (erro) {
+        console.error("Erro ao carregar mensagens:", erro);
+      }
+    }
+
+    carregarMensagens();
+  }, [contextoAtual, user]);
+
+  useEffect(() => {
     if (!user && !carregando) {
       toast.warning(
         "Você precisa estar logado para criar ou entrar em um contexto.",
@@ -117,6 +147,22 @@ export default function Home() {
 
     executarLogout();
   }, [logout, router]);
+
+  async function EnviarMensagem() {
+    if (!contextoAtual || !user) return;
+
+    try {
+      const novaMensagem: Mensagem = await enviarMensagem(
+        contextoAtual.id,
+        user.id,
+        textoMensagem,
+      );
+
+      setMensagens((mensagensAtuais) => [...mensagensAtuais, novaMensagem]); // Atualiza o array de mensagens com esta que acabou de ser feita
+    } catch (erro) {
+      console.error("Erro ao enviar mensagem:", erro);
+    }
+  }
 
   if (carregando) {
     return (
@@ -202,55 +248,70 @@ export default function Home() {
             </p>
             {/* Simulação de um chat */}
             <section className="h-[54vh] overflow-y-auto">
-              {[
-                { id: 1, mensagem: "It is a long established fact that a reader will be distracted by the readable " },
-                { id: 2, mensagem: "It is a long established fact that a reader will be distracted by the readable " },
-                { id: 3, mensagem: "It is a long established fact that a reader will be distracted by the readable " },
-                {
-                  id: 1,
-                  mensagem:
-                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
-                },
-                {
-                  id: 1,
-                  mensagem:
-                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
-                },
-                {
-                  id: 1,
-                  mensagem:
-                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
-                },
-                {
-                  id: 2,
-                  mensagem:
-                    "Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride ",
-                },
-              ].map((elem, index) =>
-                elem.id === user?.id ? (
-                  <div key={index} className="flex justify-end">
+              {mensagens.length > 0 ? (
+                mensagens.map((elem, index) =>
+                  elem.usuarioId === user?.id ? (
                     <div
-                      className="flex rounded-lg p-2 my-2 w-[50vh] bg-indigo-300 text-black"
+                      key={index}
+                      className="flex flex-col items-end"
                     >
-                      {elem.mensagem}
+                      <div className="flex rounded-lg p-2 my-2 w-[50vh] bg-indigo-300 text-black">
+                        {elem.texto}
+                      </div>
+                      <p className="text-sm text-gray-800">
+                        {new Date(elem.dataEnvio).toLocaleString("pt-BR")}
+                      </p>
                     </div>
+                  ) : (
+                    <div
+                      key={index}
+                      className="flex flex-col items-start"
+                    >
+                      <div
+                        key={index}
+                        className="flex rounded-lg p-2  my-2 w-[50vh] bg-indigo-200 text-black"
+                      >
+                        {elem.texto}
+                      </div>
+                      <p className="text-sm text-gray-800">
+                        {new Date(elem.dataEnvio).toLocaleString("pt-BR")}
+                      </p>
+                    </div>
+                  ),
+                )
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-3 py-12 mx-[14vw]">
+                  <div className="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-100">
+                    <LuMessagesSquare size={30} className="text-indigo-500" />
                   </div>
-                ) : (
-                  <div
-                    key={index}
-                    className="flex rounded-lg p-2  my-2 w-[50vh] bg-indigo-200 text-black"
-                  >
-                    {elem.mensagem}
-                  </div>
-                ),
+
+                  <p className="text-gray-700 text-center text-lg font-medium">
+                    Este contexto ainda não tem nenhuma mensagem.
+                  </p>
+
+                  <p className="text-gray-500 text-sm text-center">
+                    Quando uma mensagem for enviada, ela aparecerá aqui.
+                  </p>
+                </div>
               )}
             </section>
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-2">
               <input
                 className="bg-white rounded-2xl h-[5vh] w-[80vh] justify-end items-end text-black border-2 border-indigo-500 hover:border-indigo-500 mt-4 p-3"
                 placeholder="Digite a mensagem..."
                 type="text"
+                value={textoMensagem}
+                onChange={(e) => setTextoMensagem(e.target.value)}
               ></input>
+              <button
+                className="flex justify-center bg-indigo-500 w-[7vh] h-[5vh] mt-4 p-3 rounded-xl"
+                onClick={() => {
+                  EnviarMensagem();
+                  setTextoMensagem("");
+                }}
+              >
+                <MdSend color="white" size={24} />
+              </button>
             </div>
           </section>
         );
@@ -264,7 +325,10 @@ export default function Home() {
             {/* Exibir as votações disponiveis: Deixei um exemplo para visualizarmos apenas */}
             <section className="flex flex-col gap-3 py-3">
               {votacoes.map((votacao, index) => (
-                <div key={index} className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60">
+                <div
+                  key={index}
+                  className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60"
+                >
                   <div className="flex items-center justify-between gap-4">
                     <h3 className="font-semibold text-indigo-950 line-clamp-1">
                       {votacao.titulo}
