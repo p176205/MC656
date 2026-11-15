@@ -11,4 +11,6 @@ public interface ParticipacaoRepository extends JpaRepository<Participacao, Long
     List<Participacao> findByUsuarioIdAndContextoId(Long usuarioId, Long contextoId);
 
     List<Participacao> findByContextoId(Long contextoId);
+    
+    boolean existsByUsuario_IdAndContexto_Id(Long id_user, Long id_contexto);
 }

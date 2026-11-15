@@ -1,8 +1,9 @@
 package com.MC656.backend.entity;
 
-/* Tipo do processo de votacao. "Votacao" é a abstracao do núcleo; por enquanto só
-   deliberacoes (pautas com Sim/Nao/Abstencao) estao implementadas. A eleicao de chapas
-   deve entrar aqui como um novo tipo, reaproveitando a mesma entidade e o mesmo fluxo. */
+/* Tipo do processo de votacao:
+   - DELIBERACAO: pauta votada com SIM, NAO ou ABSTENCAO
+   - ELEICAO: escolha entre chapas cadastradas (ou ABSTENCAO / voto em branco) */
 public enum TipoVotacao {
-    DELIBERACAO
+    DELIBERACAO,
+    ELEICAO
 }

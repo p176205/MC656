@@ -5,6 +5,7 @@ import com.MC656.backend.entity.StatusVotacao;
 import com.MC656.backend.entity.TipoVotacao;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record VotacaoResponseDTO(
         Long id,
@@ -18,5 +19,6 @@ public record VotacaoResponseDTO(
         Double quorumMinimo,
         StatusVotacao status,
         LocalDateTime dataInicio,
-        LocalDateTime dataFim
+        LocalDateTime dataFim,
+        List<ChapaResponseDTO> chapas
 ) {}

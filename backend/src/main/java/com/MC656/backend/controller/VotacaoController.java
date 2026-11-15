@@ -1,6 +1,8 @@
 package com.MC656.backend.controller;
 
 import com.MC656.backend.dto.ApuracaoResponseDTO;
+import com.MC656.backend.dto.ChapaResponseDTO;
+import com.MC656.backend.dto.ChapaUpdateDTO;
 import com.MC656.backend.dto.VotacaoCreateDTO;
 import com.MC656.backend.dto.VotacaoResponseDTO;
 import com.MC656.backend.dto.VotoRequestDTO;
@@ -13,10 +15,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-// Endpoints para abertura de pautas, votacao e apuracao
+// Endpoints para abertura de pautas e eleicoes, edicao de chapas, votacao e apuracao
 @RestController
 @RequestMapping("/api/votacoes")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class VotacaoController {
 
     private final VotacaoService votacaoService;
@@ -38,6 +40,18 @@ public class VotacaoController {
     @GetMapping("/contexto/{contextoId}")
     public List<VotacaoResponseDTO> listarPorContexto(@PathVariable Long contextoId) {
         return votacaoService.listarPorContexto(contextoId);
+    }
+
+    @GetMapping("/{id}/chapas")
+    public List<ChapaResponseDTO> listarChapas(@PathVariable Long id) {
+        return votacaoService.listarChapas(id);
+    }
+
+    @PutMapping("/{id}/chapas/{chapaId}")
+    public ChapaResponseDTO atualizarChapa(@PathVariable Long id,
+                                           @PathVariable Long chapaId,
+                                           @Valid @RequestBody ChapaUpdateDTO dto) {
+        return votacaoService.atualizarChapa(id, chapaId, dto);
     }
 
     // Nao devolve a opcao escolhida: a resposta so confirma que o voto foi computado

@@ -52,13 +52,13 @@ public class Votacao {
         // precisa pro JPA
     }
 
-    public Votacao(String titulo, String descricao, Contexto contexto, RegraAprovacao regraAprovacao,
-            Double percentualMinimo, Double quorumMinimo, LocalDateTime dataInicio,
-            LocalDateTime dataFim) {
+    public Votacao(String titulo, String descricao, Contexto contexto, TipoVotacao tipo,
+            RegraAprovacao regraAprovacao, Double percentualMinimo, Double quorumMinimo,
+            LocalDateTime dataInicio, LocalDateTime dataFim) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.contexto = contexto;
-        this.tipo = TipoVotacao.DELIBERACAO;
+        this.tipo = tipo;
         this.regraAprovacao = regraAprovacao;
         this.percentualMinimo = regraAprovacao == RegraAprovacao.PERCENTUAL_MINIMO ? percentualMinimo : null;
         this.quorumMinimo = quorumMinimo;
@@ -77,6 +77,9 @@ public class Votacao {
         }
         if (contexto == null) {
             throw new IllegalArgumentException("A votação deve pertencer a um contexto.");
+        }
+        if (tipo == null) {
+            throw new IllegalArgumentException("O tipo da votação deve ser informado.");
         }
         if (regraAprovacao == null) {
             throw new IllegalArgumentException("A regra de aprovação deve ser informada.");
