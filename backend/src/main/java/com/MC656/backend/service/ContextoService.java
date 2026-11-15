@@ -92,7 +92,7 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-    @Transactional  // para executar todas as operacoes em conjunto
+    @Transactional // para executar todas as operacoes em conjunto
     public ContextoResponseDTO entrarContexto(Long id_user, UUID codigo) {
 
         // 1. Buscar contexto pelo UUID
