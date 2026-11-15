@@ -44,7 +44,7 @@ public class MensagemService {
             .orElseThrow(() -> new IllegalArgumentException("Contexto não encontrado."));
 
         // Registra a nova mensagem
-        Mensagem mensagem = new Mensagem(contexto, texto);
+        Mensagem mensagem = new Mensagem(contexto, usuarioId, texto);
         return mensagemRepository.save(mensagem);
     }
 }

@@ -15,6 +15,7 @@ export type ResultadoApi = {
 // Mensagem retornada pelo backend
 export type Mensagem = {
   id: number;
+  usuarioId: number;
   texto: string;
   dataEnvio: string;
 };

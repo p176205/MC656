@@ -108,7 +108,7 @@ export default function Home() {
           contextoAtual.id,
           user.id,
         );
-
+        console.log(mensagens)
         setMensagens(mensagens);
       } catch (erro) {
         console.error("Erro ao carregar mensagens:", erro);
@@ -250,7 +250,7 @@ export default function Home() {
             <section className="h-[54vh] overflow-y-auto">
               {mensagens.length > 0 ? (
                 mensagens.map((elem, index) =>
-                  elem.id === user?.id ? (
+                  elem.usuarioId === user?.id ? (
                     <div
                       key={index}
                       className="flex flex-col items-end"
