@@ -18,7 +18,6 @@ import com.MC656.backend.entity.Condominio;
 import com.MC656.backend.entity.Contexto;
 import com.MC656.backend.entity.Papel;
 import com.MC656.backend.entity.Participacao;
-import com.MC656.backend.entity.TipoContexto;
 import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.repository.ContextoRepository;
 import com.MC656.backend.repository.ParticipacaoRepository;
@@ -92,7 +91,7 @@ public class ContextoService {
         return contextoSalvo;
     }
 
-    @Transactional  // para executar todas as operacoes em conjunto
+    @Transactional // para executar todas as operacoes em conjunto
     public ContextoResponseDTO entrarContexto(Long id_user, UUID codigo) {
 
         // 1. Buscar contexto pelo UUID
