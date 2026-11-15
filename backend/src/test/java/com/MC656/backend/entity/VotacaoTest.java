@@ -32,6 +32,20 @@ class VotacaoTest {
     }
 
     @Test
+    void deveRejeitarTituloNulo() {
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(null, "desc", assembleia,
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
+    }
+
+    @Test
+    void deveRejeitarDescricaoVaziaOuNula() {
+        assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", " ", assembleia,
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", null, assembleia,
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
+    }
+
+    @Test
     void deveRejeitarVotacaoSemContexto() {
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", null,
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null));
@@ -43,6 +57,21 @@ class VotacaoTest {
                 TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null));
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
                 TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, 120.0, 50.0, null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
+                TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, 0.0, 50.0, null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
+                TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, -1.0, 50.0, null, null));
+    }
+
+    @Test
+    void percentualMinimoAceitaLimiteSuperiorEQuorumAceitaExtremos() {
+        Votacao votacao = new Votacao("Pauta", "desc", assembleia, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.PERCENTUAL_MINIMO, 100.0, 0.0, null, null);
+        assertEquals(100.0, votacao.getPercentualMinimo());
+        assertEquals(0.0, votacao.getQuorumMinimo());
+        Votacao quorumMaximo = new Votacao("Pauta", "desc", assembleia, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 100.0, null, null);
+        assertEquals(100.0, quorumMaximo.getQuorumMinimo());
     }
 
     @Test
@@ -59,12 +88,16 @@ class VotacaoTest {
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, -1.0, null, null));
         assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 101.0, null, null));
+        assertThrows(IllegalArgumentException.class, () -> new Votacao("Pauta", "desc", assembleia,
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, null, null, null));
     }
 
     @Test
     void deveRejeitarFimAntesDoInicio() {
         LocalDateTime agora = LocalDateTime.now();
         assertThrows(IllegalArgumentException.class, () -> maioriaSimples(agora, agora.minusHours(1)));
+        assertThrows(IllegalArgumentException.class, () -> maioriaSimples(agora, agora));
+        assertDoesNotThrow(() -> maioriaSimples(agora, agora.plusSeconds(1)));
     }
 
     @Test
