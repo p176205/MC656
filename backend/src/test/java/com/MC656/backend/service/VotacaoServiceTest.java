@@ -628,12 +628,14 @@ class VotacaoServiceTest {
         // Sem chapas
         assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
                 "Eleição", "Descrição", 1L, TipoVotacao.ELEICAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, List.of())));
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L, List.of())));
 
         // Chapas com nomes duplicados (case-insensitive)
         assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
                 "Eleição", "Descrição", 1L, TipoVotacao.ELEICAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
                 List.of(
                         new ChapaCreateDTO("Chapa A", null, List.of(11L)),
                         new ChapaCreateDTO(" chapa a ", null, List.of(12L))
@@ -642,7 +644,8 @@ class VotacaoServiceTest {
         // Mesmo usuário em duas chapas distintas na mesma eleição
         assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
                 "Eleição", "Descrição", 1L, TipoVotacao.ELEICAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
                 List.of(
                         new ChapaCreateDTO("Chapa A", null, List.of(11L)),
                         new ChapaCreateDTO("Chapa B", null, List.of(11L))
