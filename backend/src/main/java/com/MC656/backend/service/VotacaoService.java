@@ -3,7 +3,6 @@ package com.MC656.backend.service;
 import com.MC656.backend.dto.*;
 import com.MC656.backend.entity.*;
 import com.MC656.backend.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,7 +94,13 @@ public class VotacaoService {
                 dto.percentualMinimo(),
                 dto.quorumMinimo(),
                 dto.dataInicio(),
-                dto.dataFim()
+                dto.dataFim(),
+                dto.pauta(),
+                dto.participantesAptos(),
+                dto.pesoVoto(),
+                dto.unidadeApartamento(),
+                dto.categoriaSegmento(),
+                dto.elegibilidade()
         );
         return votacaoRepository.save(votacao);
     }
@@ -202,6 +207,8 @@ public class VotacaoService {
 
     @Transactional(readOnly = true)
     public List<VotacaoResponseDTO> listarPorContexto(Long contextoId) {
+        contextoRepository.findById(contextoId)
+                .orElseThrow(() -> new NoSuchElementException("Contexto não encontrado."));
         return votacaoRepository.findByContextoId(contextoId).stream()
                 .map(this::toDTO)
                 .toList();
@@ -418,6 +425,12 @@ public class VotacaoService {
                 v.getStatus(),
                 v.getDataInicio(),
                 v.getDataFim(),
+                v.getPauta(),
+                v.getParticipantesAptos(),
+                v.getPesoVoto(),
+                v.getUnidadeApartamento(),
+                v.getCategoriaSegmento(),
+                v.getElegibilidade(),
                 chapasDTO
         );
     }
