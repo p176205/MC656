@@ -2,6 +2,7 @@ package com.MC656.backend.entity;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,6 +65,37 @@ class VotacaoTest {
     void deveRejeitarFimAntesDoInicio() {
         LocalDateTime agora = LocalDateTime.now();
         assertThrows(IllegalArgumentException.class, () -> maioriaSimples(agora, agora.minusHours(1)));
+    }
+
+    @Test
+    void deveValidarCamposEspecificosPorTipoDeContexto() {
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                "Pauta", "Descrição", assembleia, RegraAprovacao.MAIORIA_SIMPLES,
+                null, 50.0, null, null, null, 10, null, null, null, null));
+
+        Votacao votacaoAssembleia = new Votacao(
+                "Pauta", "Descrição", assembleia, RegraAprovacao.MAIORIA_SIMPLES,
+                null, 50.0, null, null, "Reforma", 10, null, null, null, null);
+        assertEquals("Reforma", votacaoAssembleia.getPauta());
+        assertEquals(10, votacaoAssembleia.getParticipantesAptos());
+
+        Condominio condominio = new Condominio("Edifício", 10);
+        Votacao votacaoCondominio = new Votacao(
+                "Pauta", "Descrição", condominio, RegraAprovacao.MAIORIA_SIMPLES,
+                null, 50.0, null, null, null, null, new BigDecimal("1.5"), "Apto 2", null, null);
+        assertEquals(new BigDecimal("1.5"), votacaoCondominio.getPesoVoto());
+        assertEquals("Apto 2", votacaoCondominio.getUnidadeApartamento());
+        assertThrows(IllegalArgumentException.class, () -> new Votacao(
+                "Pauta", "Descrição", condominio, RegraAprovacao.MAIORIA_SIMPLES,
+                null, 50.0, null, null, "Campo inválido", null,
+                BigDecimal.ONE, "Apto 2", null, null));
+
+        CentroAcademico centro = new CentroAcademico("Centro", 2);
+        Votacao votacaoCentro = new Votacao(
+                "Pauta", "Descrição", centro, RegraAprovacao.MAIORIA_SIMPLES,
+                null, 50.0, null, null, null, null, null, null, "Graduação", "Matriculados");
+        assertEquals("Graduação", votacaoCentro.getCategoriaSegmento());
+        assertEquals("Matriculados", votacaoCentro.getElegibilidade());
     }
 
     @Test

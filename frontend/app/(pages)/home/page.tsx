@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import CriarContexto from "@/components/criarContexto";
 import EntrarContexto from "@/components/entrarContexto";
 import Navbar from "@/components/navbar";
@@ -7,10 +8,11 @@ import {
   Aba,
   ContextoDTO,
   UsuarioResponse,
-  Votacao,
+  VotacaoResponse,
 } from "@/entities/entities";
 import {
   buscarMensagens,
+  buscarVotacoesPorContexto,
   enviarMensagem,
   getContextos,
   getIdUser,
@@ -20,7 +22,7 @@ import {
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { MdMessage, MdSend } from "react-icons/md";
+import { MdBarChart, MdHowToVote, MdInfoOutline, MdSend } from "react-icons/md";
 import { LuMessagesSquare } from "react-icons/lu";
 
 export default function Home() {
@@ -34,32 +36,12 @@ export default function Home() {
   const [criarContexto, setCriarContexto] = useState(false);
   const [entrarContexto, setEntrarContexto] = useState(false);
   const [logout, setLogout] = useState<boolean>(false);
+  const [votacoes, setVotacoes] = useState<VotacaoResponse[]>([]);
+  const [carregandoVotacoes, setCarregandoVotacoes] = useState(false);
+  const [erroVotacoes, setErroVotacoes] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [textoMensagem, setTextoMensagem] = useState("");
-  const [votacoes, setVotacoes] = useState<Votacao[]>([
-    {
-      titulo: "Votacao 1",
-      descricao: "Votacao descricao",
-      //contexto: ,
-      tipo: "DELIBERACAO",
-      regra_aprovacao: "MAIORIA_SIMPLES",
-      quorum_minimo: 100,
-      status: "ENCERRADA",
-      data_inicio: "11-02-2026",
-      data_fim: "11-22-2026",
-    },
-    {
-      titulo: "Votacao 2",
-      descricao: "Votacao descricao 2",
-      //contexto: ,
-      tipo: "DELIBERACAO",
-      regra_aprovacao: "MAIORIA_SIMPLES",
-      quorum_minimo: 100,
-      status: "ABERTA",
-      data_inicio: "11-02-2026",
-      data_fim: "11-22-2026",
-    },
-  ]);
+
   useEffect(() => {
     async function carregarDados() {
       setCarregando(true);
@@ -100,6 +82,37 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let cancelado = false;
+    if (!contextoAtual) return;
+    const contextoId = contextoAtual.id;
+
+    async function carregarVotacoes() {
+      setCarregandoVotacoes(true);
+      setErroVotacoes(null);
+      try {
+        const resultado = await buscarVotacoesPorContexto(contextoId);
+        if (!cancelado) setVotacoes(resultado);
+      } catch (erro) {
+        if (!cancelado) {
+          setErroVotacoes(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível carregar as votações.",
+          );
+          setVotacoes([]);
+        }
+      } finally {
+        if (!cancelado) setCarregandoVotacoes(false);
+      }
+    }
+
+    void carregarVotacoes();
+    return () => {
+      cancelado = true;
+    };
+  }, [contextoAtual]);
+
+  useEffect(() => {
     async function carregarMensagens() {
       if (!contextoAtual || !user) return;
 
@@ -108,7 +121,7 @@ export default function Home() {
           contextoAtual.id,
           user.id,
         );
-        console.log(mensagens)
+        console.log(mensagens);
         setMensagens(mensagens);
       } catch (erro) {
         console.error("Erro ao carregar mensagens:", erro);
@@ -238,6 +251,8 @@ export default function Home() {
   }
 
   function renderizarConteudo() {
+    if (!contextoAtual) return null;
+
     switch (abaSelecionada) {
       case "COMUNIDADE":
         return (
@@ -251,10 +266,7 @@ export default function Home() {
               {mensagens.length > 0 ? (
                 mensagens.map((elem, index) =>
                   elem.usuarioId === user?.id ? (
-                    <div
-                      key={index}
-                      className="flex flex-col items-end"
-                    >
+                    <div key={index} className="flex flex-col items-end">
                       <div className="flex rounded-lg p-2 my-2 w-[50vh] bg-indigo-300 text-black">
                         {elem.texto}
                       </div>
@@ -263,10 +275,7 @@ export default function Home() {
                       </p>
                     </div>
                   ) : (
-                    <div
-                      key={index}
-                      className="flex flex-col items-start"
-                    >
+                    <div key={index} className="flex flex-col items-start">
                       <div
                         key={index}
                         className="flex rounded-lg p-2  my-2 w-[50vh] bg-indigo-200 text-black"
@@ -319,43 +328,110 @@ export default function Home() {
       case "VOTACAO":
         return (
           <section className="rounded-2xl border-2 border-indigo-500 p-6 h-[74vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold">Votações</h2>
-            <p className="mt-2 text-gray-600">Consulte todas as votações.</p>
-
-            {/* Exibir as votações disponiveis: Deixei um exemplo para visualizarmos apenas */}
-            <section className="flex flex-col gap-3 py-3">
-              {votacoes.map((votacao, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <h3 className="font-semibold text-indigo-950 line-clamp-1">
-                      {votacao.titulo}
-                    </h3>
-                    <span
-                      className={`flex flex-row items-center gap-2 shrink-0 rounded-full border-2 px-3 py-1 text-xs font-medium border-indigo-500`}
-                    >
-                      <span>{votacao.status}</span>
-                      <span
-                        className={`w-2 h-2 rounded-full ${votacao.status === "ENCERRADA" ? "bg-red-500" : "bg-green-500"}`}
-                      ></span>
-                    </span>
-                  </div>
-                  <p className="text-sm text-indigo-900/80 line-clamp-2">
-                    {votacao.descricao}
-                  </p>
-                  <div className="flex items-center justify-between border-t border-indigo-300/90 pt-2 text-xs text-indigo-700">
-                    <span>
-                      Início:{" "}
-                      {new Date(votacao.data_inicio).toLocaleDateString()}
-                    </span>
-                    <span>
-                      Fim: {new Date(votacao.data_fim).toLocaleDateString()}
-                    </span>
-                  </div>
+            <div className="flex flex-row justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Votações</h2>
+                <p className="mt-2 text-gray-600">
+                  Consulte todas as votações.
+                </p>
+              </div>
+              {contextoAtual.papel == "ADMINISTRADOR" && (
+                <div className="flex justify-center items-center">
+                  <Link
+                    href={`/contextos/${contextoAtual.id}/votacoes/nova`}
+                    className="inline-block rounded-2xl bg-indigo-300 hover:bg-indigo-300/85  p-3 text-center itens-center text-gray-800"
+                  >
+                    Criar nova votação
+                  </Link>
                 </div>
-              ))}
+              )}
+            </div>
+            <section className="flex flex-col gap-3 py-3">
+              {carregandoVotacoes && (
+                <p role="status">Carregando votações...</p>
+              )}
+              {!carregandoVotacoes && erroVotacoes && (
+                <p className="text-red-700">{erroVotacoes}</p>
+              )}
+              {!carregandoVotacoes &&
+                !erroVotacoes &&
+                votacoes.length === 0 && (
+                  <div className="flex flex-col items-center justify-center gap-3 py-12 mx-[19vw]">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-100">
+                      <MdHowToVote size={30} className="text-indigo-500" />
+                    </div>
+
+                    <p className="text-gray-700 text-center text-lg font-medium">
+                      Este contexto ainda não tem votações.
+                    </p>
+
+                    <p className="text-gray-500 text-sm text-center">
+                      Quando uma votação for criada, ela aparecerá aqui.
+                    </p>
+                  </div>
+                )}
+              {!carregandoVotacoes &&
+                !erroVotacoes &&
+                votacoes.map((votacao) => (
+                  <section
+                    key={votacao.id}
+                    className="flex flex-col gap-3 rounded-2xl bg-indigo-100 p-4 transition-all hover:bg-indigo-200/60"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <h3 className="font-semibold text-indigo-950 line-clamp-1">
+                        {votacao.titulo}
+                      </h3>
+                      <span className="flex shrink-0 items-center gap-2 rounded-full border-2 border-indigo-500 px-3 py-1 text-xs font-medium">
+                        <span>{votacao.status}</span>
+                        <span
+                          className={`h-2 w-2 rounded-full ${votacao.status === "ENCERRADA" ? "bg-red-500" : "bg-green-500"}`}
+                        />
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 text-sm text-indigo-900/80">
+                      {votacao.descricao}
+                    </p>
+                    <section className="flex flex-wrap items-center gap-3 mt-4">
+                      <Link
+                        href={`contextos/${contextoAtual.id}/votacoes/${votacao.id}`}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
+                      >
+                        <MdInfoOutline size={19} />
+                        Detalhes
+                      </Link>
+
+                      <Link
+                        href="Votar"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
+                      >
+                        <MdHowToVote size={19} />
+                        Votar
+                      </Link>
+
+                      <Link
+                        href="Resultados"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
+                      >
+                        <MdBarChart size={19} />
+                        Resultados
+                      </Link>
+                    </section>
+                    <div className="flex items-center justify-between border-t border-indigo-300/90 pt-2 text-xs text-indigo-700">
+                      <span>
+                        Início:
+                        {votacao.dataInicio
+                          ? new Date(votacao.dataInicio).toLocaleString()
+                          : "Não definido"}
+                      </span>
+                      <span>
+                        Fim:{" "}
+                        {votacao.dataFim
+                          ? new Date(votacao.dataFim).toLocaleString()
+                          : "Não definido"}
+                      </span>
+                    </div>
+                  </section>
+                ))}
             </section>
           </section>
         );

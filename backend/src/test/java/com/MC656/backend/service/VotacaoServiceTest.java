@@ -59,7 +59,14 @@ class VotacaoServiceTest {
     }
 
     private Votacao votacao(Contexto contexto, RegraAprovacao regra, Double percentual, double quorum) {
-        Votacao v = new Votacao("Pauta", "Descrição", contexto, TipoVotacao.DELIBERACAO, regra, percentual, quorum, null, null);
+        Votacao v = new Votacao("Pauta", "Descrição", contexto, TipoVotacao.DELIBERACAO, regra,
+                percentual, quorum, null, null,
+                contexto instanceof Assembleia ? "Pauta" : null,
+                contexto instanceof Assembleia ? 10 : null,
+                contexto instanceof Condominio ? java.math.BigDecimal.ONE : null,
+                contexto instanceof Condominio ? "Apto 1" : null,
+                contexto instanceof CentroAcademico ? "Graduação" : null,
+                contexto instanceof CentroAcademico ? "Matriculados" : null);
         ReflectionTestUtils.setField(v, "id", 100L);
         return v;
     }
@@ -78,12 +85,14 @@ class VotacaoServiceTest {
 
         VotacaoResponseDTO response = votacaoService.abrir(new VotacaoCreateDTO(
                 "Reforma", "Aprovar reforma", 1L, TipoVotacao.DELIBERACAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, null));
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null));
 
         assertEquals(100L, response.id());
         assertEquals(1L, response.contextoId());
         assertEquals(StatusVotacao.ABERTA, response.status());
         assertEquals(TipoVotacao.DELIBERACAO, response.tipo());
+        assertEquals("Obras", response.pauta());
     }
 
     @Test
@@ -93,7 +102,8 @@ class VotacaoServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
                 "Reforma", "Aprovar reforma", 1L, TipoVotacao.DELIBERACAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, null)));
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L, null)));
         verify(votacaoRepository, never()).save(any());
     }
 
@@ -103,8 +113,29 @@ class VotacaoServiceTest {
 
         assertThrows(NoSuchElementException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
                 "Reforma", "Aprovar reforma", 99L, TipoVotacao.DELIBERACAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, null)));
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null)));
         verify(votacaoRepository, never()).save(any());
+    }
+
+    @Test
+    void listarPorContexto_RetornaVotacoesDoContexto() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(votacaoRepository.findByContextoId(1L))
+                .thenReturn(List.of(votacao(assembleia, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0)));
+
+        List<VotacaoResponseDTO> respostas = votacaoService.listarPorContexto(1L);
+
+        assertEquals(1, respostas.size());
+        assertEquals(1L, respostas.get(0).contextoId());
+    }
+
+    @Test
+    void listarPorContexto_ContextoInexistente() {
+        when(contextoRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> votacaoService.listarPorContexto(999L));
+        verifyNoInteractions(votacaoRepository);
     }
 
     // ---------- voto ----------
@@ -181,7 +212,8 @@ class VotacaoServiceTest {
     @Test
     void votar_AntesDoInicio() {
         Votacao v = new Votacao("Pauta", "Descrição", assembleia, TipoVotacao.DELIBERACAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, LocalDateTime.now().plusDays(1), null);
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, LocalDateTime.now().plusDays(1), null,
+                "Pauta", 10, null, null, null, null);
         when(votacaoRepository.findById(100L)).thenReturn(Optional.of(v));
 
         assertThrows(IllegalStateException.class,
@@ -348,7 +380,8 @@ class VotacaoServiceTest {
 
         VotacaoCreateDTO dto = new VotacaoCreateDTO(
                 "Eleição Diretoria", "Escolha a nova gestão", 1L, TipoVotacao.ELEICAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
                 List.of(
                         new ChapaCreateDTO("Chapa A", null, List.of(11L)),
                         new ChapaCreateDTO("Chapa B", null, List.of(12L))
@@ -370,7 +403,8 @@ class VotacaoServiceTest {
 
         VotacaoCreateDTO dto = new VotacaoCreateDTO(
                 "Eleição Diretoria", "Escolha a nova gestão", 1L, TipoVotacao.ELEICAO,
-                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
                 List.of(new ChapaCreateDTO("Chapa A", null, List.of(11L)))
         );
 

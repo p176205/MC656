@@ -11,13 +11,13 @@ import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.ContextoResponseDTO;
+import com.MC656.backend.dto.ContextoDetalheDTO;
 import com.MC656.backend.entity.Assembleia;
 import com.MC656.backend.entity.CentroAcademico;
 import com.MC656.backend.entity.Condominio;
 import com.MC656.backend.entity.Contexto;
 import com.MC656.backend.entity.Papel;
 import com.MC656.backend.entity.Participacao;
-import com.MC656.backend.entity.TipoContexto;
 import com.MC656.backend.entity.Usuario;
 import com.MC656.backend.repository.ContextoRepository;
 import com.MC656.backend.repository.ParticipacaoRepository;
@@ -165,6 +165,12 @@ public class ContextoService {
 
                 // Reúne todos os DTOs produzidos em uma nova lista.
                 .toList();
+    }
+
+    public ContextoDetalheDTO buscarDetalhes(Long contextoId) {
+        Contexto contexto = contextoRepository.findById(contextoId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Contexto não encontrado."));
+        return new ContextoDetalheDTO(contexto.getId(), contexto.getNome(), contexto.getTipo());
     }
 
     // Retorna a participacao que habilita o usuario a votar no contexto, se existir

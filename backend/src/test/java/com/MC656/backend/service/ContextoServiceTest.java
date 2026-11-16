@@ -13,6 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.test.util.ReflectionTestUtils;
+import com.MC656.backend.dto.ContextoDetalheDTO;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -71,5 +73,24 @@ class ContextoServiceTest {
         Map<Long, Double> eleitorado = contextoService.pesosDoEleitorado(10L);
 
         assertEquals(Map.of(1L, 2.5, 2L, 1.5), eleitorado);
+    }
+
+    @Test
+    void buscaDetalhesDoContextoComTipo() {
+        ReflectionTestUtils.setField(condominio, "id", 12L);
+        when(contextoRepository.findById(12L)).thenReturn(Optional.of(condominio));
+
+        ContextoDetalheDTO detalhes = contextoService.buscarDetalhes(12L);
+
+        assertEquals(12L, detalhes.id());
+        assertEquals("Edifício", detalhes.nome());
+        assertEquals(TipoContexto.CONDOMINIO, detalhes.tipo());
+    }
+
+    @Test
+    void contextoInexistenteNaoTemDetalhes() {
+        when(contextoRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(java.util.NoSuchElementException.class, () -> contextoService.buscarDetalhes(999L));
     }
 }
