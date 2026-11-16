@@ -3,7 +3,6 @@ package com.MC656.backend.service;
 import com.MC656.backend.dto.*;
 import com.MC656.backend.entity.*;
 import com.MC656.backend.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
