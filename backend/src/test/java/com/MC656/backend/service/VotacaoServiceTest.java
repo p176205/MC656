@@ -108,6 +108,62 @@ class VotacaoServiceTest {
     }
 
     @Test
+    void abrir_AdminAusente_LancaExcecao() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Reforma", "Aprovar reforma", 1L, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, null, null)));
+        verify(contextoService, never()).isAdministradorDoContexto(any(), any());
+        verify(votacaoRepository, never()).save(any());
+    }
+
+    @Test
+    void abrir_DeliberacaoComChapas_LancaExcecao() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Reforma", "Aprovar reforma", 1L, TipoVotacao.DELIBERACAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
+                List.of(new ChapaCreateDTO("Chapa A", null, List.of(11L))))));
+        verify(votacaoRepository, never()).save(any());
+        verifyNoInteractions(chapaRepository);
+    }
+
+    @Test
+    void abrirEleicao_NomesDeChapaDuplicados_LancaExcecao() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Eleição", "Escolha a gestão", 1L, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
+                List.of(new ChapaCreateDTO("Chapa A", null, List.of(11L)),
+                        new ChapaCreateDTO(" chapa a ", null, List.of(12L))))));
+        verify(votacaoRepository, never()).save(any());
+        verifyNoInteractions(chapaRepository);
+    }
+
+    @Test
+    void abrirEleicao_MembroRepetidoNaEleicao_LancaExcecao() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Eleição", "Escolha a gestão", 1L, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
+                List.of(new ChapaCreateDTO("Chapa A", null, List.of(11L)),
+                        new ChapaCreateDTO("Chapa B", null, List.of(11L))))));
+        verify(votacaoRepository, never()).save(any());
+        verifyNoInteractions(chapaRepository);
+    }
+
+    @Test
     void abrir_ContextoInexistente() {
         when(contextoRepository.findById(99L)).thenReturn(Optional.empty());
 
