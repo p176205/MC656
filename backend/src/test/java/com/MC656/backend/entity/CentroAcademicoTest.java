@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
-import com.MC656.backend.entity.CentroAcademico;
-
 class CentroAcademicoTest {
 
     // TESTE 1: Verifica se a criação de um novo centro academico é feita corretamente (Nome, tipo e período de vigência válidos)
