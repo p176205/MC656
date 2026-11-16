@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
@@ -114,4 +115,83 @@ public class MensagemServiceTest {
         verify(mensagemRepository, never()).findByContextoIdOrderByDataEnvioAsc(anyLong());
     }
 
+    // TESTES 2: TESTES RELACIONADOS À FUNÇÃO ENVIAR MENSAGEM
+
+    // TESTE 2.1: Caso o usuário faça parte do contexto, é possível enviar uma nova mensagem
+    @Test
+    void permiteEnviarMensagemSeUsuarioParticipaContexto(){
+
+        // Criação um texto para a mensagem de teste e de IDs de um usuário e um contexto
+        String texto = "Teste";
+        Long usuarioId = 1L;
+        Long contextoId = 2L;
+
+        // Simulação de um contexto
+        Contexto contexto = mock(Contexto.class);
+
+        // Simulação de uma mensagem
+        Mensagem mensagemSalva = mock(Mensagem.class);
+
+        // Simulação da participação do usuário no contexto
+        when(participacaoRepository.findByUsuarioIdAndContextoId(usuarioId, contextoId)).thenReturn(List.of(mock(Participacao.class)));
+        when(contextoRepository.findById(contextoId)).thenReturn(Optional.of(contexto));
+
+        // Simulação do resultado esperado pelo método 
+        when(mensagemRepository.save(any(Mensagem.class))).thenReturn(mensagemSalva);
+
+        // Geração do resultado do método
+        Mensagem resultado = mensagemService.enviarMensagem(usuarioId, contextoId, texto);
+
+        // Confirma que o resultado obtido é igual ao resultado esperado (o método funciona nesse caso):
+        assertSame(mensagemSalva, resultado);
+
+        // Confirma que os métodos esperados realmente foram executados
+        verify(participacaoRepository).findByUsuarioIdAndContextoId(usuarioId, contextoId);
+        verify(contextoRepository).findById(contextoId);
+        verify(mensagemRepository).save(any(Mensagem.class));
+    }
+
+    // TESTE 2.2: Caso o usuário não faça parte do contexto, não é possível enviar uma mensagem
+    @Test
+    void naoPermiteEnviarMensagemSeUsuarioNaoParticipaContexto(){
+
+        // Criação um texto para a mensagem de teste e de IDs de um usuário e um contexto
+        String texto = "Teste";
+        Long usuarioId = 1L;
+        Long contextoId = 2L;
+
+        // Simulação de uma lista de participação vazia no contexto (o usuário não faz parte do contexto)
+        when(participacaoRepository.findByUsuarioIdAndContextoId(usuarioId, contextoId)).thenReturn(List.of());
+
+        // Verifica que o método retorna a exceção esperada caso um usuário que não faça parte do contexto tente enviar mensagem
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> mensagemService.enviarMensagem(usuarioId, contextoId, texto));
+        assertEquals("O usuário não faz parte deste contexto.", excecao.getMessage());
+
+        // Verifica que os métodos bloqueados realmente não foram executados
+        verify(contextoRepository, never()).findById(anyLong());
+        verify(mensagemRepository, never()).save(any(Mensagem.class));
+    }
+
+    // TESTE 2.3: Caso o contexto não exista, não é possível enviar uma mensagem
+    @Test
+    void naoPermiteEnviarMensagemSeContextoNaoExiste(){
+
+        // Criação um texto para a mensagem de teste e de IDs de um usuário e um contexto
+        String texto = "Teste";
+        Long usuarioId = 1L;
+        Long contextoId = 2L;
+
+        // Simulação da participação do usuário no contexto
+        when(participacaoRepository.findByUsuarioIdAndContextoId(usuarioId, contextoId)).thenReturn(List.of(mock(Participacao.class)));
+
+        // Simulação de um contexto não encontrado no banco de dados
+        when(contextoRepository.findById(contextoId)).thenReturn(Optional.empty());
+
+        // Verifica que o método retorna a exceção esperada caso um usuário tente enviar mensagem em um contexto que não existe
+        IllegalArgumentException excecao = assertThrows(IllegalArgumentException.class, () -> mensagemService.enviarMensagem(usuarioId, contextoId, texto));
+        assertEquals("Contexto não encontrado.", excecao.getMessage());
+
+        // Verifica que a mensagem não foi salva
+        verify(mensagemRepository, never()).save(any(Mensagem.class));
+    }
 }
