@@ -403,9 +403,19 @@ class VotacaoServiceTest {
 
         assertEquals(ResultadoVotacao.APROVADA, votacaoService.apurar(100L).resultado());
 
+        // Fronteira exata: 1 SIM x 1 NAO = 50,0% quando o mínimo exigido é exatamente 50,0%
+        Votacao fronteiraExata = votacao(assembleia, RegraAprovacao.PERCENTUAL_MINIMO, 50.0, 0.0);
+        fronteiraExata.encerrar();
+        when(votacaoRepository.findById(100L)).thenReturn(Optional.of(fronteiraExata));
+        when(votoRepository.findByVotacaoId(100L)).thenReturn(List.of(
+                new Voto(fronteiraExata, OpcaoVoto.SIM, 1.0),
+                new Voto(fronteiraExata, OpcaoVoto.NAO, 1.0)));
+        assertEquals(ResultadoVotacao.APROVADA, votacaoService.apurar(100L).resultado());
+
         Votacao exigente = votacao(assembleia, RegraAprovacao.PERCENTUAL_MINIMO, 70.0, 0.0);
         exigente.encerrar();
         when(votacaoRepository.findById(100L)).thenReturn(Optional.of(exigente));
+        when(votoRepository.findByVotacaoId(100L)).thenReturn(votos);
 
         assertEquals(ResultadoVotacao.REJEITADA, votacaoService.apurar(100L).resultado());
     }
@@ -546,5 +556,128 @@ class VotacaoServiceTest {
         ApuracaoResponseDTO apuracaoEmpate = votacaoService.apurar(200L);
         assertEquals(ResultadoVotacao.EMPATE, apuracaoEmpate.resultado());
         assertNull(apuracaoEmpate.chapaVencedora());
+    }
+
+    @Test
+    void apurarEleicao_PercentualMinimoCalculaPercentualPorChapaEValidaCriterio() {
+        Votacao eleicao = new Votacao("Eleição", "Descrição", assembleia, TipoVotacao.ELEICAO,
+                RegraAprovacao.PERCENTUAL_MINIMO, 60.0, 50.0, null, null);
+        ReflectionTestUtils.setField(eleicao, "id", 200L);
+        eleicao.encerrar();
+
+        Chapa chapaA = new Chapa(eleicao, "Chapa A", "Proposta A", List.of(usuario));
+        ReflectionTestUtils.setField(chapaA, "id", 10L);
+        Chapa chapaB = new Chapa(eleicao, "Chapa B", "Proposta B", List.of(usuario));
+        ReflectionTestUtils.setField(chapaB, "id", 20L);
+
+        when(votacaoRepository.findById(200L)).thenReturn(Optional.of(eleicao));
+        when(chapaRepository.findByVotacaoId(200L)).thenReturn(List.of(chapaA, chapaB));
+        when(contextoService.pesosDoEleitorado(1L)).thenReturn(Map.of(1L, 1.0, 2L, 1.0, 3L, 1.0, 4L, 1.0, 5L, 1.0));
+
+        // Cenário 1: Chapa A obtém exatamente 60% dos votos válidos (3 de 5) -> ELEITA na fronteira exata
+        when(votoRepository.findByVotacaoId(200L)).thenReturn(List.of(
+                Voto.emChapa(eleicao, chapaA, 1.0),
+                Voto.emChapa(eleicao, chapaA, 1.0),
+                Voto.emChapa(eleicao, chapaA, 1.0),
+                Voto.emChapa(eleicao, chapaB, 1.0),
+                Voto.emChapa(eleicao, chapaB, 1.0)
+        ));
+
+        ApuracaoResponseDTO apuracaoEleita = votacaoService.apurar(200L);
+        assertEquals(ResultadoVotacao.ELEITA, apuracaoEleita.resultado());
+        assertNotNull(apuracaoEleita.chapaVencedora());
+        assertEquals(60.0, apuracaoEleita.chapaVencedora().percentualVotosValidos(), 1e-6);
+        assertEquals(60.0, apuracaoEleita.percentualSimObtido(), 1e-6);
+        assertEquals(40.0, apuracaoEleita.resultadosChapas().get(1).percentualVotosValidos(), 1e-6);
+
+        // Cenário 2: Chapa A tem mais votos (2 contra 1 = 66,67%), mas a eleição exige 70% -> REJEITADA
+        Votacao eleicaoExigente = new Votacao("Eleição", "Descrição", assembleia, TipoVotacao.ELEICAO,
+                RegraAprovacao.PERCENTUAL_MINIMO, 70.0, 50.0, null, null);
+        ReflectionTestUtils.setField(eleicaoExigente, "id", 200L);
+        eleicaoExigente.encerrar();
+        when(votacaoRepository.findById(200L)).thenReturn(Optional.of(eleicaoExigente));
+        when(votoRepository.findByVotacaoId(200L)).thenReturn(List.of(
+                Voto.emChapa(eleicaoExigente, chapaA, 1.0),
+                Voto.emChapa(eleicaoExigente, chapaA, 1.0),
+                Voto.emChapa(eleicaoExigente, chapaB, 1.0)
+        ));
+
+        ApuracaoResponseDTO apuracaoRejeitada = votacaoService.apurar(200L);
+        assertEquals(ResultadoVotacao.REJEITADA, apuracaoRejeitada.resultado());
+        assertNull(apuracaoRejeitada.chapaVencedora());
+        assertEquals(200.0 / 3.0, apuracaoRejeitada.percentualSimObtido(), 1e-6);
+
+        // Cenário 3: Apenas abstenções (totalVotosValidos == 0) -> REJEITADA e percentual nulo nas chapas
+        when(votoRepository.findByVotacaoId(200L)).thenReturn(List.of(
+                Voto.emBranco(eleicaoExigente, 1.0),
+                Voto.emBranco(eleicaoExigente, 1.0),
+                Voto.emBranco(eleicaoExigente, 1.0)
+        ));
+
+        ApuracaoResponseDTO apuracaoSoAbstencoes = votacaoService.apurar(200L);
+        assertEquals(ResultadoVotacao.REJEITADA, apuracaoSoAbstencoes.resultado());
+        assertNull(apuracaoSoAbstencoes.chapaVencedora());
+        assertNull(apuracaoSoAbstencoes.resultadosChapas().get(0).percentualVotosValidos());
+    }
+
+    @Test
+    void abrirEleicao_RejeitaSemChapasOuComNomesOuMembrosDuplicados() {
+        when(contextoRepository.findById(1L)).thenReturn(Optional.of(assembleia));
+        when(contextoService.isAdministradorDoContexto(7L, 1L)).thenReturn(true);
+
+        // Sem chapas
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Eleição", "Descrição", 1L, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L, List.of())));
+
+        // Chapas com nomes duplicados (case-insensitive)
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Eleição", "Descrição", 1L, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
+                List.of(
+                        new ChapaCreateDTO("Chapa A", null, List.of(11L)),
+                        new ChapaCreateDTO(" chapa a ", null, List.of(12L))
+                ))));
+
+        // Mesmo usuário em duas chapas distintas na mesma eleição
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.abrir(new VotacaoCreateDTO(
+                "Eleição", "Descrição", 1L, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                null, null, null, null, null, null, 7L,
+                List.of(
+                        new ChapaCreateDTO("Chapa A", null, List.of(11L)),
+                        new ChapaCreateDTO("Chapa B", null, List.of(11L))
+                ))));
+
+        verify(votacaoRepository, never()).save(any());
+    }
+
+    @Test
+    void atualizarChapa_RejeitaEleicaoEncerradaOuNomeEmUsoPorOutraChapa() {
+        Votacao eleicao = new Votacao("Eleição", "Descrição", assembleia, TipoVotacao.ELEICAO,
+                RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null);
+        ReflectionTestUtils.setField(eleicao, "id", 200L);
+
+        Chapa chapaA = new Chapa(eleicao, "Chapa A", "Proposta A", List.of(usuario));
+        ReflectionTestUtils.setField(chapaA, "id", 10L);
+        Chapa chapaB = new Chapa(eleicao, "Chapa B", "Proposta B", List.of(usuario));
+        ReflectionTestUtils.setField(chapaB, "id", 20L);
+
+        when(votacaoRepository.findById(200L)).thenReturn(Optional.of(eleicao));
+        when(chapaRepository.findByIdAndVotacaoId(10L, 200L)).thenReturn(Optional.of(chapaA));
+        when(chapaRepository.findByVotacaoId(200L)).thenReturn(List.of(chapaA, chapaB));
+
+        // Tentativa de renomear Chapa A para o nome já utilizado pela Chapa B
+        assertThrows(IllegalArgumentException.class, () -> votacaoService.atualizarChapa(
+                200L, 10L, new ChapaUpdateDTO(7L, "Chapa B", "Nova proposta")));
+
+        // Tentativa de editar chapa após o encerramento da eleição
+        eleicao.encerrar();
+        assertThrows(IllegalStateException.class, () -> votacaoService.atualizarChapa(
+                200L, 10L, new ChapaUpdateDTO(7L, "Chapa A Renovada", "Nova proposta")));
+
+        verify(chapaRepository, never()).save(any());
     }
 }
