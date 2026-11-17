@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.NoSuchElementException;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,13 +36,15 @@ class VotacaoControllerTest {
 
     private VotacaoResponseDTO resposta(StatusVotacao status) {
         return new VotacaoResponseDTO(100L, "Reforma", "Aprovar reforma", 1L, "Assembleia Geral",
-                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, status, null, null, java.util.List.of());
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, status, null, null,
+                "Obras", 10, null, null, null, null, List.of());
     }
 
     @Test
     void abrir_Retorna201() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
-                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null);
         Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class))).thenReturn(resposta(StatusVotacao.ABERTA));
 
         mockMvc.perform(post("/api/votacoes")
@@ -56,7 +59,8 @@ class VotacaoControllerTest {
     @Test
     void abrir_SemTitulo_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("", "Aprovar reforma", 1L,
-                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, 7L, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null);
 
         mockMvc.perform(post("/api/votacoes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -68,7 +72,8 @@ class VotacaoControllerTest {
     @Test
     void abrir_SemAdminId_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
-                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null, null, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/votacoes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +85,8 @@ class VotacaoControllerTest {
     @Test
     void abrir_RegraInvalidaNaEntidade_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
-                TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null, 7L, null);
+                TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null,
+                "Obras", 10, null, null, null, null, 7L, null);
         Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class)))
                 .thenThrow(new IllegalArgumentException("O percentual mínimo deve estar entre 0 (exclusivo) e 100."));
 
@@ -95,6 +101,25 @@ class VotacaoControllerTest {
         Mockito.when(votacaoService.buscar(99L)).thenThrow(new NoSuchElementException("Votação não encontrada."));
 
         mockMvc.perform(get("/api/votacoes/99"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listarPorContexto_RetornaLista() throws Exception {
+        Mockito.when(votacaoService.listarPorContexto(1L)).thenReturn(List.of(resposta(StatusVotacao.ABERTA)));
+
+        mockMvc.perform(get("/api/votacoes/contexto/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].contextoId").value(1))
+                .andExpect(jsonPath("$[0].titulo").value("Reforma"));
+    }
+
+    @Test
+    void listarPorContexto_ContextoInexistente_Retorna404() throws Exception {
+        Mockito.when(votacaoService.listarPorContexto(999L))
+                .thenThrow(new NoSuchElementException("Contexto não encontrado."));
+
+        mockMvc.perform(get("/api/votacoes/contexto/999"))
                 .andExpect(status().isNotFound());
     }
 

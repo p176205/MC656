@@ -5,7 +5,9 @@ import com.MC656.backend.entity.TipoVotacao;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,6 +37,21 @@ public record VotacaoCreateDTO(
 
         LocalDateTime dataInicio,
         LocalDateTime dataFim,
+
+        String pauta,
+
+        @Positive(message = "A quantidade de participantes aptos deve ser positiva")
+        Integer participantesAptos,
+
+        @jakarta.validation.constraints.DecimalMin(
+                value = "0.0", inclusive = false, message = "O peso do voto deve ser positivo")
+        BigDecimal pesoVoto,
+
+        String unidadeApartamento,
+
+        String categoriaSegmento,
+
+        String elegibilidade,
 
         @NotNull(message = "O administrador responsável pela criação da votação é obrigatório")
         Long adminId,

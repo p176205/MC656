@@ -1,6 +1,7 @@
 package com.MC656.backend.service;
 
 import com.MC656.backend.dto.CondominioRequestDTO;
+import com.MC656.backend.dto.ContextoDetalheDTO;
 import com.MC656.backend.dto.ContextoResponseDTO;
 import com.MC656.backend.entity.*;
 import com.MC656.backend.repository.ContextoRepository;
@@ -48,7 +49,7 @@ class ContextoServiceTest {
         return u;
     }
 
-    // ---------- buscarParticipacaoVotante ----------
+    //  buscarParticipacaoVotante 
 
     @Test
     void usuarioSemParticipacaoNaoEhVotante() {
@@ -78,7 +79,7 @@ class ContextoServiceTest {
         assertEquals(2.5, participacao.orElseThrow().getPeso());
     }
 
-    // ---------- pesosDoEleitorado ----------
+    //  pesosDoEleitorado 
 
     @Test
     void eleitoradoVazioQuandoContextoNaoTemParticipacoes() {
@@ -111,7 +112,28 @@ class ContextoServiceTest {
         assertEquals(Map.of(1L, 2.5), contextoService.pesosDoEleitorado(10L));
     }
 
-    // ---------- criarCondominio ----------
+    // buscarDetalhes (veio da develop) 
+
+    @Test
+    void buscaDetalhesDoContextoComTipo() {
+        ReflectionTestUtils.setField(condominio, "id", 12L);
+        when(contextoRepository.findById(12L)).thenReturn(Optional.of(condominio));
+
+        ContextoDetalheDTO detalhes = contextoService.buscarDetalhes(12L);
+
+        assertEquals(12L, detalhes.id());
+        assertEquals("Edifício", detalhes.nome());
+        assertEquals(TipoContexto.CONDOMINIO, detalhes.tipo());
+    }
+
+    @Test
+    void contextoInexistenteNaoTemDetalhes() {
+        when(contextoRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(java.util.NoSuchElementException.class, () -> contextoService.buscarDetalhes(999L));
+    }
+
+    //  criarCondominio 
 
     @Test
     void criarCondominioRegistraCriadorComoAdministrador() {
@@ -139,7 +161,7 @@ class ContextoServiceTest {
         verify(participacaoRepository, never()).save(any());
     }
 
-    // ---------- listarContextosDoUsuario ----------
+    //  listarContextosDoUsuario 
 
     @Test
     void listarContextosDoUsuarioMapeiaParticipacoesParaDTO() {
@@ -161,7 +183,7 @@ class ContextoServiceTest {
         assertTrue(contextoService.listarContextosDoUsuario(1L).isEmpty());
     }
 
-    // ---------- isAdministradorDoContexto ----------
+    //  isAdministradorDoContexto
 
     @Test
     void isAdministradorRetornaFalseSeIdsForemNulos() {
@@ -187,7 +209,7 @@ class ContextoServiceTest {
         assertFalse(contextoService.isAdministradorDoContexto(1L, 10L));
     }
 
-    // ---------- buscarMembroDoContexto ----------
+    //  buscarMembroDoContexto 
 
     @Test
     void buscarMembroRetornaUsuarioDaParticipacao() {
@@ -206,7 +228,7 @@ class ContextoServiceTest {
                 () -> contextoService.buscarMembroDoContexto(1L, 10L));
     }
 
-    // ---------- entrarContexto ----------
+    //  entrarContexto 
 
     @Test
     void entrarContextoLancaExcecaoSeContextoNaoExiste() {
