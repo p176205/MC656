@@ -1,5 +1,7 @@
 package com.MC656.backend.entity;
 
+import java.util.UUID;
+
 import jakarta.persistence.*;
 
 @Entity // A classe representa uma entidade no banco de dados
@@ -8,60 +10,74 @@ import jakarta.persistence.*;
 @Inheritance(strategy = InheritanceType.JOINED)
 
 public abstract class Contexto {
-// "Contexto" deve ser uma classe abstrata, pois não deve existir um "Contexto" que não seja "CentroAcademico", "Condominio" ou "Assembleia"
+    // "Contexto" deve ser uma classe abstrata, pois não deve existir um "Contexto"
+    // que não seja "CentroAcademico", "Condominio" ou "Assembleia"
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Gera um id para o banco de dados
     private Long id;
+
+    @Column(nullable = false, unique = true, updatable = false)
+    private UUID codigo;
 
     private String nome;
 
     @Enumerated(EnumType.STRING) // Garante que o nome do tipo será salvo no banco de dados, ao invés de números
     private TipoContexto tipo;
 
-    // Construtor sem argumentos (deve ser protegido, para não permitir a criação de uma entidade "Contexto" fora do mecanismo de herança/JPA)
-    protected Contexto(){}
+    // Construtor sem argumentos (deve ser protegido, para não permitir a criação de
+    // uma entidade "Contexto" fora do mecanismo de herança/JPA)
+    protected Contexto() {
+    }
 
-    // Construtor com argumentos (utilizado por "CentroAcademico", "Condominio" e "Assembleia")
-    public Contexto(String nome, TipoContexto tipo){
+    // Construtor com argumentos (utilizado por "CentroAcademico", "Condominio" e
+    // "Assembleia")
+    public Contexto(String nome, TipoContexto tipo) {
         this.nome = nome;
         this.tipo = tipo;
+        this.codigo = UUID.randomUUID();
         validar_contexto();
     }
 
     // Confere se a entidade "Contexto" poderá ser criada sem erros
-    public final void validar_contexto(){
+    public final void validar_contexto() {
 
         // O nome do "Contexto" não pode estar vazio
         validarNome(nome);
 
         // O tipo do "Contexto" não pode ser nulo
-        if (tipo == null){
+        if (tipo == null) {
             throw new IllegalArgumentException("O tipo do contexto deve ser informado.");
         }
     }
 
-    public Long getId(){
+    public Long getId() {
         return id;
     }
 
-    public TipoContexto getTipo(){
+    public UUID getCodigo() {
+        return codigo;
+    }
+
+    public TipoContexto getTipo() {
         return tipo;
     }
 
-    public String getNome(){
+    public String getNome() {
         return nome;
     }
 
-    // O nome é o único atributo do "Contexto" que poderá ser modificado após a criação da entidade, caso necessário:
-    public void setNome(String nome){
+    // O nome é o único atributo do "Contexto" que poderá ser modificado após a
+    // criação da entidade, caso necessário:
+    public void setNome(String nome) {
         validarNome(nome);
         this.nome = nome;
     }
 
-    // Regra única do nome (usada na criação e na alteração): não pode ser nulo nem vazio
-    private void validarNome(String nome){
-        if (nome == null || nome.isBlank()){
+    // Regra única do nome (usada na criação e na alteração): não pode ser nulo nem
+    // vazio
+    private void validarNome(String nome) {
+        if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException("O nome do contexto não pode ser vazio.");
         }
     }

@@ -1,31 +1,21 @@
 "use client";
 
-type Aba = "comunidade" | "votacao" | "propostas" | "configurar-votacao";
+import { Aba} from "@/entities/entities";
 
 interface NavbarProps {
   abaSelecionada: Aba;
   setAbaSelecionada: (aba: Aba) => void;
-  ehAdmin: boolean;
-  tipoContexto: string;
 }
 
 export default function Navbar({
   abaSelecionada,
   setAbaSelecionada,
-  ehAdmin,
-  tipoContexto,
 }: NavbarProps) {
 
   const abas: { id: Aba; nome: string }[] = [
-    { id: "comunidade", nome: "Comunidade" },
-    { id: "votacao", nome: "Votação" },
-    {
-      id: tipoContexto === "assembleia" ? "propostas" : "propostas",
-      nome: tipoContexto === "assembleia" ? "Chapas" : "Propostas",
-    },
-    ...(ehAdmin
-      ? [{ id: "configurar-votacao" as Aba, nome: "Configurar votação" }]
-      : []),
+    { id: "COMUNIDADE", nome: "Comunidade" },
+    { id: "VOTACAO", nome: "Votações" },
+    { id: "MEMBROS", nome: "Membros" },
   ];
 
   return (
@@ -36,8 +26,8 @@ export default function Navbar({
           onClick={() => setAbaSelecionada(aba.id)}
           className={`shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
             abaSelecionada === aba.id
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-blue-600"
+              ? "border-indigo-600 text-indigo-600"
+              : "border-transparent text-gray-500 hover:text-indigo-600"
           }`}
         >
           {aba.nome}
