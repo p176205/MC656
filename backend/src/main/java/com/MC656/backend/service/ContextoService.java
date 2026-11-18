@@ -1,8 +1,11 @@
 package com.MC656.backend.service;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -12,6 +15,7 @@ import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.ContextoResponseDTO;
 import com.MC656.backend.dto.ContextoDetalheDTO;
+import com.MC656.backend.dto.MembroChapaDTO;
 import com.MC656.backend.entity.Assembleia;
 import com.MC656.backend.entity.CentroAcademico;
 import com.MC656.backend.entity.Condominio;
@@ -205,6 +209,23 @@ public class ContextoService {
                         p -> p.getUsuario().getId(),
                         Participacao::getPeso,
                         Math::max));
+    }
+
+    // Lista todos os usuários participantes do contexto (sem duplicatas por usuário)
+    public List<MembroChapaDTO> listarMembrosDoContexto(Long contextoId) {
+        contextoRepository.findById(contextoId)
+                .orElseThrow(() -> new NoSuchElementException("Contexto não encontrado."));
+        return participacaoRepository.findByContextoId(contextoId).stream()
+                .map(Participacao::getUsuario)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        Usuario::getId,
+                        u -> new MembroChapaDTO(u.getId(), u.getNome(), u.getEmail()),
+                        (existente, duplicado) -> existente,
+                        LinkedHashMap::new))
+                .values()
+                .stream()
+                .toList();
     }
 
 }

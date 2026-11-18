@@ -30,6 +30,7 @@ import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.ContextoDetalheDTO;
 import com.MC656.backend.dto.ContextoResponseDTO;
 import com.MC656.backend.dto.EntrarContextoRequestDTO;
+import com.MC656.backend.dto.MembroChapaDTO;
 import com.MC656.backend.entity.Assembleia;
 import com.MC656.backend.entity.CentroAcademico;
 import com.MC656.backend.entity.Condominio;
@@ -352,6 +353,30 @@ class ContextoControllerTest {
                                 .thenThrow(new NoSuchElementException("Contexto não encontrado."));
 
                 mockMvc.perform(get("/api/contextos/id/999"))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void deveListarMembrosDoContextoComSucesso() throws Exception {
+                when(contextoService.listarMembrosDoContexto(12L))
+                                .thenReturn(List.of(
+                                                new MembroChapaDTO(1L, "Ana", "ana@email.com"),
+                                                new MembroChapaDTO(2L, "Bruno", "bruno@email.com")));
+
+                mockMvc.perform(get("/api/contextos/12/membros"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].id").value(1))
+                                .andExpect(jsonPath("$[0].nome").value("Ana"))
+                                .andExpect(jsonPath("$[1].id").value(2))
+                                .andExpect(jsonPath("$[1].nome").value("Bruno"));
+        }
+
+        @Test
+        void deveRetornar404AoListarMembrosDeContextoInexistente() throws Exception {
+                when(contextoService.listarMembrosDoContexto(999L))
+                                .thenThrow(new NoSuchElementException("Contexto não encontrado."));
+
+                mockMvc.perform(get("/api/contextos/999/membros"))
                                 .andExpect(status().isNotFound());
         }
 }
