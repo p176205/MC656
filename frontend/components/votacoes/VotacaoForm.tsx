@@ -1,16 +1,36 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type {
+  ChapaCadastro,
+  MembroChapa,
   RegraAprovacao,
   TipoContexto,
+  TipoVotacao,
   VotacaoCadastro,
   VotacaoResponse,
 } from "../../entities/entities";
-import { cadastrarVotacao } from "../../services/apiFacade";
+import {
+  buscarMembrosDoContexto,
+  cadastrarVotacao,
+  getIdUser,
+} from "../../services/apiFacade";
 import { toast } from "sonner";
 
+export type ChapaFormValue = {
+  nome: string;
+  proposta: string;
+  membrosIds: number[];
+};
+
+export type ChapaFormErrors = {
+  nome?: string;
+  proposta?: string;
+  membrosIds?: string;
+};
+
 export type VotacaoFormValues = {
+  tipo: TipoVotacao;
   nome: string;
   descricao: string;
   regraAprovacao: string;
@@ -18,36 +38,150 @@ export type VotacaoFormValues = {
   quorumMinimo: string;
   dataInicio: string;
   dataFim: string;
-  pauta: string;
-  participantesAptos: string;
-  pesoVoto: string;
-  unidadeApartamento: string;
-  categoriaSegmento: string;
-  elegibilidade: string;
+  chapas: ChapaFormValue[];
 };
 
-export type VotacaoFormErrors = Partial<Record<keyof VotacaoFormValues, string>>;
-
-export const camposEspecificosPorTipoContexto: Record<
-  TipoContexto,
-  readonly ("pauta" | "participantesAptos" | "pesoVoto" | "unidadeApartamento" | "categoriaSegmento" | "elegibilidade")[]
-> = {
-  ASSEMBLEIA: ["pauta", "participantesAptos"],
-  CONDOMINIO: ["pesoVoto", "unidadeApartamento"],
-  CENTRO_ACADEMICO: ["categoriaSegmento", "elegibilidade"],
+export type VotacaoFormErrors = {
+  tipo?: string;
+  nome?: string;
+  descricao?: string;
+  regraAprovacao?: string;
+  percentualMinimo?: string;
+  quorumMinimo?: string;
+  dataInicio?: string;
+  dataFim?: string;
+  chapas?: string;
+  chapasItens?: Record<number, ChapaFormErrors>;
 };
+
+/* Padrão Strategy: encapsula os rótulos de interface, regras de validação específicas
+   e construção do payload de acordo com o TipoVotacao (DELIBERACAO ou ELEICAO). */
+export interface VotacaoFormStrategy {
+  readonly tipo: TipoVotacao;
+  readonly rotuloTitulo: string;
+  readonly rotuloDescricao: string;
+  readonly placeholderTitulo: string;
+  readonly placeholderDescricao: string;
+  validarEspecifico(valores: VotacaoFormValues, erros: VotacaoFormErrors): void;
+  construirChapasPayload(valores: VotacaoFormValues): ChapaCadastro[] | null;
+}
+
+const deliberacaoFormStrategy: VotacaoFormStrategy = {
+  tipo: "DELIBERACAO",
+  rotuloTitulo: "Título da Pauta",
+  rotuloDescricao: "Descrição da Pauta",
+  placeholderTitulo: "Informe o título da pauta",
+  placeholderDescricao: "Descreva os detalhes da pauta em deliberação",
+  validarEspecifico() {
+    // Deliberações não possuem chapas
+  },
+  construirChapasPayload() {
+    return null;
+  },
+};
+
+const eleicaoFormStrategy: VotacaoFormStrategy = {
+  tipo: "ELEICAO",
+  rotuloTitulo: "Título da Eleição",
+  rotuloDescricao: "Descrição da Eleição",
+  placeholderTitulo: "Informe o título da eleição",
+  placeholderDescricao: "Descreva os detalhes da eleição",
+  validarEspecifico(valores, erros) {
+    if (!valores.chapas || valores.chapas.length === 0) {
+      erros.chapas = "Adicione ao menos uma chapa para a eleição.";
+      return;
+    }
+
+    const nomesNormalizados = new Set<string>();
+    const membrosNaEleicao = new Set<number>();
+    const chapasItens: Record<number, ChapaFormErrors> = {};
+
+    valores.chapas.forEach((chapa, index) => {
+      const errosChapa: ChapaFormErrors = {};
+      const nomeLimpo = chapa.nome.trim();
+
+      if (!nomeLimpo) {
+        errosChapa.nome = "Informe o nome da chapa.";
+      } else {
+        const chaveNome = nomeLimpo.toLowerCase();
+        if (nomesNormalizados.has(chaveNome)) {
+          errosChapa.nome = "Não são permitidas chapas com nomes duplicados.";
+        } else {
+          nomesNormalizados.add(chaveNome);
+        }
+      }
+
+      if (!chapa.membrosIds || chapa.membrosIds.length === 0) {
+        errosChapa.membrosIds = "Selecione ao menos um membro do contexto para a chapa.";
+      } else {
+        for (const membroId of chapa.membrosIds) {
+          if (membrosNaEleicao.has(membroId)) {
+            errosChapa.membrosIds =
+              "Um membro não pode participar de mais de uma chapa na mesma eleição.";
+          } else {
+            membrosNaEleicao.add(membroId);
+          }
+        }
+      }
+
+      if (Object.keys(errosChapa).length > 0) {
+        chapasItens[index] = errosChapa;
+      }
+    });
+
+    if (Object.keys(chapasItens).length > 0) {
+      erros.chapasItens = chapasItens;
+    }
+  },
+  construirChapasPayload(valores) {
+    return valores.chapas.map((chapa) => ({
+      nome: chapa.nome.trim(),
+      proposta: chapa.proposta.trim() ? chapa.proposta.trim() : null,
+      membrosIds: [...chapa.membrosIds],
+    }));
+  },
+};
+
+export const estrategiasFormularioPorTipo: Record<TipoVotacao, VotacaoFormStrategy> = {
+  DELIBERACAO: deliberacaoFormStrategy,
+  ELEICAO: eleicaoFormStrategy,
+};
+
+export function obterEstrategiaFormulario(tipo: TipoVotacao): VotacaoFormStrategy {
+  return estrategiasFormularioPorTipo[tipo] ?? deliberacaoFormStrategy;
+}
+
+export function criarChapaVazia(): ChapaFormValue {
+  return {
+    nome: "",
+    proposta: "",
+    membrosIds: [],
+  };
+}
 
 const regrasAprovacao: RegraAprovacao[] = [
   "MAIORIA_SIMPLES",
   "PERCENTUAL_MINIMO",
 ];
 
-export function validarVotacaoForm(
-  tipoContexto: TipoContexto,
-  valores: VotacaoFormValues,
-): VotacaoFormErrors {
+const tiposVotacao: TipoVotacao[] = ["DELIBERACAO", "ELEICAO"];
+
+export function temErrosValidacao(erros: VotacaoFormErrors): boolean {
+  const { chapasItens, ...errosGerais } = erros;
+  const possuiErroGeral = Object.values(errosGerais).some((msg) => Boolean(msg));
+  const possuiErroChapa = chapasItens
+    ? Object.values(chapasItens).some((item) => Object.values(item).some((msg) => Boolean(msg)))
+    : false;
+  return possuiErroGeral || possuiErroChapa;
+}
+
+export function validarVotacaoForm(valores: VotacaoFormValues): VotacaoFormErrors {
   const erros: VotacaoFormErrors = {};
-  if (!valores.nome.trim()) erros.nome = "Informe o nome.";
+
+  if (!tiposVotacao.includes(valores.tipo)) {
+    erros.tipo = "Selecione o tipo da votação.";
+  }
+  if (!valores.nome.trim()) erros.nome = "Informe o título.";
   if (!valores.descricao.trim()) erros.descricao = "Informe a descrição.";
   if (!regrasAprovacao.includes(valores.regraAprovacao as RegraAprovacao)) {
     erros.regraAprovacao = "Selecione a regra de aprovação.";
@@ -55,13 +189,23 @@ export function validarVotacaoForm(
 
   if (valores.regraAprovacao === "PERCENTUAL_MINIMO") {
     const percentual = Number(valores.percentualMinimo);
-    if (!valores.percentualMinimo.trim() || !Number.isFinite(percentual) || percentual <= 0 || percentual > 100) {
+    if (
+      !valores.percentualMinimo.trim() ||
+      !Number.isFinite(percentual) ||
+      percentual <= 0 ||
+      percentual > 100
+    ) {
       erros.percentualMinimo = "Informe um percentual maior que 0 e até 100.";
     }
   }
 
   const quorum = Number(valores.quorumMinimo);
-  if (!valores.quorumMinimo.trim() || !Number.isFinite(quorum) || quorum < 0 || quorum > 100) {
+  if (
+    !valores.quorumMinimo.trim() ||
+    !Number.isFinite(quorum) ||
+    quorum < 0 ||
+    quorum > 100
+  ) {
     erros.quorumMinimo = "Informe um quórum entre 0 e 100.";
   }
 
@@ -77,28 +221,8 @@ export function validarVotacaoForm(
     erros.dataFim = "A data de fim deve ser posterior à data de início.";
   }
 
-  if (tipoContexto === "ASSEMBLEIA") {
-    if (!valores.pauta.trim()) erros.pauta = "Informe a pauta.";
-    const participantes = Number(valores.participantesAptos);
-    if (!Number.isSafeInteger(participantes) || participantes <= 0) {
-      erros.participantesAptos = "Informe uma quantidade inteira positiva de participantes aptos.";
-    }
-  } else if (tipoContexto === "CONDOMINIO") {
-    const peso = Number(valores.pesoVoto);
-    if (!valores.pesoVoto.trim() || !Number.isFinite(peso) || peso <= 0) {
-      erros.pesoVoto = "Informe um peso de voto positivo.";
-    }
-    if (!valores.unidadeApartamento.trim()) {
-      erros.unidadeApartamento = "Informe a unidade ou apartamento.";
-    }
-  } else {
-    if (!valores.categoriaSegmento.trim()) {
-      erros.categoriaSegmento = "Informe a categoria ou segmento.";
-    }
-    if (!valores.elegibilidade.trim()) {
-      erros.elegibilidade = "Informe a elegibilidade.";
-    }
-  }
+  const estrategia = obterEstrategiaFormulario(valores.tipo);
+  estrategia.validarEspecifico(valores, erros);
 
   return erros;
 }
@@ -109,49 +233,35 @@ function dataIsoLocal(valor: string): string {
 
 export function criarCadastroVotacao(
   contextoId: number,
-  tipoContexto: TipoContexto,
+  adminId: number,
   valores: VotacaoFormValues,
 ): VotacaoCadastro {
   if (!regrasAprovacao.includes(valores.regraAprovacao as RegraAprovacao)) {
     throw new Error("Selecione uma regra de aprovação válida.");
   }
 
-  const camposComuns = {
+  const estrategia = obterEstrategiaFormulario(valores.tipo);
+
+  return {
     contextoId,
+    adminId,
+    tipo: estrategia.tipo,
     titulo: valores.nome.trim(),
     descricao: valores.descricao.trim(),
     regraAprovacao: valores.regraAprovacao as RegraAprovacao,
-    percentualMinimo: valores.regraAprovacao === "PERCENTUAL_MINIMO"
-      ? Number(valores.percentualMinimo)
-      : null,
+    percentualMinimo:
+      valores.regraAprovacao === "PERCENTUAL_MINIMO"
+        ? Number(valores.percentualMinimo)
+        : null,
     quorumMinimo: Number(valores.quorumMinimo),
     dataInicio: dataIsoLocal(valores.dataInicio),
     dataFim: dataIsoLocal(valores.dataFim),
+    chapas: estrategia.construirChapasPayload(valores),
   };
-
-  switch (tipoContexto) {
-    case "ASSEMBLEIA":
-      return {
-        ...camposComuns,
-        pauta: valores.pauta.trim(),
-        participantesAptos: Number(valores.participantesAptos),
-      };
-    case "CONDOMINIO":
-      return {
-        ...camposComuns,
-        pesoVoto: Number(valores.pesoVoto),
-        unidadeApartamento: valores.unidadeApartamento.trim(),
-      };
-    case "CENTRO_ACADEMICO":
-      return {
-        ...camposComuns,
-        categoriaSegmento: valores.categoriaSegmento.trim(),
-        elegibilidade: valores.elegibilidade.trim(),
-      };
-  }
 }
 
 const valoresIniciais: VotacaoFormValues = {
+  tipo: "DELIBERACAO",
   nome: "",
   descricao: "",
   regraAprovacao: "",
@@ -159,61 +269,238 @@ const valoresIniciais: VotacaoFormValues = {
   quorumMinimo: "",
   dataInicio: "",
   dataFim: "",
-  pauta: "",
-  participantesAptos: "",
-  pesoVoto: "",
-  unidadeApartamento: "",
-  categoriaSegmento: "",
-  elegibilidade: "",
+  chapas: [],
 };
 
 type Props = {
   contextoId: number;
-  tipoContexto: TipoContexto;
+  tipoContexto?: TipoContexto;
+  adminId?: number;
+  membrosContexto?: MembroChapa[];
 };
 
-export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
+export default function VotacaoForm({
+  contextoId,
+  adminId: adminIdProp,
+  membrosContexto: membrosContextoProp,
+}: Props) {
   const [valores, setValores] = useState<VotacaoFormValues>(valoresIniciais);
   const [erros, setErros] = useState<VotacaoFormErrors>({});
   const [erroApi, setErroApi] = useState<string | null>(null);
   const [votacaoCriada, setVotacaoCriada] = useState<VotacaoResponse | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [membrosContexto, setMembrosContexto] = useState<MembroChapa[]>(
+    membrosContextoProp ?? [],
+  );
+  const [adminId, setAdminId] = useState<number | undefined>(adminIdProp);
 
-  function atualizarCampo(campo: keyof VotacaoFormValues, valor: string) {
+  useEffect(() => {
+    if (membrosContextoProp !== undefined) {
+      setMembrosContexto(membrosContextoProp);
+      return;
+    }
+    let cancelado = false;
+    async function carregarMembros() {
+      try {
+        const lista = await buscarMembrosDoContexto(contextoId);
+        if (!cancelado) setMembrosContexto(lista);
+      } catch {
+        // Caso o endpoint falhe, mantém lista atual
+      }
+    }
+    void carregarMembros();
+    return () => {
+      cancelado = true;
+    };
+  }, [contextoId, membrosContextoProp]);
+
+  useEffect(() => {
+    if (adminIdProp !== undefined) {
+      setAdminId(adminIdProp);
+      return;
+    }
+    let cancelado = false;
+    async function carregarAdmin() {
+      try {
+        const usuario = await getIdUser();
+        if (!cancelado) setAdminId(usuario.id);
+      } catch {
+        // Admin será validado no envio
+      }
+    }
+    void carregarAdmin();
+    return () => {
+      cancelado = true;
+    };
+  }, [adminIdProp]);
+
+  const estrategiaAtual = obterEstrategiaFormulario(valores.tipo);
+
+  function selecionarTipoVotacao(novoTipo: TipoVotacao) {
+    setValores((atuais) => ({
+      ...atuais,
+      tipo: novoTipo,
+      chapas: novoTipo === "DELIBERACAO" ? [] : atuais.chapas,
+    }));
+    setErros((atuais) => ({
+      ...atuais,
+      tipo: undefined,
+      chapas: undefined,
+      chapasItens: undefined,
+    }));
+    setErroApi(null);
+    setVotacaoCriada(null);
+  }
+
+  function atualizarCampo(
+    campo: Exclude<keyof VotacaoFormValues, "chapas" | "tipo">,
+    valor: string,
+  ) {
     setValores((atuais) => ({ ...atuais, [campo]: valor }));
     setErros((atuais) => ({ ...atuais, [campo]: undefined }));
     setErroApi(null);
     setVotacaoCriada(null);
   }
 
+  function adicionarChapa() {
+    setValores((atuais) => ({
+      ...atuais,
+      chapas: [...atuais.chapas, criarChapaVazia()],
+    }));
+    setErros((atuais) => ({ ...atuais, chapas: undefined }));
+    setErroApi(null);
+    setVotacaoCriada(null);
+  }
+
+  function removerChapa(indice: number) {
+    setValores((atuais) => ({
+      ...atuais,
+      chapas: atuais.chapas.filter((_, idx) => idx !== indice),
+    }));
+    setErros((atuais) => ({
+      ...atuais,
+      chapas: undefined,
+      chapasItens: undefined,
+    }));
+  }
+
+  function atualizarCampoChapa(
+    indice: number,
+    campo: "nome" | "proposta",
+    valor: string,
+  ) {
+    setValores((atuais) => ({
+      ...atuais,
+      chapas: atuais.chapas.map((chapa, idx) =>
+        idx === indice ? { ...chapa, [campo]: valor } : chapa,
+      ),
+    }));
+    setErros((atuais) => {
+      if (!atuais.chapasItens?.[indice]) return atuais;
+      return {
+        ...atuais,
+        chapasItens: {
+          ...atuais.chapasItens,
+          [indice]: {
+            ...atuais.chapasItens[indice],
+            [campo]: undefined,
+          },
+        },
+      };
+    });
+  }
+
+  function adicionarMembroNaChapa(indiceChapa: number, membroIdValor: string) {
+    const membroId = Number(membroIdValor);
+    if (!Number.isSafeInteger(membroId) || membroId <= 0) return;
+
+    setValores((atuais) => ({
+      ...atuais,
+      chapas: atuais.chapas.map((chapa, idx) => {
+        if (idx !== indiceChapa || chapa.membrosIds.includes(membroId)) {
+          return chapa;
+        }
+        return {
+          ...chapa,
+          membrosIds: [...chapa.membrosIds, membroId],
+        };
+      }),
+    }));
+    setErros((atuais) => {
+      if (!atuais.chapasItens?.[indiceChapa]) return atuais;
+      return {
+        ...atuais,
+        chapasItens: {
+          ...atuais.chapasItens,
+          [indiceChapa]: {
+            ...atuais.chapasItens[indiceChapa],
+            membrosIds: undefined,
+          },
+        },
+      };
+    });
+  }
+
+  function removerMembroDaChapa(indiceChapa: number, membroId: number) {
+    setValores((atuais) => ({
+      ...atuais,
+      chapas: atuais.chapas.map((chapa, idx) =>
+        idx === indiceChapa
+          ? {
+              ...chapa,
+              membrosIds: chapa.membrosIds.filter((id) => id !== membroId),
+            }
+          : chapa,
+      ),
+    }));
+  }
+
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    const errosValidacao = validarVotacaoForm(tipoContexto, valores);
+    const errosValidacao = validarVotacaoForm(valores);
     setErros(errosValidacao);
     setErroApi(null);
     setVotacaoCriada(null);
-    if (Object.keys(errosValidacao).length > 0) return;
+    if (temErrosValidacao(errosValidacao)) return;
 
     setEnviando(true);
     try {
-      const resposta = await cadastrarVotacao(criarCadastroVotacao(contextoId, tipoContexto, valores));
+      let idAdminResolvido = adminId;
+      if (idAdminResolvido === undefined) {
+        const usuario = await getIdUser();
+        idAdminResolvido = usuario.id;
+        setAdminId(usuario.id);
+      }
+
+      const payload = criarCadastroVotacao(contextoId, idAdminResolvido, valores);
+      const resposta = await cadastrarVotacao(payload);
       setVotacaoCriada(resposta);
-      toast.success("Votação cadastrada com sucesso!")
+      toast.success("Votação cadastrada com sucesso!");
     } catch (erro) {
-      setErroApi(erro instanceof Error ? erro.message : "Não foi possível cadastrar a votação.");
-      toast.error("Não foi possível cadastrar a votação!")
+      setErroApi(
+        erro instanceof Error
+          ? erro.message
+          : "Não foi possível cadastrar a votação.",
+      );
+      toast.error("Não foi possível cadastrar a votação!");
     } finally {
       setEnviando(false);
     }
   }
 
-  function campoTexto(campo: "nome" | "descricao" | "pauta" | "unidadeApartamento" | "categoriaSegmento" | "elegibilidade", rotulo: string, multiline = false) {
+  function campoTexto(
+    campo: "nome" | "descricao",
+    rotulo: string,
+    placeholder: string,
+    multiline = false,
+  ) {
     const controle = multiline ? (
       <textarea
         id={campo}
         name={campo}
         required
         rows={4}
+        placeholder={placeholder}
         value={valores[campo]}
         onChange={(evento) => atualizarCampo(campo, evento.target.value)}
         aria-invalid={Boolean(erros[campo])}
@@ -226,6 +513,7 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
         name={campo}
         type="text"
         required
+        placeholder={placeholder}
         value={valores[campo]}
         onChange={(evento) => atualizarCampo(campo, evento.target.value)}
         aria-invalid={Boolean(erros[campo])}
@@ -235,29 +523,41 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
     );
 
     return (
-      <label htmlFor={campo} className="flex flex-col gap-1 font-medium text-gray-800">
+      <label
+        htmlFor={campo}
+        className="flex flex-col gap-1 font-medium text-gray-800"
+      >
         {rotulo}
         {controle}
-        {erros[campo] && <span id={`${campo}-erro`} className="text-sm font-normal text-red-700">{erros[campo]}</span>}
+        {erros[campo] && (
+          <span
+            id={`${campo}-erro`}
+            className="text-sm font-normal text-red-700"
+          >
+            {erros[campo]}
+          </span>
+        )}
       </label>
     );
   }
 
   function campoNumero(
-    campo: "percentualMinimo" | "quorumMinimo" | "participantesAptos" | "pesoVoto",
+    campo: "percentualMinimo" | "quorumMinimo",
     rotulo: string,
   ) {
-    const percentual = campo === "percentualMinimo" || campo === "quorumMinimo";
     return (
-      <label htmlFor={campo} className="flex flex-col gap-1 font-medium text-gray-800">
-        {rotulo}{percentual ? " (%)" : ""}
+      <label
+        htmlFor={campo}
+        className="flex flex-col gap-1 font-medium text-gray-800"
+      >
+        {rotulo} (%)
         <input
           id={campo}
           name={campo}
           type="number"
-          min={percentual ? "0" : campo === "participantesAptos" ? "1" : "0"}
-          max={percentual ? "100" : undefined}
-          step={campo === "participantesAptos" ? "1" : percentual ? "0.01" : "any"}
+          min="0"
+          max="100"
+          step="0.01"
           required
           value={valores[campo]}
           onChange={(evento) => atualizarCampo(campo, evento.target.value)}
@@ -265,14 +565,24 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
           aria-describedby={erros[campo] ? `${campo}-erro` : undefined}
           className="rounded-md border border-indigo-500 p-2 outline-none focus:border-purple-600"
         />
-        {erros[campo] && <span id={`${campo}-erro`} className="text-sm font-normal text-red-700">{erros[campo]}</span>}
+        {erros[campo] && (
+          <span
+            id={`${campo}-erro`}
+            className="text-sm font-normal text-red-700"
+          >
+            {erros[campo]}
+          </span>
+        )}
       </label>
     );
   }
 
   function campoData(campo: "dataInicio" | "dataFim", rotulo: string) {
     return (
-      <label htmlFor={campo} className="flex flex-col gap-1 font-medium text-gray-800">
+      <label
+        htmlFor={campo}
+        className="flex flex-col gap-1 font-medium text-gray-800"
+      >
         {rotulo}
         <input
           id={campo}
@@ -285,59 +595,304 @@ export default function VotacaoForm({ contextoId, tipoContexto }: Props) {
           aria-describedby={erros[campo] ? `${campo}-erro` : undefined}
           className="rounded-md border border-indigo-500 p-2 outline-none focus:border-purple-600"
         />
-        {erros[campo] && <span id={`${campo}-erro`} className="text-sm font-normal text-red-700">{erros[campo]}</span>}
+        {erros[campo] && (
+          <span
+            id={`${campo}-erro`}
+            className="text-sm font-normal text-red-700"
+          >
+            {erros[campo]}
+          </span>
+        )}
       </label>
     );
   }
 
-  const camposEspecificos = camposEspecificosPorTipoContexto[tipoContexto];
+  // Conjunto de membros já vinculados a alguma chapa para orientar a seleção
+  const membrosJaAlocados = new Set<number>(
+    valores.chapas.flatMap((chapa) => chapa.membrosIds),
+  );
 
   return (
-    <section className="flex justify-center items-center">
-    <form onSubmit={enviarFormulario} noValidate className="flex w-full max-w-3xl border-indigo-500 border-r-8 border-r-indigo-500 flex-col gap-5 rounded-xl border px-8 py-10 shadow-md">
-      {campoTexto("nome", "Nome")}
-      {campoTexto("descricao", "Descrição", true)}
-
-      <label htmlFor="regraAprovacao" className="flex flex-col gap-1 font-medium text-gray-800">
-        Regra de aprovação
-        <select
-          id="regraAprovacao"
-          name="regraAprovacao"
-          required
-          value={valores.regraAprovacao}
-          onChange={(evento) => atualizarCampo("regraAprovacao", evento.target.value)}
-          aria-invalid={Boolean(erros.regraAprovacao)}
-          aria-describedby={erros.regraAprovacao ? "regraAprovacao-erro" : undefined}
-          className="rounded-md border border-indigo-500 p-2 outline-none focus:border-indigo-600"
-        >
-          <option value="">Selecione uma regra</option>
-          <option value="MAIORIA_SIMPLES">Maioria simples</option>
-          <option value="PERCENTUAL_MINIMO">Percentual mínimo</option>
-        </select>
-        {erros.regraAprovacao && <span id="regraAprovacao-erro" className="text-sm font-normal text-red-700">{erros.regraAprovacao}</span>}
-      </label>
-
-      {valores.regraAprovacao === "PERCENTUAL_MINIMO" && campoNumero("percentualMinimo", "Percentual mínimo")}
-      {campoNumero("quorumMinimo", "Quórum mínimo")}
-
-      {camposEspecificos.includes("pauta") && campoTexto("pauta", "Pauta")}
-      {camposEspecificos.includes("participantesAptos") && campoNumero("participantesAptos", "Participantes aptos a votar")}
-      {camposEspecificos.includes("pesoVoto") && campoNumero("pesoVoto", "Peso do voto")}
-      {camposEspecificos.includes("unidadeApartamento") && campoTexto("unidadeApartamento", "Unidade/apartamento")}
-      {camposEspecificos.includes("categoriaSegmento") && campoTexto("categoriaSegmento", "Categoria/segmento")}
-      {camposEspecificos.includes("elegibilidade") && campoTexto("elegibilidade", "Elegibilidade", true)}
-
-      {campoData("dataInicio", "Data e hora de início")}
-      {campoData("dataFim", "Data e hora de fim")}
-
-      <button
-        type="submit"
-        disabled={enviando}
-        className="rounded-md bg-indigo-500 p-3 font-medium text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+    <section className="flex items-center justify-center">
+      <form
+        onSubmit={enviarFormulario}
+        noValidate
+        className="flex w-full max-w-3xl flex-col gap-5 rounded-xl border border-indigo-500 border-r-8 border-r-indigo-500 px-8 py-10 shadow-md"
       >
-        {enviando ? "Cadastrando..." : "Cadastrar votação"}
-      </button>
-    </form>
+        <div className="flex flex-col gap-2">
+          <span className="font-medium text-gray-800">Tipo da votação</span>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              aria-pressed={valores.tipo === "DELIBERACAO"}
+              onClick={() => selecionarTipoVotacao("DELIBERACAO")}
+              className={`rounded-md border border-indigo-500 p-3 font-medium transition-colors ${
+                valores.tipo === "DELIBERACAO"
+                  ? "bg-indigo-500 text-white"
+                  : "bg-white text-indigo-700 hover:bg-indigo-50"
+              }`}
+            >
+              DELIBERACAO
+            </button>
+            <button
+              type="button"
+              aria-pressed={valores.tipo === "ELEICAO"}
+              onClick={() => selecionarTipoVotacao("ELEICAO")}
+              className={`rounded-md border border-indigo-500 p-3 font-medium transition-colors ${
+                valores.tipo === "ELEICAO"
+                  ? "bg-indigo-500 text-white"
+                  : "bg-white text-indigo-700 hover:bg-indigo-50"
+              }`}
+            >
+              ELEICAO
+            </button>
+          </div>
+          {erros.tipo && (
+            <span className="text-sm font-normal text-red-700">{erros.tipo}</span>
+          )}
+        </div>
+
+        {campoTexto(
+          "nome",
+          estrategiaAtual.rotuloTitulo,
+          estrategiaAtual.placeholderTitulo,
+        )}
+        {campoTexto(
+          "descricao",
+          estrategiaAtual.rotuloDescricao,
+          estrategiaAtual.placeholderDescricao,
+          true,
+        )}
+
+        <label
+          htmlFor="regraAprovacao"
+          className="flex flex-col gap-1 font-medium text-gray-800"
+        >
+          Regra de aprovação
+          <select
+            id="regraAprovacao"
+            name="regraAprovacao"
+            required
+            value={valores.regraAprovacao}
+            onChange={(evento) =>
+              atualizarCampo("regraAprovacao", evento.target.value)
+            }
+            aria-invalid={Boolean(erros.regraAprovacao)}
+            aria-describedby={
+              erros.regraAprovacao ? "regraAprovacao-erro" : undefined
+            }
+            className="rounded-md border border-indigo-500 p-2 outline-none focus:border-indigo-600"
+          >
+            <option value="">Selecione uma regra</option>
+            <option value="MAIORIA_SIMPLES">Maioria simples</option>
+            <option value="PERCENTUAL_MINIMO">Percentual mínimo</option>
+          </select>
+          {erros.regraAprovacao && (
+            <span
+              id="regraAprovacao-erro"
+              className="text-sm font-normal text-red-700"
+            >
+              {erros.regraAprovacao}
+            </span>
+          )}
+        </label>
+
+        {valores.regraAprovacao === "PERCENTUAL_MINIMO" &&
+          campoNumero("percentualMinimo", "Percentual mínimo")}
+        {campoNumero("quorumMinimo", "Quórum mínimo")}
+
+        {campoData("dataInicio", "Data e hora de início")}
+        {campoData("dataFim", "Data e hora de fim")}
+
+        {valores.tipo === "ELEICAO" && (
+          <div className="flex flex-col gap-4 border-t border-indigo-200 pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-semibold text-gray-800">
+                Chapas da Eleição
+              </span>
+              <button
+                type="button"
+                onClick={adicionarChapa}
+                className="rounded-md bg-indigo-100 px-4 py-2 font-medium text-indigo-800 hover:bg-indigo-200"
+              >
+                Adicionar Chapa
+              </button>
+            </div>
+
+            {erros.chapas && (
+              <span className="text-sm font-normal text-red-700">
+                {erros.chapas}
+              </span>
+            )}
+
+            {valores.chapas.map((chapa, index) => {
+              const errosChapa = erros.chapasItens?.[index];
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col gap-4 rounded-lg border border-indigo-300 bg-indigo-50/30 p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-indigo-950">
+                      Chapa {index + 1}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => removerChapa(index)}
+                      className="text-sm font-medium text-red-600 hover:text-red-800"
+                    >
+                      Remover chapa
+                    </button>
+                  </div>
+
+                  <label
+                    htmlFor={`chapa-nome-${index}`}
+                    className="flex flex-col gap-1 font-medium text-gray-800"
+                  >
+                    Nome da Chapa
+                    <input
+                      id={`chapa-nome-${index}`}
+                      name={`chapa-nome-${index}`}
+                      type="text"
+                      required
+                      value={chapa.nome}
+                      onChange={(evento) =>
+                        atualizarCampoChapa(index, "nome", evento.target.value)
+                      }
+                      aria-invalid={Boolean(errosChapa?.nome)}
+                      className="rounded-md border border-indigo-500 bg-white p-2 outline-none focus:border-purple-600"
+                    />
+                    {errosChapa?.nome && (
+                      <span className="text-sm font-normal text-red-700">
+                        {errosChapa.nome}
+                      </span>
+                    )}
+                  </label>
+
+                  <label
+                    htmlFor={`chapa-proposta-${index}`}
+                    className="flex flex-col gap-1 font-medium text-gray-800"
+                  >
+                    Descrição/Proposta da Chapa
+                    <textarea
+                      id={`chapa-proposta-${index}`}
+                      name={`chapa-proposta-${index}`}
+                      rows={3}
+                      value={chapa.proposta}
+                      onChange={(evento) =>
+                        atualizarCampoChapa(
+                          index,
+                          "proposta",
+                          evento.target.value,
+                        )
+                      }
+                      className="rounded-md border border-indigo-500 bg-white p-2 outline-none focus:border-purple-600"
+                    />
+                  </label>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor={`chapa-membros-${index}`}
+                      className="flex flex-col gap-1 font-medium text-gray-800"
+                    >
+                      Membros da Chapa
+                      <select
+                        id={`chapa-membros-${index}`}
+                        name={`chapa-membros-${index}`}
+                        value=""
+                        onChange={(evento) =>
+                          adicionarMembroNaChapa(index, evento.target.value)
+                        }
+                        aria-invalid={Boolean(errosChapa?.membrosIds)}
+                        className="rounded-md border border-indigo-500 bg-white p-2 outline-none focus:border-indigo-600"
+                      >
+                        <option value="">
+                          Selecione um membro presente no contexto
+                        </option>
+                        {membrosContexto.map((membro) => {
+                          const jaSelecionado = membrosJaAlocados.has(membro.id);
+                          return (
+                            <option
+                              key={membro.id}
+                              value={membro.id}
+                              disabled={jaSelecionado}
+                            >
+                              {membro.nome} ({membro.email})
+                              {jaSelecionado ? " - já selecionado" : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </label>
+
+                    {chapa.membrosIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {chapa.membrosIds.map((membroId) => {
+                          const membro = membrosContexto.find(
+                            (m) => m.id === membroId,
+                          );
+                          return (
+                            <span
+                              key={membroId}
+                              className="inline-flex items-center gap-2 rounded-full border border-indigo-400 bg-indigo-100 px-3 py-1 text-sm text-indigo-900"
+                            >
+                              {membro
+                                ? `${membro.nome} (${membro.email})`
+                                : `Membro #${membroId}`}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removerMembroDaChapa(index, membroId)
+                                }
+                                aria-label={`Remover membro ${membro?.nome ?? membroId}`}
+                                className="font-bold text-indigo-700 hover:text-red-700"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {errosChapa?.membrosIds && (
+                      <span className="text-sm font-normal text-red-700">
+                        {errosChapa.membrosIds}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {erroApi && (
+          <p
+            role="alert"
+            className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+          >
+            {erroApi}
+          </p>
+        )}
+
+        {votacaoCriada && (
+          <p
+            role="status"
+            className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800"
+          >
+            Votação &ldquo;{votacaoCriada.titulo}&rdquo; criada com sucesso!
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={enviando}
+          className="rounded-md bg-indigo-500 p-3 font-medium text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {enviando ? "Cadastrando..." : "Cadastrar votação"}
+        </button>
+      </form>
     </section>
   );
 }
