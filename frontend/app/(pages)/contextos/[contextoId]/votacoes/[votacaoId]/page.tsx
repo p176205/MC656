@@ -166,51 +166,36 @@ export default function VotacaoDetalhesPage() {
               <dt className="font-medium text-gray-800">Data e hora de fim</dt>
               <dd className="text-gray-600">{formatarData(votacao.dataFim)}</dd>
             </div>
-            {votacao.pauta && (
-              <div>
-                <dt className="font-medium text-gray-800">Pauta</dt>
-                <dd className="text-gray-600">{votacao.pauta}</dd>
-              </div>
-            )}
-            {votacao.participantesAptos !== null && (
-              <div>
-                <dt className="font-medium text-gray-800">
-                  Participantes aptos a votar
-                </dt>
-                <dd className="text-gray-600">{votacao.participantesAptos}</dd>
-              </div>
-            )}
-            {votacao.pesoVoto !== null && (
-              <div>
-                <dt className="font-medium text-gray-800">Peso do voto</dt>
-                <dd className="text-gray-600">{votacao.pesoVoto}</dd>
-              </div>
-            )}
-            {votacao.unidadeApartamento && (
-              <div>
-                <dt className="font-medium text-gray-800">
-                  Unidade/apartamento
-                </dt>
-                <dd className="text-gray-600">{votacao.unidadeApartamento}</dd>
-              </div>
-            )}
-            {votacao.categoriaSegmento && (
-              <div>
-                <dt className="font-medium text-gray-800">
-                  Categoria/segmento
-                </dt>
-                <dd className="text-gray-600">{votacao.categoriaSegmento}</dd>
-              </div>
-            )}
-            {votacao.elegibilidade && (
-              <div>
-                <dt className="font-medium text-gray-800">Elegibilidade</dt>
-                <dd className="whitespace-pre-wrap text-gray-600">
-                  {votacao.elegibilidade}
-                </dd>
-              </div>
-            )}
+            <div>
+              <dt className="font-medium text-gray-800">Modalidade</dt>
+              <dd className="text-gray-600">
+                {votacao.tipo === "ELEICAO" ? "Eleição" : "Deliberação"}
+              </dd>
+            </div>
           </dl>
+          {votacao.tipo === "ELEICAO" && votacao.chapas && votacao.chapas.length > 0 && (
+            <section className="mt-6 border-t pt-6">
+              <h2 className="text-lg font-semibold text-gray-900">Chapas concorrentes</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {votacao.chapas.map((chapa) => (
+                  <div
+                    key={chapa.id}
+                    className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4"
+                  >
+                    <h3 className="font-semibold text-indigo-950">{chapa.nome}</h3>
+                    {chapa.proposta && (
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
+                        {chapa.proposta}
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-gray-600">
+                      Membros: {chapa.membros.map((m) => m.nome).join(", ")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           {votacao.status === "ENCERRADA" && (
             <section
               aria-labelledby="apuracao-titulo"

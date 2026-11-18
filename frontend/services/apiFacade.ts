@@ -4,6 +4,7 @@ import type {
   ContextoDetalhe,
   ContextoDTO,
   LoginUsuario,
+  MembroChapa,
   TipoContexto,
   Usuario,
   UsuarioResponse,
@@ -167,6 +168,18 @@ export async function buscarContexto(contextoId: number): Promise<ContextoDetalh
   });
   if (!resposta.ok) {
     throw new Error((await resposta.text()) || "Erro ao buscar o contexto.");
+  }
+  return resposta.json();
+}
+
+// GET /api/contextos/{contextoId}/membros
+export async function buscarMembrosDoContexto(contextoId: number): Promise<MembroChapa[]> {
+  const resposta = await fetch(`${API_URL}/api/contextos/${contextoId}/membros`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar os membros do contexto.");
   }
   return resposta.json();
 }
