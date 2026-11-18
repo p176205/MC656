@@ -289,21 +289,23 @@ export default function VotacaoForm({
   const [erroApi, setErroApi] = useState<string | null>(null);
   const [votacaoCriada, setVotacaoCriada] = useState<VotacaoResponse | null>(null);
   const [enviando, setEnviando] = useState(false);
-  const [membrosContexto, setMembrosContexto] = useState<MembroChapa[]>(
-    membrosContextoProp ?? [],
+  const [membrosCarregados, setMembrosCarregados] = useState<MembroChapa[]>([]);
+  const [adminIdCarregado, setAdminIdCarregado] = useState<number | undefined>(
+    undefined,
   );
-  const [adminId, setAdminId] = useState<number | undefined>(adminIdProp);
+
+  const membrosContexto = membrosContextoProp ?? membrosCarregados;
+  const adminId = adminIdProp ?? adminIdCarregado;
 
   useEffect(() => {
     if (membrosContextoProp !== undefined) {
-      setMembrosContexto(membrosContextoProp);
       return;
     }
     let cancelado = false;
     async function carregarMembros() {
       try {
         const lista = await buscarMembrosDoContexto(contextoId);
-        if (!cancelado) setMembrosContexto(lista);
+        if (!cancelado) setMembrosCarregados(lista);
       } catch {
         // Caso o endpoint falhe, mantém lista atual
       }
@@ -316,14 +318,13 @@ export default function VotacaoForm({
 
   useEffect(() => {
     if (adminIdProp !== undefined) {
-      setAdminId(adminIdProp);
       return;
     }
     let cancelado = false;
     async function carregarAdmin() {
       try {
         const usuario = await getIdUser();
-        if (!cancelado) setAdminId(usuario.id);
+        if (!cancelado) setAdminIdCarregado(usuario.id);
       } catch {
         // Admin será validado no envio
       }
@@ -469,7 +470,7 @@ export default function VotacaoForm({
       if (idAdminResolvido === undefined) {
         const usuario = await getIdUser();
         idAdminResolvido = usuario.id;
-        setAdminId(usuario.id);
+        setAdminIdCarregado(usuario.id);
       }
 
       const payload = criarCadastroVotacao(contextoId, idAdminResolvido, valores);
