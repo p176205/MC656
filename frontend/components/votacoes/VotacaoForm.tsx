@@ -101,7 +101,7 @@ const eleicaoFormStrategy: VotacaoFormStrategy = {
       const nomeLimpo = chapa.nome.trim();
 
       if (!nomeLimpo) {
-        errosChapa.nome = "Informe o nome da chapa.";
+        errosChapa.nome = "O nome é obrigatório.";
       } else {
         const chaveNome = nomeLimpo.toLowerCase();
         if (nomesNormalizados.has(chaveNome)) {
@@ -112,7 +112,8 @@ const eleicaoFormStrategy: VotacaoFormStrategy = {
       }
 
       if (!chapa.membrosIds || chapa.membrosIds.length === 0) {
-        errosChapa.membrosIds = "Selecione ao menos um membro do contexto para a chapa.";
+        errosChapa.membrosIds =
+          "Selecione ao menos um membro do contexto.";
       } else {
         for (const membroId of chapa.membrosIds) {
           if (membrosNaEleicao.has(membroId)) {
@@ -142,12 +143,17 @@ const eleicaoFormStrategy: VotacaoFormStrategy = {
   },
 };
 
-export const estrategiasFormularioPorTipo: Record<TipoVotacao, VotacaoFormStrategy> = {
+export const estrategiasFormularioPorTipo: Record<
+  TipoVotacao,
+  VotacaoFormStrategy
+> = {
   DELIBERACAO: deliberacaoFormStrategy,
   ELEICAO: eleicaoFormStrategy,
 };
 
-export function obterEstrategiaFormulario(tipo: TipoVotacao): VotacaoFormStrategy {
+export function obterEstrategiaFormulario(
+  tipo: TipoVotacao,
+): VotacaoFormStrategy {
   return estrategiasFormularioPorTipo[tipo] ?? deliberacaoFormStrategy;
 }
 
@@ -168,14 +174,20 @@ const tiposVotacao: TipoVotacao[] = ["DELIBERACAO", "ELEICAO"];
 
 export function temErrosValidacao(erros: VotacaoFormErrors): boolean {
   const { chapasItens, ...errosGerais } = erros;
-  const possuiErroGeral = Object.values(errosGerais).some((msg) => Boolean(msg));
+  const possuiErroGeral = Object.values(errosGerais).some((msg) =>
+    Boolean(msg),
+  );
   const possuiErroChapa = chapasItens
-    ? Object.values(chapasItens).some((item) => Object.values(item).some((msg) => Boolean(msg)))
+    ? Object.values(chapasItens).some((item) =>
+        Object.values(item).some((msg) => Boolean(msg)),
+      )
     : false;
   return possuiErroGeral || possuiErroChapa;
 }
 
-export function validarVotacaoForm(valores: VotacaoFormValues): VotacaoFormErrors {
+export function validarVotacaoForm(
+  valores: VotacaoFormValues,
+): VotacaoFormErrors {
   const erros: VotacaoFormErrors = {};
 
   if (!tiposVotacao.includes(valores.tipo)) {
@@ -274,20 +286,23 @@ const valoresIniciais: VotacaoFormValues = {
 
 type Props = {
   contextoId: number;
-  tipoContexto?: TipoContexto;
+  tipoContexto: TipoContexto;
   adminId?: number;
   membrosContexto?: MembroChapa[];
 };
 
 export default function VotacaoForm({
   contextoId,
+  tipoContexto,
   adminId: adminIdProp,
   membrosContexto: membrosContextoProp,
 }: Props) {
   const [valores, setValores] = useState<VotacaoFormValues>(valoresIniciais);
   const [erros, setErros] = useState<VotacaoFormErrors>({});
   const [erroApi, setErroApi] = useState<string | null>(null);
-  const [votacaoCriada, setVotacaoCriada] = useState<VotacaoResponse | null>(null);
+  const [votacaoCriada, setVotacaoCriada] = useState<VotacaoResponse | null>(
+    null,
+  );
   const [enviando, setEnviando] = useState(false);
   const [membrosCarregados, setMembrosCarregados] = useState<MembroChapa[]>([]);
   const [adminIdCarregado, setAdminIdCarregado] = useState<number | undefined>(
@@ -421,6 +436,20 @@ export default function VotacaoForm({
         if (idx !== indiceChapa || chapa.membrosIds.includes(membroId)) {
           return chapa;
         }
+        // Se for condomínio, permite apenas um membro na chapa
+        if (tipoContexto === "CONDOMINIO" && chapa.membrosIds.length >= 1) {
+                setErros((errosAtuais) => ({
+        ...errosAtuais,
+        chapasItens: {
+          ...errosAtuais.chapasItens,
+          [indiceChapa]: {
+            ...errosAtuais.chapasItens?.[indiceChapa],
+            membrosIds: "Você pode selecionar apenas um candidato por vez. Para incluir mais, clique em 'Adicionar Candidato'",
+          },
+        },
+      }));
+          return chapa;
+        }
         return {
           ...chapa,
           membrosIds: [...chapa.membrosIds, membroId],
@@ -473,7 +502,11 @@ export default function VotacaoForm({
         setAdminIdCarregado(usuario.id);
       }
 
-      const payload = criarCadastroVotacao(contextoId, idAdminResolvido, valores);
+      const payload = criarCadastroVotacao(
+        contextoId,
+        idAdminResolvido,
+        valores,
+      );
       const resposta = await cadastrarVotacao(payload);
       setVotacaoCriada(resposta);
       toast.success("Votação cadastrada com sucesso!");
@@ -620,38 +653,43 @@ export default function VotacaoForm({
         noValidate
         className="flex w-full max-w-3xl flex-col gap-5 rounded-xl border border-indigo-500 border-r-8 border-r-indigo-500 px-8 py-10 shadow-md"
       >
-        <div className="flex flex-col gap-2">
-          <span className="font-medium text-gray-800">Tipo da votação</span>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              aria-pressed={valores.tipo === "DELIBERACAO"}
-              onClick={() => selecionarTipoVotacao("DELIBERACAO")}
-              className={`rounded-md border border-indigo-500 p-3 font-medium transition-colors ${
-                valores.tipo === "DELIBERACAO"
-                  ? "bg-indigo-500 text-white"
-                  : "bg-white text-indigo-700 hover:bg-indigo-50"
-              }`}
-            >
-              DELIBERACAO
-            </button>
-            <button
-              type="button"
-              aria-pressed={valores.tipo === "ELEICAO"}
-              onClick={() => selecionarTipoVotacao("ELEICAO")}
-              className={`rounded-md border border-indigo-500 p-3 font-medium transition-colors ${
-                valores.tipo === "ELEICAO"
-                  ? "bg-indigo-500 text-white"
-                  : "bg-white text-indigo-700 hover:bg-indigo-50"
-              }`}
-            >
-              ELEICAO
-            </button>
+        {tipoContexto != "ASSEMBLEIA" && (
+          <div className="flex flex-col gap-2">
+            <span className="font-medium text-gray-800">Tipo da votação</span>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                aria-pressed={valores.tipo === "DELIBERACAO"}
+                onClick={() => selecionarTipoVotacao("DELIBERACAO")}
+                className={`rounded-md border border-indigo-500 p-3 font-medium transition-colors ${
+                  valores.tipo === "DELIBERACAO"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-white text-indigo-700 hover:bg-indigo-50"
+                }`}
+              >
+                DELIBERAÇÃO
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={valores.tipo === "ELEICAO"}
+                onClick={() => selecionarTipoVotacao("ELEICAO")}
+                className={`rounded-md border border-indigo-500 p-3 font-medium transition-colors ${
+                  valores.tipo === "ELEICAO"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-white text-indigo-700 hover:bg-indigo-50"
+                }`}
+              >
+                ELEIÇÃO
+              </button>
+            </div>
+            {erros.tipo && (
+              <span className="text-sm font-normal text-red-700">
+                {erros.tipo}
+              </span>
+            )}
           </div>
-          {erros.tipo && (
-            <span className="text-sm font-normal text-red-700">{erros.tipo}</span>
-          )}
-        </div>
+        )}
 
         {campoTexto(
           "nome",
@@ -709,14 +747,16 @@ export default function VotacaoForm({
           <div className="flex flex-col gap-4 border-t border-indigo-200 pt-4">
             <div className="flex items-center justify-between">
               <span className="text-lg font-semibold text-gray-800">
-                Chapas da Eleição
+                {tipoContexto == "CONDOMINIO"
+                  ? "Candidatos da Eleição"
+                  : "Chapas da Eleição"}
               </span>
               <button
                 type="button"
                 onClick={adicionarChapa}
                 className="rounded-md bg-indigo-100 px-4 py-2 font-medium text-indigo-800 hover:bg-indigo-200"
               >
-                Adicionar Chapa
+                Adicionar {tipoContexto == "CONDOMINIO" ? "Candidato" : "Chapa"}
               </button>
             </div>
 
@@ -735,14 +775,15 @@ export default function VotacaoForm({
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-indigo-950">
-                      Chapa {index + 1}
+                      {tipoContexto == "CONDOMINIO" ? "Candidato" : "Chapa"}{" "}
+                      {index + 1}
                     </h3>
                     <button
                       type="button"
                       onClick={() => removerChapa(index)}
                       className="text-sm font-medium text-red-600 hover:text-red-800"
                     >
-                      Remover chapa
+                      Remover {tipoContexto == "CONDOMINIO" ? "candidato" : "chapa"}
                     </button>
                   </div>
 
@@ -750,7 +791,9 @@ export default function VotacaoForm({
                     htmlFor={`chapa-nome-${index}`}
                     className="flex flex-col gap-1 font-medium text-gray-800"
                   >
-                    Nome da Chapa
+                    {tipoContexto == "CONDOMINIO"
+                      ? "Nome do Candidato"
+                      : "Nome da Chapa"}
                     <input
                       id={`chapa-nome-${index}`}
                       name={`chapa-nome-${index}`}
@@ -774,7 +817,9 @@ export default function VotacaoForm({
                     htmlFor={`chapa-proposta-${index}`}
                     className="flex flex-col gap-1 font-medium text-gray-800"
                   >
-                    Descrição/Proposta da Chapa
+                    {tipoContexto == "CONDOMINIO"
+                      ? "Descrição/Proposta do Candidato"
+                      : "Descrição/Proposta da Chapa"}
                     <textarea
                       id={`chapa-proposta-${index}`}
                       name={`chapa-proposta-${index}`}
@@ -796,7 +841,10 @@ export default function VotacaoForm({
                       htmlFor={`chapa-membros-${index}`}
                       className="flex flex-col gap-1 font-medium text-gray-800"
                     >
-                      Membros da Chapa
+                      {tipoContexto == "CONDOMINIO"
+                        ? "Selecione o Candidato"
+                        : "Selecione os Membros da Chapa"}
+
                       <select
                         id={`chapa-membros-${index}`}
                         name={`chapa-membros-${index}`}
@@ -811,7 +859,9 @@ export default function VotacaoForm({
                           Selecione um membro presente no contexto
                         </option>
                         {membrosContexto.map((membro) => {
-                          const jaSelecionado = membrosJaAlocados.has(membro.id);
+                          const jaSelecionado = membrosJaAlocados.has(
+                            membro.id,
+                          );
                           return (
                             <option
                               key={membro.id}

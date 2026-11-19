@@ -7,12 +7,15 @@ import SeletorContexto from "@/components/seletorContextos";
 import {
   Aba,
   ContextoDTO,
+  MembroChapa,
   UsuarioResponse,
   VotacaoResponse,
 } from "@/entities/entities";
 import {
+  buscarMembrosDoContexto,
   buscarMensagens,
   buscarVotacoesPorContexto,
+  deletarParticipacao,
   enviarMensagem,
   getContextos,
   getIdUser,
@@ -24,6 +27,8 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { MdBarChart, MdHowToVote, MdInfoOutline, MdSend } from "react-icons/md";
 import { LuMessagesSquare } from "react-icons/lu";
+import { HiTrash } from "react-icons/hi";
+import { FiEdit3 } from "react-icons/fi";
 
 export default function Home() {
   const router = useRouter();
@@ -39,6 +44,9 @@ export default function Home() {
   const [votacoes, setVotacoes] = useState<VotacaoResponse[]>([]);
   const [carregandoVotacoes, setCarregandoVotacoes] = useState(false);
   const [erroVotacoes, setErroVotacoes] = useState<string | null>(null);
+  const [carregandoMembros, setCarregandoMembros] = useState(false);
+  const [membros, setMembros] = useState<MembroChapa[]>([]);
+  const [erroMembros, setErroMembros] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [textoMensagem, setTextoMensagem] = useState("");
 
@@ -113,6 +121,38 @@ export default function Home() {
   }, [contextoAtual]);
 
   useEffect(() => {
+    let cancelado = false;
+    if (!contextoAtual) return;
+    const contextoId = contextoAtual.id;
+
+    async function carregarMembros() {
+      setCarregandoMembros(true);
+      setErroMembros(null);
+      try {
+        const resultado: MembroChapa[] =
+          await buscarMembrosDoContexto(contextoId);
+        if (!cancelado) setMembros(resultado);
+      } catch (erro) {
+        if (!cancelado) {
+          setErroMembros(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível encontrar os membros do contexto.",
+          );
+          setMembros([]);
+        }
+      } finally {
+        if (!cancelado) setCarregandoMembros(false);
+      }
+    }
+
+    void carregarMembros();
+    return () => {
+      cancelado = true;
+    };
+  }, [contextoAtual]);
+
+  useEffect(() => {
     async function carregarMensagens() {
       if (!contextoAtual || !user) return;
 
@@ -160,6 +200,21 @@ export default function Home() {
 
     executarLogout();
   }, [logout, router]);
+
+  async function ExcluirParticipacao(idMembro: number) {
+    if (!contextoAtual || !user) return;
+
+    try {
+      await deletarParticipacao(contextoAtual.id, user.id, idMembro);
+
+      toast.success("Membro removido do contexto");
+
+      setMembros((atuais) => atuais.filter((membro) => membro.id !== idMembro));
+    } catch (erro) {
+      console.error("Erro ao excluir participação:", erro);
+      toast.error("Não foi possível remover o membro do contexto.");
+    }
+  }
 
   async function EnviarMensagem() {
     if (!contextoAtual || !user) return;
@@ -445,27 +500,58 @@ export default function Home() {
             </p>
 
             <section className="flex flex-col gap-3 py-3">
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 1
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 2
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 3
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>{" "}
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>{" "}
+              {membros.length > 0 ? (
+                membros.map((membro) => (
+                  <div
+                    key={membro.id}
+                    className="flex items-center gap-4 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3 transition-all hover:shadow-sm"
+                  >
+                    <div className="flex items-center justify-center w-11 h-11 rounded-full bg-indigo-200 text-indigo-800 font-semibold text-sm shrink-0">
+                      {membro.nome.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold text-gray-800 truncate">
+                        {membro.nome}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {membro.email}
+                      </p>
+                    </div>
+
+                    {/* Remover membro e modificar peso - somente administrador */}
+                    {contextoAtual.papel === "ADMINISTRADOR" && (
+                      <div className="flex flex-row gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            ExcluirParticipacao(membro.id);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-blue-600 hover:bg-blue-200/70 bg-blue-100 transition-colors shrink-0"
+                        >
+                          <FiEdit3 className="text-blue-600" size={18} />
+                          Modificar peso
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            ExcluirParticipacao(membro.id);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 bg-red-200/70 hover:bg-red-50 transition-colors shrink-0"
+                        >
+                          <HiTrash color="red" size={18} />
+                          Remover
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-6">
+                  Nenhum membro encontrado neste contexto.
+                </p>
+              )}
             </section>
           </section>
         );

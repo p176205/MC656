@@ -211,7 +211,8 @@ public class ContextoService {
                         Math::max));
     }
 
-    // Lista todos os usuários participantes do contexto (sem duplicatas por usuário)
+    // Lista todos os usuários participantes do contexto (sem duplicatas por
+    // usuário)
     public List<MembroChapaDTO> listarMembrosDoContexto(Long contextoId) {
         contextoRepository.findById(contextoId)
                 .orElseThrow(() -> new NoSuchElementException("Contexto não encontrado."));
@@ -228,4 +229,25 @@ public class ContextoService {
                 .toList();
     }
 
+    @Transactional
+    public void deletarParticipacao(Long administradorId, Long contextoId, Long membroId) {
+
+        // Verifica se o usuário possui permissão para remover membros
+        if (!isAdministradorDoContexto(administradorId, contextoId)) {
+            throw new RuntimeException("Somente administradores ou síndicos podem remover membros.");
+        }
+
+        // Busca a participação do membro no contexto. Como a participacao é unica, a lista conterá um elemento
+        Participacao participacao = participacaoRepository
+                .findByUsuarioIdAndContextoId(membroId, contextoId)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Membro não encontrado neste contexto."));
+
+        // Exclui somente a participação
+        participacaoRepository.delete(participacao);
+
+
+        // preciso fazer com q se for o ultimo no contexto apague
+    }
 }

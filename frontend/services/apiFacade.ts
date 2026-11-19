@@ -184,6 +184,17 @@ export async function buscarMembrosDoContexto(contextoId: number): Promise<Membr
   return resposta.json();
 }
 
+// DELETE api/contextos/{contextoId}/adm/{admId}/membros/{membroId}
+export async function deletarParticipacao(contextoId: number, admId: number, membroId: number): Promise<void> {
+  const resposta = await fetch(`${API_URL}/api/contextos/${contextoId}/adm/${admId}/membros/${membroId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao excluir membro do contexto.");
+  }
+}
+
 // GET /api/votacoes/contexto/{contextoId}
 export async function buscarVotacoesPorContexto(contextoId: number): Promise<VotacaoResponse[]> {
   const resposta = await fetch(`${API_URL}/api/votacoes/contexto/${contextoId}`, {
