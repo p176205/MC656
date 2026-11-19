@@ -374,4 +374,3 @@ export async function enviarMensagem(
 
   return (await resposta.json()) as Mensagem;
 }
-}

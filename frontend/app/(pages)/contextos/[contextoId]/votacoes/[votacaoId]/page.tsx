@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { ApuracaoResponse, VotacaoResponse } from "@/entities/entities";
-import { buscarApuracao, buscarVotacaoPorId } from "@/services/apiFacade";
 import PainelPropostas from "@/components/votacoes/PainelPropostas";
 import {
   buscarApuracao,
@@ -97,7 +96,6 @@ export default function VotacaoDetalhesPage() {
           if (resultado.status === "ENCERRADA" || prazoExpirado) {
             try {
               const resultadoApuracao = await buscarApuracao(votacaoId);
-
               if (!cancelado) {
                 setApuracao(resultadoApuracao);
               }
@@ -278,42 +276,6 @@ export default function VotacaoDetalhesPage() {
               )}
             </section>
           )}
-          {votacao.status === "ENCERRADA" && (
-
-          {votacao.tipo === "ELEICAO" &&
-            votacao.chapas &&
-            votacao.chapas.length > 0 && (
-              <section className="mt-6 border-t pt-6">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Chapas concorrentes
-                </h2>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {votacao.chapas.map((chapa) => (
-                    <div
-                      key={chapa.id}
-                      className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4"
-                    >
-                      <h3 className="font-semibold text-indigo-950">
-                        {chapa.nome}
-                      </h3>
-
-                      {chapa.proposta && (
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
-                          {chapa.proposta}
-                        </p>
-                      )}
-
-                      <p className="mt-2 text-xs text-gray-600">
-                        Membros:{" "}
-                        {chapa.membros.map((membro) => membro.nome).join(", ")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
           {votacao.status === "ABERTA" &&
             !prazoExpirado &&
             votacao.tipo === "DELIBERACAO" &&
@@ -323,7 +285,6 @@ export default function VotacaoDetalhesPage() {
                 usuarioId={usuarioId}
               />
             )}
-
           {votacaoEncerrada && (
             <section
               aria-labelledby="apuracao-titulo"
