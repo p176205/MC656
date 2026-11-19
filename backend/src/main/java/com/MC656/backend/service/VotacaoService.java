@@ -94,13 +94,7 @@ public class VotacaoService {
                 dto.percentualMinimo(),
                 dto.quorumMinimo(),
                 dto.dataInicio(),
-                dto.dataFim(),
-                dto.pauta(),
-                dto.participantesAptos(),
-                dto.pesoVoto(),
-                dto.unidadeApartamento(),
-                dto.categoriaSegmento(),
-                dto.elegibilidade()
+                dto.dataFim()
         );
         return votacaoRepository.save(votacao);
     }
@@ -425,12 +419,6 @@ public class VotacaoService {
                 v.getStatus(),
                 v.getDataInicio(),
                 v.getDataFim(),
-                v.getPauta(),
-                v.getParticipantesAptos(),
-                v.getPesoVoto(),
-                v.getUnidadeApartamento(),
-                v.getCategoriaSegmento(),
-                v.getElegibilidade(),
                 chapasDTO
         );
     }

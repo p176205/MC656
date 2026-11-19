@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import type { ContextoDetalhe } from "@/entities/entities";
-import { buscarContexto } from "@/services/apiFacade";
+import type { ContextoDetalhe, MembroChapa } from "@/entities/entities";
+import {
+  buscarContexto,
+  buscarMembrosDoContexto,
+  getIdUser,
+} from "@/services/apiFacade";
 import VotacaoForm from "@/components/votacoes/VotacaoForm";
 import { MdArrowBack } from "react-icons/md";
 
@@ -12,6 +16,8 @@ export default function NovaVotacaoPage() {
   const { contextoId: contextoIdParam } = useParams<{ contextoId: string }>();
   const contextoId = Number(contextoIdParam);
   const [contexto, setContexto] = useState<ContextoDetalhe | null>(null);
+  const [membros, setMembros] = useState<MembroChapa[]>([]);
+  const [adminId, setAdminId] = useState<number | undefined>(undefined);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -26,8 +32,17 @@ export default function NovaVotacaoPage() {
       }
 
       try {
-        const resultado = await buscarContexto(contextoId);
-        if (!cancelado) setContexto(resultado);
+        const [resultadoContexto, resultadoMembros, usuarioAtual] =
+          await Promise.all([
+            buscarContexto(contextoId),
+            buscarMembrosDoContexto(contextoId).catch(() => []),
+            getIdUser().catch(() => null),
+          ]);
+        if (!cancelado) {
+          setContexto(resultadoContexto);
+          setMembros(resultadoMembros);
+          if (usuarioAtual) setAdminId(usuarioAtual.id);
+        }
       } catch (erroApi) {
         if (!cancelado) {
           setErro(
@@ -70,7 +85,12 @@ export default function NovaVotacaoPage() {
         </p>
       )}
       {!carregando && contexto && (
-        <VotacaoForm contextoId={contexto.id} tipoContexto={contexto.tipo} />
+        <VotacaoForm
+          contextoId={contexto.id}
+          tipoContexto={contexto.tipo}
+          adminId={adminId}
+          membrosContexto={membros}
+        />
       )}
     </main>
   );

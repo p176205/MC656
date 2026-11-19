@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buscarApuracao,
   buscarContexto,
+  buscarMembrosDoContexto,
   buscarVotacaoPorId,
   buscarVotacoesPorContexto,
   cadastrarUsuario,
@@ -46,27 +47,27 @@ describe("cadastrarUsuario (fachada da API)", () => {
       status: "ABERTA",
       dataInicio: "2026-11-01T10:00:00",
       dataFim: "2026-11-02T10:00:00",
-      pauta: "Pauta",
-      participantesAptos: 15,
-      pesoVoto: null,
-      unidadeApartamento: null,
-      categoriaSegmento: null,
-      elegibilidade: null,
+      chapas: [],
     };
 
-    it("consulta contexto e lista por contexto usando GET", async () => {
+    it("consulta contexto, membros e lista por contexto usando GET", async () => {
+      const membros = [{ id: 11, nome: "Ana", email: "ana@email.com" }];
       const fetchMock = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ id: 2, nome: "Assembleia", tipo: "ASSEMBLEIA" }) })
+        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue(membros) })
         .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue([votacao]) });
       vi.stubGlobal("fetch", fetchMock);
 
       await expect(buscarContexto(2)).resolves.toEqual({ id: 2, nome: "Assembleia", tipo: "ASSEMBLEIA" });
+      await expect(buscarMembrosDoContexto(2)).resolves.toEqual(membros);
       await expect(buscarVotacoesPorContexto(2)).resolves.toEqual([votacao]);
 
       expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/contextos\/id\/2$/);
       expect(fetchMock.mock.calls[0][1].method).toBe("GET");
-      expect(fetchMock.mock.calls[1][0]).toMatch(/\/api\/votacoes\/contexto\/2$/);
+      expect(fetchMock.mock.calls[1][0]).toMatch(/\/api\/contextos\/2\/membros$/);
       expect(fetchMock.mock.calls[1][1].method).toBe("GET");
+      expect(fetchMock.mock.calls[2][0]).toMatch(/\/api\/votacoes\/contexto\/2$/);
+      expect(fetchMock.mock.calls[2][1].method).toBe("GET");
     });
 
     it("busca detalhes e apuração por id", async () => {
@@ -88,9 +89,11 @@ describe("cadastrarUsuario (fachada da API)", () => {
       expect(fetchMock.mock.calls[1][1].method).toBe("GET");
     });
 
-    it("cadastra payload específico do contexto sem status definido pelo cliente", async () => {
+    it("cadastra votação (deliberação ou eleição) sem status definido pelo cliente", async () => {
       const cadastro = {
         contextoId: 2,
+        adminId: 7,
+        tipo: "DELIBERACAO",
         titulo: "Assembleia",
         descricao: "Descrição",
         regraAprovacao: "MAIORIA_SIMPLES",
@@ -98,8 +101,7 @@ describe("cadastrarUsuario (fachada da API)", () => {
         quorumMinimo: 50,
         dataInicio: "2026-11-01T10:00:00",
         dataFim: "2026-11-02T10:00:00",
-        pauta: "Pauta",
-        participantesAptos: 15,
+        chapas: null,
       } as const;
       const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(votacao) });
       vi.stubGlobal("fetch", fetchMock);

@@ -107,4 +107,14 @@ public class ContextoController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
+
+    @GetMapping("/{contextoId}/membros")
+    public ResponseEntity<?> listarMembros(@PathVariable Long contextoId) {
+        try {
+            var resposta = contextoService.listarMembrosDoContexto(contextoId);
+            return ResponseEntity.ok(resposta);
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }

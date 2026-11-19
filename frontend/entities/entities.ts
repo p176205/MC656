@@ -95,7 +95,8 @@ export type Aba =
   | "MEMBROS"
 
 export type TipoVotacao =
-  "DELIBERACAO"
+  | "DELIBERACAO"
+  | "ELEICAO";
 
 export type RegraAprovacao =
   | "MAIORIA_SIMPLES"
@@ -105,20 +106,39 @@ export type StatusVotacao =
   | "ENCERRADA"
   | "ABERTA"
 
+export interface MembroChapa {
+    id: number;
+    nome: string;
+    email: string;
+}
+
+export interface ChapaCadastro {
+    nome: string;
+    proposta: string | null;
+    membrosIds: number[];
+}
+
+export interface ChapaResponse {
+    id: number;
+    votacaoId: number;
+    nome: string;
+    proposta: string | null;
+    membros: MembroChapa[];
+}
+
 export type VotacaoCadastro = {
     titulo: string;
     descricao: string;
     contextoId: number;
+    tipo: TipoVotacao;
     regraAprovacao: RegraAprovacao;
     percentualMinimo: number | null;
     quorumMinimo: number;
     dataInicio: string;
     dataFim: string;
-} & (
-    | { pauta: string; participantesAptos: number; pesoVoto?: never; unidadeApartamento?: never; categoriaSegmento?: never; elegibilidade?: never }
-    | { pesoVoto: number; unidadeApartamento: string; pauta?: never; participantesAptos?: never; categoriaSegmento?: never; elegibilidade?: never }
-    | { categoriaSegmento: string; elegibilidade: string; pauta?: never; participantesAptos?: never; pesoVoto?: never; unidadeApartamento?: never }
-);
+    adminId: number;
+    chapas: ChapaCadastro[] | null;
+};
 
 export interface VotacaoResponse {
     id: number;
@@ -133,18 +153,13 @@ export interface VotacaoResponse {
     status: StatusVotacao;
     dataInicio: string | null;
     dataFim: string | null;
-    pauta: string | null;
-    participantesAptos: number | null;
-    pesoVoto: number | null;
-    unidadeApartamento: string | null;
-    categoriaSegmento: string | null;
-    elegibilidade: string | null;
+    chapas?: ChapaResponse[];
 }
 
 export interface ApuracaoResponse {
     votacaoId: number;
     titulo: string;
-    resultado: "APROVADA" | "REJEITADA" | "SEM_QUORUM";
+    resultado: "APROVADA" | "REJEITADA" | "SEM_QUORUM" | "ELEITA" | "EMPATE";
     quorumAtingido: boolean;
     votosSim: number;
     votosNao: number;

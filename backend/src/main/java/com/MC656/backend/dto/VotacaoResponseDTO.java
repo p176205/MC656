@@ -4,7 +4,6 @@ import com.MC656.backend.entity.RegraAprovacao;
 import com.MC656.backend.entity.StatusVotacao;
 import com.MC656.backend.entity.TipoVotacao;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,11 +20,5 @@ public record VotacaoResponseDTO(
         StatusVotacao status,
         LocalDateTime dataInicio,
         LocalDateTime dataFim,
-        String pauta,
-        Integer participantesAptos,
-        BigDecimal pesoVoto,
-        String unidadeApartamento,
-        String categoriaSegmento,
-        String elegibilidade,
         List<ChapaResponseDTO> chapas
 ) {}
