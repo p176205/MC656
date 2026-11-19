@@ -12,6 +12,14 @@ const statusLabels: Record<string, string> = {
   ENCERRADA: "Encerrada",
 };
 
+const resultadoLabels: Record<string, string> = {
+  APROVADA: "Aprovada",
+  REJEITADA: "Rejeitada",
+  SEM_QUORUM: "Sem quórum",
+  ELEITA: "Chapa eleita",
+  EMPATE: "Empate",
+};
+
 function formatarData(data: string | null): string {
   if (!data) return "Não definida";
   const dataObj = new Date(data);
@@ -46,9 +54,12 @@ export default function VotacaoDetalhesPage() {
 
       try {
         const resultado = await buscarVotacaoPorId(votacaoId);
+        const prazoExpirado =
+          resultado.dataFim !== null &&
+          new Date(resultado.dataFim) <= new Date();
         if (!cancelado) {
           setVotacao(resultado);
-          if (resultado.status === "ENCERRADA") {
+          if (resultado.status === "ENCERRADA" || prazoExpirado) {
             try {
               const resultadoApuracao = await buscarApuracao(votacaoId);
               if (!cancelado) setApuracao(resultadoApuracao);
@@ -196,7 +207,9 @@ export default function VotacaoDetalhesPage() {
               </div>
             </section>
           )}
-          {votacao.status === "ENCERRADA" && (
+          {(votacao.status === "ENCERRADA" ||
+            (votacao.dataFim !== null &&
+              new Date(votacao.dataFim) <= new Date())) && (
             <section
               aria-labelledby="apuracao-titulo"
               className="mt-8 border-t pt-6"
@@ -221,7 +234,9 @@ export default function VotacaoDetalhesPage() {
                 <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
                   <div>
                     <dt className="font-medium text-gray-800">Resultado</dt>
-                    <dd className="text-gray-600">{apuracao.resultado}</dd>
+                    <dd className="text-gray-600">
+                      {resultadoLabels[apuracao.resultado] ?? apuracao.resultado}
+                    </dd>
                   </div>
                   <div>
                     <dt className="font-medium text-gray-800">

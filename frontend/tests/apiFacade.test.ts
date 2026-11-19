@@ -7,6 +7,7 @@ import {
   buscarVotacoesPorContexto,
   cadastrarUsuario,
   cadastrarVotacao,
+  encerrarVotacao,
 } from "../services/apiFacade";
 
 const usuario = { nome: "Maria", email: "maria@email.com", senha: "123456" };
@@ -128,5 +129,31 @@ describe("cadastrarUsuario (fachada da API)", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("rede indisponível")));
 
     await expect(cadastrarUsuario(usuario)).rejects.toThrow("rede indisponível");
+  });
+});
+
+describe("encerrarVotacao (fachada da API)", () => {
+  it("envia PATCH para encerrar uma votação e retorna a votação atualizada", async () => {
+    const votacaoEncerrada = { id: 8, status: "ENCERRADA" };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(votacaoEncerrada),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(encerrarVotacao(8)).resolves.toEqual(votacaoEncerrada);
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/api\/votacoes\/8\/encerrar$/);
+    expect(opcoes.method).toBe("PATCH");
+    expect(opcoes.credentials).toBe("include");
+  });
+
+  it("repassa a mensagem do backend quando o encerramento é recusado", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      text: vi.fn().mockResolvedValue("Votação já encerrada"),
+    }));
+    await expect(encerrarVotacao(8)).rejects.toThrow("Votação já encerrada");
   });
 });

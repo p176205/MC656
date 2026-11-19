@@ -233,6 +233,19 @@ export async function buscarApuracao(votacaoId: number): Promise<ApuracaoRespons
   }
   return resposta.json();
 }
+
+// PATCH /api/votacoes/{id}/encerrar
+export async function encerrarVotacao(votacaoId: number): Promise<VotacaoResponse> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${votacaoId}/encerrar`, {
+    method: "PATCH",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao encerrar a votação.");
+  }
+  return resposta.json();
+}
+
 // GET /api/contextos/{contextoId}/mensagens?usuarioId={usuarioId}
 // Busca as mensagens de um contexto
 export async function buscarMensagens(
@@ -279,4 +292,3 @@ export async function enviarMensagem(
 
   return (await resposta.json()) as Mensagem;
 }
-
