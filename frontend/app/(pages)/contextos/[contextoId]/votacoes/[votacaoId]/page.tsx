@@ -317,4 +317,65 @@ export default function VotacaoDetalhesPage() {
               </h2>
 
               {erroApuracao && (
-                <p role="alert"
+                <p role="alert" className="mt-3 text-red-700">
+                  {erroApuracao}
+                </p>
+              )}
+              {!erroApuracao && !apuracao && (
+                <p role="status" className="mt-3 text-gray-600">
+                  Carregando apuração...
+                </p>
+              )}
+              {apuracao && (
+                <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt className="font-medium text-gray-800">Resultado</dt>
+                    <dd className="text-gray-600">
+                      {resultadoLabels[apuracao.resultado] ?? apuracao.resultado}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">
+                      Quórum atingido
+                    </dt>
+                    <dd className="text-gray-600">
+                      {apuracao.quorumAtingido ? "Sim" : "Não"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">Votos sim</dt>
+                    <dd className="text-gray-600">{apuracao.votosSim}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">Votos não</dt>
+                    <dd className="text-gray-600">{apuracao.votosNao}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">Abstenções</dt>
+                    <dd className="text-gray-600">{apuracao.abstencoes}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">
+                      Total de votantes
+                    </dt>
+                    <dd className="text-gray-600">{apuracao.totalVotantes}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-gray-800">
+                      Percentual de votos sim
+                    </dt>
+                    <dd className="text-gray-600">
+                      {apuracao.percentualSimObtido === null
+                        ? "Não disponível"
+                        : `${apuracao.percentualSimObtido}%`}
+                    </dd>
+                  </div>
+                </dl>
+              )}
+            </section>
+          )}
+        </section>
+      )}
+    </main>
+  );
+}
