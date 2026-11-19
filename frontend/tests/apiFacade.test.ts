@@ -7,6 +7,7 @@ import {
   buscarVotacoesPorContexto,
   cadastrarUsuario,
   cadastrarVotacao,
+  votarEmVotacao,
 } from "../services/apiFacade";
 
 const usuario = { nome: "Maria", email: "maria@email.com", senha: "123456" };
@@ -128,5 +129,29 @@ describe("cadastrarUsuario (fachada da API)", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("rede indisponível")));
 
     await expect(cadastrarUsuario(usuario)).rejects.toThrow("rede indisponível");
+  });
+});
+
+describe("votarEmVotacao (fachada da API)", () => {
+  it("envia POST com usuarioId e opcao para /api/votacoes/{id}/votos", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await votarEmVotacao(8, { usuarioId: 3, opcao: "SIM" });
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/api\/votacoes\/8\/votos$/);
+    expect(opcoes.method).toBe("POST");
+    expect(opcoes.credentials).toBe("include");
+    expect(JSON.parse(opcoes.body)).toEqual({ usuarioId: 3, opcao: "SIM" });
+  });
+
+  it("repassa a mensagem do backend quando o voto é recusado", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false, status: 409, text: vi.fn().mockResolvedValue("Voto já registrado"),
+    }));
+
+    await expect(votarEmVotacao(8, { usuarioId: 3, opcao: "NAO" }))
+      .rejects.toThrow("Voto já registrado");
   });
 });

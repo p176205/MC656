@@ -10,6 +10,7 @@ import type {
   UsuarioResponse,
   VotacaoCadastro,
   VotacaoResponse,
+  VotoCadastro,
 } from "@/entities/entities";
 
 // Fachada (Facade) para a API REST do backend.
@@ -233,6 +234,20 @@ export async function buscarApuracao(votacaoId: number): Promise<ApuracaoRespons
   }
   return resposta.json();
 }
+
+// POST /api/votacoes/{id}/votos
+export async function votarEmVotacao(votacaoId: number, voto: VotoCadastro): Promise<void> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${votacaoId}/votos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(voto),
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao registrar o voto.");
+  }
+}
+
 // GET /api/contextos/{contextoId}/mensagens?usuarioId={usuarioId}
 // Busca as mensagens de um contexto
 export async function buscarMensagens(
@@ -279,4 +294,3 @@ export async function enviarMensagem(
 
   return (await resposta.json()) as Mensagem;
 }
-
