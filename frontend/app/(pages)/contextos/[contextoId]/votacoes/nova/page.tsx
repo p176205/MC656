@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { ContextoDetalhe, MembroChapa } from "@/entities/entities";
 import {
   buscarContexto,
@@ -20,6 +20,8 @@ export default function NovaVotacaoPage() {
   const [adminId, setAdminId] = useState<number | undefined>(undefined);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     let cancelado = false;
@@ -65,14 +67,17 @@ export default function NovaVotacaoPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
       <header className="flex flex-row mb-8 mt-4 justify-between">
-        <h1 className="mt-1 text-3xl font-bold text-gray-900">{contexto?.tipo != "ASSEMBLEIA" ? "Nova votação" : "Nova deliberação"}</h1>
-        <Link
+        <h1 className="mt-1 text-3xl font-bold text-gray-900">
+          {contexto?.tipo != "ASSEMBLEIA" ? "Nova votação" : "Nova deliberação"}
+        </h1>
+        <button
           className="inline-flex items-center gap-2 text-indigo-800 bg-indigo-300 py-2 px-4 rounded-xl font-medium hover:bg-indigo-200 hover:shadow-sm"
-          href="/home"
+          type="button"
+          onClick={() => router.push(`/home?contextoId=${contextoId}`)}
         >
           <MdArrowBack size={20} />
           Voltar
-        </Link>
+        </button>
       </header>
 
       {carregando && <p role="status">Carregando contexto...</p>}

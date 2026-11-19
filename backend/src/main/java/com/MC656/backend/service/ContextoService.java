@@ -237,6 +237,10 @@ public class ContextoService {
             throw new RuntimeException("Somente administradores ou síndicos podem remover membros.");
         }
 
+        // Por precaução 
+        if(administradorId == membroId){
+            throw new RuntimeException("O administrador do contexto não pode ser removido.");
+        }
         // Busca a participação do membro no contexto. Como a participacao é unica, a lista conterá um elemento
         Participacao participacao = participacaoRepository
                 .findByUsuarioIdAndContextoId(membroId, contextoId)
@@ -246,8 +250,5 @@ public class ContextoService {
 
         // Exclui somente a participação
         participacaoRepository.delete(participacao);
-
-
-        // preciso fazer com q se for o ultimo no contexto apague
     }
 }

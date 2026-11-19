@@ -24,7 +24,7 @@ import {
 } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MdBarChart, MdHowToVote, MdInfoOutline, MdSend } from "react-icons/md";
 import { LuMessagesSquare } from "react-icons/lu";
 import { HiTrash } from "react-icons/hi";
@@ -37,7 +37,7 @@ export default function Home() {
   const [contextos, setContextos] = useState<ContextoDTO[]>([]);
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
   const [open, setOpen] = useState(false);
-  const [abaSelecionada, setAbaSelecionada] = useState<Aba>("COMUNIDADE");
+  const [abaSelecionada, setAbaSelecionada] = useState<Aba>("VOTACAO");
   const [criarContexto, setCriarContexto] = useState(false);
   const [entrarContexto, setEntrarContexto] = useState(false);
   const [logout, setLogout] = useState<boolean>(false);
@@ -49,6 +49,22 @@ export default function Home() {
   const [erroMembros, setErroMembros] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [textoMensagem, setTextoMensagem] = useState("");
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const contextoId = searchParams.get("contextoId");
+
+    if (!contextoId || contextos.length === 0) return;
+
+    const contextoSelecionado = contextos.find(
+      (contexto) => contexto.id === Number(contextoId),
+    );
+
+    if (contextoSelecionado) {
+      setContextoAtual(contextoSelecionado);
+    }
+  }, [searchParams, contextos]);
 
   useEffect(() => {
     async function carregarDados() {
@@ -522,27 +538,31 @@ export default function Home() {
                     {/* Remover membro e modificar peso - somente administrador */}
                     {contextoAtual.papel === "ADMINISTRADOR" && (
                       <div className="flex flex-row gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            ExcluirParticipacao(membro.id);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-blue-600 hover:bg-blue-200/70 bg-blue-100 transition-colors shrink-0"
-                        >
-                          <FiEdit3 className="text-blue-600" size={18} />
-                          Modificar peso
-                        </button>
+                        {contextoAtual.tipo == "CONDOMINIO" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // mudar peso
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-blue-600 hover:bg-blue-200/70 bg-blue-100 transition-colors shrink-0"
+                          >
+                            <FiEdit3 className="text-blue-600" size={18} />
+                            Modificar peso
+                          </button>
+                        )}
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            ExcluirParticipacao(membro.id);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 bg-red-200/70 hover:bg-red-50 transition-colors shrink-0"
-                        >
-                          <HiTrash color="red" size={18} />
-                          Remover
-                        </button>
+                        {user && membro.id != user.id && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              ExcluirParticipacao(membro.id);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 bg-red-200/70 hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <HiTrash color="red" size={18} />
+                            Remover
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -586,7 +606,7 @@ export default function Home() {
             setOpen={setOpen}
             onSelecionar={(contexto) => {
               setContextoAtual(contexto);
-              setAbaSelecionada("COMUNIDADE");
+              setAbaSelecionada("VOTACAO");
             }}
             onCriar={() => {
               setCriarContexto(true);

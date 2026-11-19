@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import type { ApuracaoResponse, VotacaoResponse } from "@/entities/entities";
 import { buscarApuracao, buscarVotacaoPorId } from "@/services/apiFacade";
 import { MdArrowBack } from "react-icons/md";
+import { useRouter } from "next/navigation";
 
 const statusLabels: Record<string, string> = {
   ABERTA: "Aberta",
@@ -33,6 +34,7 @@ export default function VotacaoDetalhesPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [apuracao, setApuracao] = useState<ApuracaoResponse | null>(null);
   const [erroApuracao, setErroApuracao] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let cancelado = false;
@@ -89,13 +91,14 @@ export default function VotacaoDetalhesPage() {
           Detalhes da {votacao?.titulo}
         </h1>
         <div className="mb-4">
-          <Link
+          <button
             className="inline-flex items-center gap-2 text-indigo-800 bg-indigo-300 py-2 px-4 rounded-xl font-medium hover:bg-indigo-200 hover:shadow-sm"
-            href="/home"
+            type="button"
+            onClick={() => router.push(`/home?contextoId=${contextoIdParam}`)}
           >
             <MdArrowBack size={20} />
             Voltar
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -132,7 +135,7 @@ export default function VotacaoDetalhesPage() {
                 </span>
               </div>
               <p className="mt-4 whitespace-pre-wrap text-gray-700 border-b-2 border-b-indigo-500 pb-4">
-               Descrição: {votacao.descricao}
+                Descrição: {votacao.descricao}
               </p>
             </div>
           </header>
@@ -173,29 +176,35 @@ export default function VotacaoDetalhesPage() {
               </dd>
             </div>
           </dl>
-          {votacao.tipo === "ELEICAO" && votacao.chapas && votacao.chapas.length > 0 && (
-            <section className="mt-6 border-t pt-6">
-              <h2 className="text-lg font-semibold text-gray-900">Chapas concorrentes</h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {votacao.chapas.map((chapa) => (
-                  <div
-                    key={chapa.id}
-                    className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4"
-                  >
-                    <h3 className="font-semibold text-indigo-950">{chapa.nome}</h3>
-                    {chapa.proposta && (
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
-                        {chapa.proposta}
+          {votacao.tipo === "ELEICAO" &&
+            votacao.chapas &&
+            votacao.chapas.length > 0 && (
+              <section className="mt-6 border-t pt-6">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Chapas concorrentes
+                </h2>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {votacao.chapas.map((chapa) => (
+                    <div
+                      key={chapa.id}
+                      className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4"
+                    >
+                      <h3 className="font-semibold text-indigo-950">
+                        {chapa.nome}
+                      </h3>
+                      {chapa.proposta && (
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
+                          {chapa.proposta}
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-gray-600">
+                        Membros: {chapa.membros.map((m) => m.nome).join(", ")}
                       </p>
-                    )}
-                    <p className="mt-2 text-xs text-gray-600">
-                      Membros: {chapa.membros.map((m) => m.nome).join(", ")}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           {votacao.status === "ENCERRADA" && (
             <section
               aria-labelledby="apuracao-titulo"
