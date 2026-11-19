@@ -7,10 +7,15 @@ import {
   buscarVotacoesPorContexto,
   cadastrarUsuario,
   cadastrarVotacao,
+  encerrarVotacao,
   votarEmVotacao,
 } from "../services/apiFacade";
 
-const usuario = { nome: "Maria", email: "maria@email.com", senha: "123456" };
+const usuario = {
+  nome: "Maria",
+  email: "maria@email.com",
+  senha: "123456",
+};
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -18,18 +23,28 @@ afterEach(() => {
 
 describe("cadastrarUsuario (fachada da API)", () => {
   it("envia POST com JSON para /api/usuarios e retorna ok quando o backend responde 201", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201, text: vi.fn().mockResolvedValue("Usuário cadastrado com sucesso") });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      text: vi.fn().mockResolvedValue("Usuário cadastrado com sucesso"),
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const resultado = await cadastrarUsuario(usuario);
 
-    expect(resultado).toEqual({ ok: true, status: 201, message: "Usuário cadastrado com sucesso" });
+    expect(resultado).toEqual({
+      ok: true,
+      status: 201,
+      message: "Usuário cadastrado com sucesso",
+    });
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const [url, opcoes] = fetchMock.mock.calls[0];
     expect(url).toMatch(/\/api\/usuarios$/);
     expect(opcoes.method).toBe("POST");
-    expect(opcoes.headers).toEqual({ "Content-Type": "application/json" });
+    expect(opcoes.headers).toEqual({
+      "Content-Type": "application/json",
+    });
     expect(opcoes.credentials).toBe("include");
     expect(JSON.parse(opcoes.body)).toEqual(usuario);
   });
@@ -52,41 +67,89 @@ describe("cadastrarUsuario (fachada da API)", () => {
     };
 
     it("consulta contexto, membros e lista por contexto usando GET", async () => {
-      const membros = [{ id: 11, nome: "Ana", email: "ana@email.com" }];
-      const fetchMock = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ id: 2, nome: "Assembleia", tipo: "ASSEMBLEIA" }) })
-        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue(membros) })
-        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue([votacao]) });
+      const membros = [
+        { id: 11, nome: "Ana", email: "ana@email.com" },
+      ];
+
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            id: 2,
+            nome: "Assembleia",
+            tipo: "ASSEMBLEIA",
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(membros),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue([votacao]),
+        });
       vi.stubGlobal("fetch", fetchMock);
 
-      await expect(buscarContexto(2)).resolves.toEqual({ id: 2, nome: "Assembleia", tipo: "ASSEMBLEIA" });
+      await expect(buscarContexto(2)).resolves.toEqual({
+        id: 2,
+        nome: "Assembleia",
+        tipo: "ASSEMBLEIA",
+      });
       await expect(buscarMembrosDoContexto(2)).resolves.toEqual(membros);
       await expect(buscarVotacoesPorContexto(2)).resolves.toEqual([votacao]);
 
-      expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/contextos\/id\/2$/);
+      expect(fetchMock.mock.calls[0][0]).toMatch(
+        /\/api\/contextos\/id\/2$/,
+      );
       expect(fetchMock.mock.calls[0][1].method).toBe("GET");
-      expect(fetchMock.mock.calls[1][0]).toMatch(/\/api\/contextos\/2\/membros$/);
+      expect(fetchMock.mock.calls[1][0]).toMatch(
+        /\/api\/contextos\/2\/membros$/,
+      );
       expect(fetchMock.mock.calls[1][1].method).toBe("GET");
-      expect(fetchMock.mock.calls[2][0]).toMatch(/\/api\/votacoes\/contexto\/2$/);
+      expect(fetchMock.mock.calls[2][0]).toMatch(
+        /\/api\/votacoes\/contexto\/2$/,
+      );
       expect(fetchMock.mock.calls[2][1].method).toBe("GET");
     });
 
     it("busca detalhes e apuração por id", async () => {
       const apuracao = {
-        votacaoId: 8, titulo: "Assembleia", resultado: "APROVADA", quorumAtingido: true,
-        votosSim: 5, votosNao: 2, abstencoes: 0, totalVotantes: 7,
-        regraAprovacao: "MAIORIA_SIMPLES", percentualMinimo: null, percentualSimObtido: 71.43,
+        votacaoId: 8,
+        titulo: "Assembleia",
+        resultado: "APROVADA",
+        quorumAtingido: true,
+        votosSim: 5,
+        votosNao: 2,
+        abstencoes: 0,
+        totalVotantes: 7,
+        regraAprovacao: "MAIORIA_SIMPLES",
+        percentualMinimo: null,
+        percentualSimObtido: 71.43,
       };
-      const fetchMock = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue(votacao) })
-        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue(apuracao) });
+
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(votacao),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(apuracao),
+        });
       vi.stubGlobal("fetch", fetchMock);
 
       await expect(buscarVotacaoPorId(8)).resolves.toEqual(votacao);
       await expect(buscarApuracao(8)).resolves.toEqual(apuracao);
-      expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/votacoes\/8$/);
+
+      expect(fetchMock.mock.calls[0][0]).toMatch(
+        /\/api\/votacoes\/8$/,
+      );
       expect(fetchMock.mock.calls[0][1].method).toBe("GET");
-      expect(fetchMock.mock.calls[1][0]).toMatch(/\/api\/votacoes\/8\/apuracao$/);
+      expect(fetchMock.mock.calls[1][0]).toMatch(
+        /\/api\/votacoes\/8\/apuracao$/,
+      );
       expect(fetchMock.mock.calls[1][1].method).toBe("GET");
     });
 
@@ -104,7 +167,11 @@ describe("cadastrarUsuario (fachada da API)", () => {
         dataFim: "2026-11-02T10:00:00",
         chapas: null,
       } as const;
-      const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(votacao) });
+
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue(votacao),
+      });
       vi.stubGlobal("fetch", fetchMock);
 
       await expect(cadastrarVotacao(cadastro)).resolves.toEqual(votacao);
@@ -118,17 +185,65 @@ describe("cadastrarUsuario (fachada da API)", () => {
   });
 
   it("retorna ok=false quando o backend recusa o cadastro (400)", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 400, text: vi.fn().mockResolvedValue("E-mail já cadastrado"), }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: vi.fn().mockResolvedValue("E-mail já cadastrado"),
+      }),
+    );
 
     const resultado = await cadastrarUsuario(usuario);
 
-    expect(resultado).toEqual({ ok: false, status: 400, message: "E-mail já cadastrado", });
+    expect(resultado).toEqual({
+      ok: false,
+      status: 400,
+      message: "E-mail já cadastrado",
+    });
   });
 
   it("propaga o erro quando a rede falha", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("rede indisponível")));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("rede indisponível")),
+    );
 
-    await expect(cadastrarUsuario(usuario)).rejects.toThrow("rede indisponível");
+    await expect(cadastrarUsuario(usuario)).rejects.toThrow(
+      "rede indisponível",
+    );
+  });
+});
+
+describe("encerrarVotacao (fachada da API)", () => {
+  it("envia PATCH para encerrar uma votação e retorna a votação atualizada", async () => {
+    const votacaoEncerrada = { id: 8, status: "ENCERRADA" };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(votacaoEncerrada),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(encerrarVotacao(8)).resolves.toEqual(votacaoEncerrada);
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/api\/votacoes\/8\/encerrar$/);
+    expect(opcoes.method).toBe("PATCH");
+    expect(opcoes.credentials).toBe("include");
+  });
+
+  it("repassa a mensagem do backend quando o encerramento é recusado", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        text: vi.fn().mockResolvedValue("Votação já encerrada"),
+      }),
+    );
+
+    await expect(encerrarVotacao(8)).rejects.toThrow(
+      "Votação já encerrada",
+    );
   });
 });
 
@@ -143,15 +258,24 @@ describe("votarEmVotacao (fachada da API)", () => {
     expect(url).toMatch(/\/api\/votacoes\/8\/votos$/);
     expect(opcoes.method).toBe("POST");
     expect(opcoes.credentials).toBe("include");
-    expect(JSON.parse(opcoes.body)).toEqual({ usuarioId: 3, opcao: "SIM" });
+    expect(JSON.parse(opcoes.body)).toEqual({
+      usuarioId: 3,
+      opcao: "SIM",
+    });
   });
 
   it("repassa a mensagem do backend quando o voto é recusado", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: false, status: 409, text: vi.fn().mockResolvedValue("Voto já registrado"),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        text: vi.fn().mockResolvedValue("Voto já registrado"),
+      }),
+    );
 
-    await expect(votarEmVotacao(8, { usuarioId: 3, opcao: "NAO" }))
-      .rejects.toThrow("Voto já registrado");
+    await expect(
+      votarEmVotacao(8, { usuarioId: 3, opcao: "NAO" }),
+    ).rejects.toThrow("Voto já registrado");
   });
 });

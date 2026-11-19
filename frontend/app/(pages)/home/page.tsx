@@ -13,6 +13,7 @@ import {
 import {
   buscarMensagens,
   buscarVotacoesPorContexto,
+  encerrarVotacao,
   enviarMensagem,
   getContextos,
   getIdUser,
@@ -174,6 +175,21 @@ export default function Home() {
       setMensagens((mensagensAtuais) => [...mensagensAtuais, novaMensagem]); // Atualiza o array de mensagens com esta que acabou de ser feita
     } catch (erro) {
       console.error("Erro ao enviar mensagem:", erro);
+    }
+  }
+
+  async function encerrar(votacaoId: number) {
+    try {
+      const atualizada = await encerrarVotacao(votacaoId);
+      setVotacoes((atuais) =>
+        atuais.map((v) => (v.id === atualizada.id ? atualizada : v)),
+      );
+    } catch (e) {
+      setErroVotacoes(
+        e instanceof Error
+          ? e.message
+          : "Não foi possível encerrar a votação.",
+      );
     }
   }
 
@@ -415,6 +431,16 @@ export default function Home() {
                         <MdBarChart size={19} />
                         Resultados
                       </Link>
+                      {contextoAtual.papel === "ADMINISTRADOR" &&
+                        votacao.status === "ABERTA" && (
+                          <button
+                            type="button"
+                            onClick={() => encerrar(votacao.id)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-red-700 border border-red-300 font-medium text-sm hover:bg-red-50"
+                          >
+                            Encerrar
+                          </button>
+                        )}
                     </section>
                     <div className="flex items-center justify-between border-t border-indigo-300/90 pt-2 text-xs text-indigo-700">
                       <span>
