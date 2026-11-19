@@ -127,6 +127,12 @@ export interface ChapaResponse {
     membros: MembroChapa[];
 }
 
+export type OpcaoVoto = "SIM" | "NAO" | "ABSTENCAO";
+
+export type VotoCadastro =
+    | { usuarioId: number; opcao: OpcaoVoto; chapaId?: never }
+    | { usuarioId: number; chapaId: number; opcao?: never };
+
 export type VotacaoCadastro = {
     titulo: string;
     descricao: string;
