@@ -1,4 +1,7 @@
-# MC656 - Podemos dar um título ao projeto
+# MC656 — Plataforma de Deliberações e Eleições
+
+Sistema web para organizar votações e deliberações em assembleias, centros
+acadêmicos e condomínios, incluindo eleições por chapas.
 
 ## Alunos Integrantes
 
@@ -21,12 +24,14 @@ e após processos eleitorais ou deliberativos.
 
 - Git;
 - Java 21 (o backend declara `java.version` 21 no `pom.xml`);
-- Node.js e npm;
-- PostgreSQL configurado localmente.
+- Node.js 20 ou superior e npm;
+- Docker Compose (para executar o PostgreSQL localmente).
 
 O backend usa Maven por meio do Maven Wrapper versionado em `backend/`. O
 frontend usa Next.js e npm, com as versões das dependências registradas em
 `frontend/package-lock.json`.
+O arquivo `frontend/.nvmrc` fixa a versão de Node recomendada para o frontend;
+com nvm, execute `nvm use` dentro de `frontend/`.
 
 ## Clone
 
@@ -45,13 +50,13 @@ Copie o arquivo de exemplo para criar a configuração local:
 cp .env.example .env
 ```
 
-O arquivo `.env` não deve ser versionado. Ajuste seus valores conforme a
-instalação local do PostgreSQL:
+O arquivo `.env` não deve ser versionado. Os valores de exemplo correspondem
+ao banco PostgreSQL iniciado pelo Docker Compose:
 
 ```env
-DB_URL=jdbc:postgresql://localhost:5432/example_db
-DB_USERNAME=example_user
-DB_PASSWORD=example_password
+DB_URL=jdbc:postgresql://localhost:5432/mc656
+DB_USERNAME=mc656_user
+DB_PASSWORD=mc656_dev
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
@@ -72,21 +77,27 @@ set +a
 No PowerShell, defina as variáveis no processo atual, por exemplo:
 
 ```powershell
-$env:DB_URL = "jdbc:postgresql://localhost:5432/example_db"
-$env:DB_USERNAME = "example_user"
-$env:DB_PASSWORD = "example_password"
+$env:DB_URL = "jdbc:postgresql://localhost:5432/mc656"
+$env:DB_USERNAME = "mc656_user"
+$env:DB_PASSWORD = "mc656_dev"
 $env:NEXT_PUBLIC_API_URL = "http://localhost:8080"
 ```
 
-## PostgreSQL
+## Banco de dados com Docker Compose
 
-O PostgreSQL não é instalado nem configurado automaticamente. Crie
-manualmente um banco e um usuário, ou use uma instalação PostgreSQL já
-existente, e coloque no `.env` a URL, o usuário e a senha correspondentes.
+Na raiz do projeto, inicie o PostgreSQL:
 
-Os valores de exemplo usam o banco `example_db`, o usuário `example_user` e a
-porta `5432`. Eles são apenas exemplos e precisam existir na instalação local
-ou ser substituídos por valores válidos.
+```bash
+docker compose up -d db
+```
+
+O Compose lê as configurações do `.env` e persiste os dados no volume
+`db-data`. Se não houver `.env`, o banco usa `mc656_user` e `mc656_dev` como
+valores padrão de desenvolvimento.
+
+Para usar um PostgreSQL já instalado, não inicie o serviço `db`; configure
+`DB_URL`, `DB_USERNAME` e `DB_PASSWORD` no `.env` para apontar à sua
+instalação.
 
 ## Preparação automatizada
 
@@ -109,7 +120,8 @@ WSL.
 
 ## Execução do backend
 
-Com as variáveis do banco exportadas, execute:
+Com o PostgreSQL disponível, exporte as variáveis do `.env` e inicie o
+backend:
 
 ```bash
 cd backend
@@ -127,7 +139,7 @@ O backend é executado em `http://localhost:8080` por padrão.
 
 ## Execução do frontend
 
-Em outro terminal, com `NEXT_PUBLIC_API_URL` definida, execute:
+Em outro terminal, exporte as variáveis do `.env` nesse terminal e execute:
 
 ```bash
 cd frontend
@@ -196,8 +208,6 @@ As respostas incluem `id`, `contextoNome`, `tipo`, `status` e `chapas`. A apura�
 
 ## Limitações conhecidas
 
-- A versão do Node.js não está fixada por `.nvmrc` ou configuração equivalente.
-- O PostgreSQL precisa ser instalado, criado e configurado manualmente.
 - O arquivo `.env` precisa ser carregado/exportado manualmente antes da
   execução; o `setup.sh` apenas prepara dependências.
 - O teste de contexto do backend pode exigir um PostgreSQL acessível com as
