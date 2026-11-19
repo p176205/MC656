@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { ApuracaoResponse, VotacaoResponse } from "@/entities/entities";
-import { buscarApuracao, buscarVotacaoPorId } from "@/services/apiFacade";
+import { buscarApuracao, buscarVotacaoPorId, getIdUser } from "@/services/apiFacade";
+import PainelVoto from "@/components/votacoes/PainelVoto";
 import { MdArrowBack } from "react-icons/md";
 
 const statusLabels: Record<string, string> = {
@@ -33,6 +34,23 @@ export default function VotacaoDetalhesPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [apuracao, setApuracao] = useState<ApuracaoResponse | null>(null);
   const [erroApuracao, setErroApuracao] = useState<string | null>(null);
+  const [usuarioId, setUsuarioId] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    getIdUser()
+      .then((usuario) => {
+        if (!cancelado) setUsuarioId(usuario.id);
+      })
+      .catch(() => {
+        if (!cancelado) setUsuarioId(null);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -196,6 +214,11 @@ export default function VotacaoDetalhesPage() {
               </div>
             </section>
           )}
+          {votacao.status === "ABERTA" &&
+            votacao.tipo === "DELIBERACAO" &&
+            usuarioId !== null && (
+              <PainelVoto votacaoId={votacao.id} usuarioId={usuarioId} />
+            )}
           {votacao.status === "ENCERRADA" && (
             <section
               aria-labelledby="apuracao-titulo"

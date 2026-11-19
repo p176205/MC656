@@ -401,7 +401,7 @@ export default function Home() {
                       </Link>
 
                       <Link
-                        href="Votar"
+                        href={`/contextos/${contextoAtual.id}/votacoes/${votacao.id}#votar`}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
                       >
                         <MdHowToVote size={19} />
@@ -409,7 +409,7 @@ export default function Home() {
                       </Link>
 
                       <Link
-                        href="Resultados"
+                        href={`/contextos/${contextoAtual.id}/votacoes/${votacao.id}#apuracao-titulo`}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
                       >
                         <MdBarChart size={19} />
