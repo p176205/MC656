@@ -4,6 +4,7 @@ import type {
   ContextoDetalhe,
   ContextoDTO,
   LoginUsuario,
+  Membro,
   MembroChapa,
   TipoContexto,
   Usuario,
@@ -182,6 +183,45 @@ export async function buscarMembrosDoContexto(contextoId: number): Promise<Membr
     throw new Error((await resposta.text()) || "Erro ao buscar os membros do contexto.");
   }
   return resposta.json();
+}
+
+// Buscar membros do contexto + atributos da participacao 
+// GET /api/contextos/{contextoId}/membrosParticipacao
+export async function buscarMembrosDoContextoParticipacao(contextoId: number): Promise<Membro[]> {
+  const resposta = await fetch(`${API_URL}/api/contextos/${contextoId}/membrosParticipacao`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar os membros do contexto.");
+  }
+  return resposta.json();
+}
+
+// PUT /{contextoId}/membro/{membroId}/peso
+// PUT /{contextoId}/membro/{membroId}/peso
+export async function alterarPeso(
+  contextoId: number,
+  membroId: number,
+  peso: number
+): Promise<void> {
+  const resposta = await fetch(
+    `${API_URL}/api/contextos/${contextoId}/membro/${membroId}/peso`,
+    {
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(peso),
+    }
+  );
+
+  if (!resposta.ok) {
+    throw new Error(
+      (await resposta.text()) || "Erro ao alterar peso do membro."
+    );
+  }
 }
 
 // DELETE api/contextos/{contextoId}/adm/{admId}/membros/{membroId}

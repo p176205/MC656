@@ -112,6 +112,14 @@ export interface MembroChapa {
     email: string;
 }
 
+export interface Membro {
+    id: number;
+    nome: string;
+    email: string;
+    peso: number;
+    papel: Papel;
+}
+
 export interface ChapaCadastro {
     nome: string;
     proposta: string | null;

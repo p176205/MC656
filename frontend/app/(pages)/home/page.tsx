@@ -7,12 +7,14 @@ import SeletorContexto from "@/components/seletorContextos";
 import {
   Aba,
   ContextoDTO,
+  Membro,
   MembroChapa,
   UsuarioResponse,
   VotacaoResponse,
 } from "@/entities/entities";
 import {
-  buscarMembrosDoContexto,
+  alterarPeso,
+  buscarMembrosDoContextoParticipacao,
   buscarMensagens,
   buscarVotacoesPorContexto,
   deletarParticipacao,
@@ -29,6 +31,7 @@ import { MdBarChart, MdHowToVote, MdInfoOutline, MdSend } from "react-icons/md";
 import { LuMessagesSquare } from "react-icons/lu";
 import { HiTrash } from "react-icons/hi";
 import { FiEdit3 } from "react-icons/fi";
+import ModificarPeso from "@/components/modificarPeso";
 
 export default function Home() {
   const router = useRouter();
@@ -45,10 +48,12 @@ export default function Home() {
   const [carregandoVotacoes, setCarregandoVotacoes] = useState(false);
   const [erroVotacoes, setErroVotacoes] = useState<string | null>(null);
   const [carregandoMembros, setCarregandoMembros] = useState(false);
-  const [membros, setMembros] = useState<MembroChapa[]>([]);
+  const [membros, setMembros] = useState<Membro[]>([]);
   const [erroMembros, setErroMembros] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [textoMensagem, setTextoMensagem] = useState("");
+  const [editarPeso, setEditarPeso] = useState(false);
+  const [membro, setMembro] = useState<Membro>();
 
   const searchParams = useSearchParams();
 
@@ -145,8 +150,9 @@ export default function Home() {
       setCarregandoMembros(true);
       setErroMembros(null);
       try {
-        const resultado: MembroChapa[] =
-          await buscarMembrosDoContexto(contextoId);
+        const resultado: Membro[] =
+          await buscarMembrosDoContextoParticipacao(contextoId);
+        console.log(resultado);
         if (!cancelado) setMembros(resultado);
       } catch (erro) {
         if (!cancelado) {
@@ -268,6 +274,14 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
         <EntrarContexto user={user} setEntrarContexto={setEntrarContexto} />
+      </main>
+    );
+  }
+
+  if (editarPeso && contextoAtual && membro) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
+        <ModificarPeso membro={membro} contextoAtual={contextoAtual.id} setModificarPeso={setEditarPeso} />{" "}
       </main>
     );
   }
@@ -528,10 +542,10 @@ export default function Home() {
 
                     <div className="min-w-0 flex-1">
                       <p className="text-base font-semibold text-gray-800 truncate">
-                        {membro.nome}
+                        Nome: {membro.nome}
                       </p>
                       <p className="text-sm text-gray-500 truncate">
-                        {membro.email}
+                        Email: {membro.email}
                       </p>
                     </div>
 
@@ -541,9 +555,10 @@ export default function Home() {
                         {contextoAtual.tipo == "CONDOMINIO" && (
                           <button
                             type="button"
-                            onClick={() => {
-                              // mudar peso
-                            }}
+                            onClick={() => (
+                              setEditarPeso(true),
+                              setMembro(membro)
+                            )}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-blue-600 hover:bg-blue-200/70 bg-blue-100 transition-colors shrink-0"
                           >
                             <FiEdit3 className="text-blue-600" size={18} />
