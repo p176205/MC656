@@ -68,4 +68,8 @@ public class Participacao {
     public Double getPeso() {
         return peso;
     }
+
+    public void setPeso(Double novoPeso) {
+        this.peso = novoPeso;
+    }
 }
