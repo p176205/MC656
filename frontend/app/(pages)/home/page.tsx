@@ -55,23 +55,7 @@ export default function Home() {
   const [textoMensagem, setTextoMensagem] = useState("");
   const [editarPeso, setEditarPeso] = useState(false);
   const [membro, setMembro] = useState<Membro>();
-
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const contextoId = searchParams.get("contextoId");
-
-    if (!contextoId || contextos.length === 0) return;
-
-    const contextoSelecionado = contextos.find(
-      (contexto) => contexto.id === Number(contextoId),
-    );
-
-    if (contextoSelecionado) {
-      setContextoAtual(contextoSelecionado);
-    }
-  }, [searchParams, contextos]);
-
   useEffect(() => {
     async function carregarDados() {
       setCarregando(true);
@@ -96,9 +80,13 @@ export default function Home() {
         console.log("Contextos recebidos:", contextos);
         setContextos(contextos);
 
-        if (contextos.length > 0) {
-          setContextoAtual(contextos[0]);
-        }
+        const idContextoURL = Number(searchParams.get("contextoId"));
+
+        const contextoSelecionado = contextos.find(
+          (contexto) => contexto.id === idContextoURL,
+        );
+
+        setContextoAtual(contextoSelecionado ?? contextos[0]);
       } catch (erro) {
         if (erro instanceof Error) {
           console.error("Erro ao carregar dados:", erro.message);
@@ -606,10 +594,7 @@ export default function Home() {
                         {membro.email}
                       </p>
                     </div>
-                    <div
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-teal-500 hover:bg-teal-200/70 bg-teal-100 transition-colors shrink-0"
-                    >
-                      
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-teal-500 hover:bg-teal-200/70 bg-teal-100 transition-colors shrink-0">
                       {membro.papel}
                     </div>
                     {/* Remover membro e modificar peso - somente administrador */}
