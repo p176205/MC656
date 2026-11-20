@@ -16,6 +16,7 @@ import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.ContextoResponseDTO;
 import com.MC656.backend.dto.ContextoDetalheDTO;
 import com.MC656.backend.dto.MembroChapaDTO;
+import com.MC656.backend.dto.MembroDTO;
 import com.MC656.backend.entity.Assembleia;
 import com.MC656.backend.entity.CentroAcademico;
 import com.MC656.backend.entity.Condominio;
@@ -211,7 +212,8 @@ public class ContextoService {
                         Math::max));
     }
 
-    // Lista todos os usuários participantes do contexto (sem duplicatas por usuário)
+    // Lista todos os usuários participantes do contexto (sem duplicatas por
+    // usuário)
     public List<MembroChapaDTO> listarMembrosDoContexto(Long contextoId) {
         contextoRepository.findById(contextoId)
                 .orElseThrow(() -> new NoSuchElementException("Contexto não encontrado."));
@@ -228,4 +230,72 @@ public class ContextoService {
                 .toList();
     }
 
+    // Lista dos membros do contexto exibindo atributos da participação tambem
+    public List<MembroDTO> listarMembrosParticipacao(Long contextoId) {
+    contextoRepository.findById(contextoId)
+            .orElseThrow(() -> new NoSuchElementException("Contexto não encontrado."));
+
+    return participacaoRepository.findByContextoId(contextoId).stream()
+            .filter(p -> p.getUsuario() != null)
+            .collect(Collectors.toMap(
+                    p -> p.getUsuario().getId(),
+                    p -> new MembroDTO(
+                            p.getUsuario().getId(),
+                            p.getUsuario().getNome(),
+                            p.getUsuario().getEmail(),
+                            p.getPeso(),
+                            p.getPapel()
+                    ),
+                    (existente, duplicado) -> existente,
+                    LinkedHashMap::new
+            ))
+            .values()
+            .stream()
+            .toList();
+}
+
+    @Transactional
+    public void deletarParticipacao(Long administradorId, Long contextoId, Long membroId) {
+
+        // Verifica se o usuário possui permissão para remover membros
+        if (!isAdministradorDoContexto(administradorId, contextoId)) {
+            throw new RuntimeException("Somente administradores ou síndicos podem remover membros.");
+        }
+
+        // Por precaução
+        if (administradorId == membroId) {
+            throw new RuntimeException("O administrador do contexto não pode ser removido.");
+        }
+        // Busca a participação do membro no contexto. Como a participacao é unica, a
+        // lista conterá um elemento
+        Participacao participacao = participacaoRepository
+                .findByUsuarioIdAndContextoId(membroId, contextoId)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Membro não encontrado neste contexto."));
+
+        // Exclui somente a participação
+        participacaoRepository.delete(participacao);
+    }
+
+    @Transactional
+    public void alterarPeso(Long contextoId, Long membroId, Double peso) {
+
+        // Valida o peso
+        if (peso == null || peso <= 0) {
+            throw new IllegalArgumentException(
+                    "O peso deve ser maior que zero.");
+        }
+
+        // Busca a participação do membro no contexto
+        Participacao participacao = participacaoRepository
+                .findByUsuarioIdAndContextoId(membroId, contextoId)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException(
+                        "Membro não encontrado neste contexto."));
+
+        // Altera o peso
+        participacao.setPeso(peso);
+    }
 }
