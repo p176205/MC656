@@ -11,6 +11,7 @@ import {
 } from "@/services/apiFacade";
 import PainelVoto from "@/components/votacoes/PainelVoto";
 import { MdArrowBack } from "react-icons/md";
+import { useRouter } from "next/navigation";
 
 const resultadoLabels: Record<string, string> = {
   APROVADA: "Aprovada",
@@ -49,6 +50,7 @@ export default function VotacaoDetalhesPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [apuracao, setApuracao] = useState<ApuracaoResponse | null>(null);
   const [erroApuracao, setErroApuracao] = useState<string | null>(null);
+  const router = useRouter();
   const [usuarioId, setUsuarioId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -147,13 +149,14 @@ export default function VotacaoDetalhesPage() {
         </h1>
 
         <div className="mb-4">
-          <Link
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-300 px-4 py-2 font-medium text-indigo-800 hover:bg-indigo-200 hover:shadow-sm"
-            href="/home"
+          <button
+            className="inline-flex items-center gap-2 text-indigo-800 bg-indigo-300 py-2 px-4 rounded-xl font-medium hover:bg-indigo-200 hover:shadow-sm"
+            type="button"
+            onClick={() => router.push(`/home`)}
           >
             <MdArrowBack size={20} />
             Voltar
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -259,7 +262,6 @@ export default function VotacaoDetalhesPage() {
               </dd>
             </div>
           </dl>
-
           {votacao.tipo === "ELEICAO" &&
             votacao.chapas &&
             votacao.chapas.length > 0 && (
@@ -267,7 +269,6 @@ export default function VotacaoDetalhesPage() {
                 <h2 className="text-lg font-semibold text-gray-900">
                   Chapas concorrentes
                 </h2>
-
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {votacao.chapas.map((chapa) => (
                     <div
@@ -277,7 +278,6 @@ export default function VotacaoDetalhesPage() {
                       <h3 className="font-semibold text-indigo-950">
                         {chapa.nome}
                       </h3>
-
                       {chapa.proposta && (
                         <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
                           {chapa.proposta}
