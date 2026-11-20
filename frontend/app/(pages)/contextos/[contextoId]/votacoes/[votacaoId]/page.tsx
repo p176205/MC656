@@ -152,7 +152,7 @@ export default function VotacaoDetalhesPage() {
           <button
             className="inline-flex items-center gap-2 text-indigo-800 bg-indigo-300 py-2 px-4 rounded-xl font-medium hover:bg-indigo-200 hover:shadow-sm"
             type="button"
-            onClick={() => router.push(`/home?contextoId=${contextoIdParam}`)}
+            onClick={() => router.push(`/home`)}
           >
             <MdArrowBack size={20} />
             Voltar

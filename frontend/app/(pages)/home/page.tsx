@@ -27,7 +27,7 @@ import {
 } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter} from "next/navigation";
 import { MdBarChart, MdHowToVote, MdInfoOutline, MdSend } from "react-icons/md";
 import { LuMessagesSquare } from "react-icons/lu";
 import { HiTrash } from "react-icons/hi";
@@ -55,7 +55,7 @@ export default function Home() {
   const [textoMensagem, setTextoMensagem] = useState("");
   const [editarPeso, setEditarPeso] = useState(false);
   const [membro, setMembro] = useState<Membro>();
-  const searchParams = useSearchParams();
+
   useEffect(() => {
     async function carregarDados() {
       setCarregando(true);
@@ -80,13 +80,9 @@ export default function Home() {
         console.log("Contextos recebidos:", contextos);
         setContextos(contextos);
 
-        const idContextoURL = Number(searchParams.get("contextoId"));
-
-        const contextoSelecionado = contextos.find(
-          (contexto) => contexto.id === idContextoURL,
-        );
-
-        setContextoAtual(contextoSelecionado ?? contextos[0]);
+        if (contextos.length > 0) {
+          setContextoAtual(contextos[0]);
+        }
       } catch (erro) {
         if (erro instanceof Error) {
           console.error("Erro ao carregar dados:", erro.message);
@@ -594,7 +590,10 @@ export default function Home() {
                         {membro.email}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-teal-500 hover:bg-teal-200/70 bg-teal-100 transition-colors shrink-0">
+                    <div
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-teal-500 hover:bg-teal-200/70 bg-teal-100 transition-colors shrink-0"
+                    >
+                      
                       {membro.papel}
                     </div>
                     {/* Remover membro e modificar peso - somente administrador */}
