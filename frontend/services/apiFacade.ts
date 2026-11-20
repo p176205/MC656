@@ -3,6 +3,7 @@ import type {
   Contexto,
   ContextoDetalhe,
   ContextoDTO,
+  ChapaResponse,
   LoginUsuario,
   Membro,
   MembroChapa,
@@ -288,6 +289,18 @@ export async function buscarVotacaoPorId(
     throw new Error((await resposta.text()) || "Erro ao buscar a votação.");
   }
 
+  return resposta.json();
+}
+
+// GET /api/votacoes/{id}/chapas
+export async function buscarChapasDaVotacao(votacaoId: number): Promise<ChapaResponse[]> {
+  const resposta = await fetch(`${API_URL}/api/votacoes/${votacaoId}/chapas`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!resposta.ok) {
+    throw new Error((await resposta.text()) || "Erro ao buscar as chapas da votação.");
+  }
   return resposta.json();
 }
 

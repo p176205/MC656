@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buscarApuracao,
+  buscarChapasDaVotacao,
   buscarContexto,
   buscarMembrosDoContexto,
   buscarVotacaoPorId,
@@ -151,6 +152,38 @@ describe("cadastrarUsuario (fachada da API)", () => {
         /\/api\/votacoes\/8\/apuracao$/,
       );
       expect(fetchMock.mock.calls[1][1].method).toBe("GET");
+    });
+
+    it("busca as chapas de uma votação com credenciais incluídas", async () => {
+      const chapas = [{
+        id: 3,
+        votacaoId: 8,
+        nome: "Renovação",
+        proposta: "Melhorar a participação",
+        membros: [{ id: 11, nome: "Ana", email: "ana@email.com" }],
+      }];
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue(chapas),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(buscarChapasDaVotacao(8)).resolves.toEqual(chapas);
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/votacoes\/8\/chapas$/),
+        { method: "GET", credentials: "include" },
+      );
+    });
+
+    it("propaga a mensagem retornada quando a consulta de chapas falha", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        text: vi.fn().mockResolvedValue("Votação não encontrada."),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(buscarChapasDaVotacao(8)).rejects.toThrow("Votação não encontrada.");
     });
 
     it("cadastra votação (deliberação ou eleição) sem status definido pelo cliente", async () => {

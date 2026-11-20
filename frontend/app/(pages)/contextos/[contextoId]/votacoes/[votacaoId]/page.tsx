@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { ApuracaoResponse, VotacaoResponse } from "@/entities/entities";
+import PainelPropostas from "@/components/votacoes/PainelPropostas";
 import {
   buscarApuracao,
   buscarVotacaoPorId,
@@ -50,6 +51,7 @@ export default function VotacaoDetalhesPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [apuracao, setApuracao] = useState<ApuracaoResponse | null>(null);
   const [erroApuracao, setErroApuracao] = useState<string | null>(null);
+  const [mostrarPropostas, setMostrarPropostas] = useState(false);
   const router = useRouter();
   const [usuarioId, setUsuarioId] = useState<number | null>(null);
 
@@ -96,7 +98,6 @@ export default function VotacaoDetalhesPage() {
           if (resultado.status === "ENCERRADA" || prazoExpirado) {
             try {
               const resultadoApuracao = await buscarApuracao(votacaoId);
-
               if (!cancelado) {
                 setApuracao(resultadoApuracao);
               }
@@ -262,38 +263,22 @@ export default function VotacaoDetalhesPage() {
               </dd>
             </div>
           </dl>
-          {votacao.tipo === "ELEICAO" &&
-            votacao.chapas &&
-            votacao.chapas.length > 0 && (
-              <section className="mt-6 border-t pt-6">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Chapas concorrentes
-                </h2>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {votacao.chapas.map((chapa) => (
-                    <div
-                      key={chapa.id}
-                      className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4"
-                    >
-                      <h3 className="font-semibold text-indigo-950">
-                        {chapa.nome}
-                      </h3>
-                      {chapa.proposta && (
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
-                          {chapa.proposta}
-                        </p>
-                      )}
-
-                      <p className="mt-2 text-xs text-gray-600">
-                        Membros:{" "}
-                        {chapa.membros.map((membro) => membro.nome).join(", ")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
+          {votacao.tipo === "ELEICAO" && (
+            <section className="mt-6 border-t pt-6">
+              <button
+                type="button"
+                aria-expanded={mostrarPropostas}
+                aria-controls="painel-propostas"
+                onClick={() => setMostrarPropostas((mostrar) => !mostrar)}
+                className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700"
+              >
+                {mostrarPropostas ? "Ocultar propostas" : "Ver propostas"}
+              </button>
+              {mostrarPropostas && (
+                <PainelPropostas votacaoId={votacao.id} />
+              )}
+            </section>
+          )}
           {votacao.status === "ABERTA" &&
             !prazoExpirado &&
             votacao.tipo === "DELIBERACAO" &&
@@ -303,7 +288,6 @@ export default function VotacaoDetalhesPage() {
                 usuarioId={usuarioId}
               />
             )}
-
           {votacaoEncerrada && (
             <section
               aria-labelledby="apuracao-titulo"

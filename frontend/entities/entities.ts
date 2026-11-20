@@ -130,6 +130,7 @@ export interface ChapaResponse {
     id: number;
     votacaoId: number;
     nome: string;
+    // Texto associado à chapa; não representa uma proposta independente.
     proposta: string | null;
     membros: MembroChapa[];
 }
