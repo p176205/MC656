@@ -171,6 +171,13 @@ export interface VotacaoResponse {
     chapas?: ChapaResponse[];
 }
 
+export interface ResultadoChapa {
+    chapaId: number;
+    nome: string;
+    votos: number;
+    percentualVotosValidos: number | null;
+}
+
 export interface ApuracaoResponse {
     votacaoId: number;
     titulo: string;
@@ -183,4 +190,6 @@ export interface ApuracaoResponse {
     regraAprovacao: RegraAprovacao;
     percentualMinimo: number | null;
     percentualSimObtido: number | null;
+    resultadosChapas?: ResultadoChapa[] | null;
+    chapaVencedora?: ResultadoChapa | null;
 }
