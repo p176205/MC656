@@ -36,10 +36,7 @@ function formatarData(data: string | null): string {
 }
 
 export default function VotacaoDetalhesPage() {
-  const {
-    contextoId: contextoIdParam,
-    votacaoId: votacaoIdParam,
-  } = useParams<{
+  const { contextoId: contextoIdParam, votacaoId: votacaoIdParam } = useParams<{
     contextoId: string;
     votacaoId: string;
   }>();
@@ -54,6 +51,9 @@ export default function VotacaoDetalhesPage() {
   const [mostrarPropostas, setMostrarPropostas] = useState(false);
   const router = useRouter();
   const [usuarioId, setUsuarioId] = useState<number | null>(null);
+  const [secaoAtual, setSecaoAtual] = useState<
+    "detalhes" | "votar" | "apuracao"
+  >("detalhes");
 
   useEffect(() => {
     let cancelado = false;
@@ -72,6 +72,28 @@ export default function VotacaoDetalhesPage() {
 
     return () => {
       cancelado = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const verificarHash = () => {
+      const hash = window.location.hash;
+
+      if (hash === "#votar") {
+        setSecaoAtual("votar");
+      } else if (hash === "#apuracao-titulo") {
+        setSecaoAtual("apuracao");
+      } else {
+        setSecaoAtual("detalhes");
+      }
+    };
+
+    verificarHash();
+
+    window.addEventListener("hashchange", verificarHash);
+
+    return () => {
+      window.removeEventListener("hashchange", verificarHash);
     };
   }, []);
 
@@ -139,14 +161,18 @@ export default function VotacaoDetalhesPage() {
     votacao?.dataFim !== undefined &&
     new Date(votacao.dataFim) <= new Date();
 
-  const votacaoEncerrada =
-    votacao?.status === "ENCERRADA" || prazoExpirado;
+  const votacaoEncerrada = votacao?.status === "ENCERRADA" || prazoExpirado;
 
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-10">
       <header className="mt-4 mb-8 flex flex-row justify-between">
         <h1 className="mt-1 text-3xl font-bold text-gray-900">
-          Detalhes da {votacao?.titulo}
+          {secaoAtual == "detalhes"
+            ? "Detalhes"
+            : secaoAtual == "apuracao"
+              ? "Votar"
+              : "Resultados"}{" "}
+          da {votacao?.titulo}
         </h1>
 
         <div className="mb-4">
@@ -194,9 +220,7 @@ export default function VotacaoDetalhesPage() {
 
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      votacaoEncerrada
-                        ? "bg-red-500"
-                        : "bg-green-500"
+                      votacaoEncerrada ? "bg-red-500" : "bg-green-500"
                     }`}
                   />
                 </span>
@@ -210,16 +234,12 @@ export default function VotacaoDetalhesPage() {
 
           <dl className="mt-6 grid w-full gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="font-medium text-gray-800">
-                Regra de aprovação
-              </dt>
+              <dt className="font-medium text-gray-800">Regra de aprovação</dt>
               <dd className="text-gray-600">{votacao.regraAprovacao}</dd>
             </div>
 
             <div>
-              <dt className="font-medium text-gray-800">
-                Percentual mínimo
-              </dt>
+              <dt className="font-medium text-gray-800">Percentual mínimo</dt>
               <dd className="text-gray-600">
                 {votacao.percentualMinimo === null
                   ? "Não se aplica"
@@ -228,12 +248,8 @@ export default function VotacaoDetalhesPage() {
             </div>
 
             <div>
-              <dt className="font-medium text-gray-800">
-                Quórum mínimo
-              </dt>
-              <dd className="text-gray-600">
-                {votacao.quorumMinimo}%
-              </dd>
+              <dt className="font-medium text-gray-800">Quórum mínimo</dt>
+              <dd className="text-gray-600">{votacao.quorumMinimo}%</dd>
             </div>
 
             <div>
@@ -246,20 +262,14 @@ export default function VotacaoDetalhesPage() {
             </div>
 
             <div>
-              <dt className="font-medium text-gray-800">
-                Data e hora de fim
-              </dt>
-              <dd className="text-gray-600">
-                {formatarData(votacao.dataFim)}
-              </dd>
+              <dt className="font-medium text-gray-800">Data e hora de fim</dt>
+              <dd className="text-gray-600">{formatarData(votacao.dataFim)}</dd>
             </div>
 
             <div>
               <dt className="font-medium text-gray-800">Modalidade</dt>
               <dd className="text-gray-600">
-                {votacao.tipo === "ELEICAO"
-                  ? "Eleição"
-                  : "Deliberação"}
+                {votacao.tipo === "ELEICAO" ? "Eleição" : "Deliberação"}
               </dd>
             </div>
           </dl>
@@ -274,90 +284,178 @@ export default function VotacaoDetalhesPage() {
               >
                 {mostrarPropostas ? "Ocultar propostas" : "Ver propostas"}
               </button>
-              {mostrarPropostas && (
-                <PainelPropostas votacaoId={votacao.id} />
-              )}
+              {mostrarPropostas && <PainelPropostas votacaoId={votacao.id} />}
             </section>
           )}
           {votacao.status === "ABERTA" &&
             !prazoExpirado &&
-            votacao.tipo === "DELIBERACAO" &&
-            usuarioId !== null && (
+            usuarioId !== null &&
+            secaoAtual == "votar" && (
               <PainelVoto
                 votacaoId={votacao.id}
                 usuarioId={usuarioId}
+                tipo={votacao.tipo}
+                chapas={votacao.chapas}
               />
             )}
-          {votacaoEncerrada && (
-            <section
-              aria-labelledby="apuracao-titulo"
-              className="mt-8 border-t pt-6"
-            >
-              <h2
-                id="apuracao-titulo"
-                className="text-xl font-semibold text-gray-900"
-              >
-                Apuração
-              </h2>
+{secaoAtual === "apuracao" && (
+  <section
+    aria-labelledby="apuracao-titulo"
+    className="mt-8 border-t pt-6"
+  >
+    <h2
+      id="apuracao-titulo"
+      className="text-xl font-semibold text-gray-900"
+    >
+      Apuração
+    </h2>
 
-              {erroApuracao && (
-                <p role="alert" className="mt-3 text-red-700">
-                  {erroApuracao}
-                </p>
-              )}
-              {!erroApuracao && !apuracao && (
-                <p role="status" className="mt-3 text-gray-600">
-                  Carregando apuração...
-                </p>
-              )}
-              {apuracao && (
-                <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="font-medium text-gray-800">Resultado</dt>
-                    <dd className="text-gray-600">
-                      {resultadoLabels[apuracao.resultado] ?? apuracao.resultado}
-                    </dd>
-                  </div>
+    {votacaoEncerrada ? (
+      <>
+        {erroApuracao && (
+          <p role="alert" className="mt-3 text-red-700">
+            {erroApuracao}
+          </p>
+        )}
+
+        {!erroApuracao && !apuracao && (
+          <p role="status" className="mt-3 text-gray-600">
+            Carregando apuração...
+          </p>
+        )}
+
+        {apuracao && (
+          <>
+            <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="font-medium text-gray-800">
+                  Resultado
+                </dt>
+                <dd className="text-gray-600">
+                  {resultadoLabels[apuracao.resultado] ??
+                    apuracao.resultado}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="font-medium text-gray-800">
+                  Quórum atingido
+                </dt>
+                <dd className="text-gray-600">
+                  {apuracao.quorumAtingido ? "Sim" : "Não"}
+                </dd>
+              </div>
+
+              {votacao.tipo === "ELEICAO" ? (
+                <div>
+                  <dt className="font-medium text-gray-800">
+                    Chapa vencedora
+                  </dt>
+                  <dd className="text-gray-600">
+                    {apuracao.chapaVencedora
+                      ? apuracao.chapaVencedora.nome
+                      : "Nenhuma chapa eleita"}
+                  </dd>
+                </div>
+              ) : (
+                <>
                   <div>
                     <dt className="font-medium text-gray-800">
-                      Quórum atingido
+                      Votos sim
                     </dt>
                     <dd className="text-gray-600">
-                      {apuracao.quorumAtingido ? "Sim" : "Não"}
+                      {apuracao.votosSim}
                     </dd>
                   </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">Votos sim</dt>
-                    <dd className="text-gray-600">{apuracao.votosSim}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">Votos não</dt>
-                    <dd className="text-gray-600">{apuracao.votosNao}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">Abstenções</dt>
-                    <dd className="text-gray-600">{apuracao.abstencoes}</dd>
-                  </div>
+
                   <div>
                     <dt className="font-medium text-gray-800">
-                      Total de votantes
-                    </dt>
-                    <dd className="text-gray-600">{apuracao.totalVotantes}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">
-                      Percentual de votos sim
+                      Votos não
                     </dt>
                     <dd className="text-gray-600">
-                      {apuracao.percentualSimObtido === null
-                        ? "Não disponível"
-                        : `${apuracao.percentualSimObtido}%`}
+                      {apuracao.votosNao}
                     </dd>
                   </div>
-                </dl>
+                </>
               )}
-            </section>
-          )}
+
+              <div>
+                <dt className="font-medium text-gray-800">
+                  Abstenções
+                </dt>
+                <dd className="text-gray-600">
+                  {apuracao.abstencoes}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="font-medium text-gray-800">
+                  Total de votantes
+                </dt>
+                <dd className="text-gray-600">
+                  {apuracao.totalVotantes}
+                </dd>
+              </div>
+
+              {votacao.tipo === "DELIBERACAO" && (
+                <div>
+                  <dt className="font-medium text-gray-800">
+                    Percentual de votos sim
+                  </dt>
+                  <dd className="text-gray-600">
+                    {apuracao.percentualSimObtido === null
+                      ? "Não disponível"
+                      : `${apuracao.percentualSimObtido}%`}
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            {votacao.tipo === "ELEICAO" &&
+              apuracao.resultadosChapas &&
+              apuracao.resultadosChapas.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Votos por chapa
+                  </h3>
+
+                  <ul className="mt-2 grid gap-3 sm:grid-cols-2">
+                    {apuracao.resultadosChapas.map((chapa) => (
+                      <li
+                        key={chapa.chapaId}
+                        className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-3 text-sm"
+                      >
+                        <p className="font-semibold text-indigo-950">
+                          {chapa.nome}
+                        </p>
+
+                        <p className="mt-1 text-gray-700">
+                          Votos: {chapa.votos}
+                          {chapa.percentualVotosValidos !== null &&
+                            ` (${chapa.percentualVotosValidos}%)`}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+          </>
+        )}
+      </>
+    ) : (
+      <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <p className="font-semibold">
+          Apuração ainda não disponível
+        </p>
+
+        <p className="mt-1">
+          Esta votação ainda está em andamento. Os resultados estarão
+          disponíveis após o encerramento da votação.
+        </p>
+      </div>
+    )}
+  </section>
+)}
         </section>
       )}
     </main>

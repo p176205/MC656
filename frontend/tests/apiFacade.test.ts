@@ -297,6 +297,22 @@ describe("votarEmVotacao (fachada da API)", () => {
     });
   });
 
+  it("envia POST com usuarioId e chapaId para /api/votacoes/{id}/votos em eleição", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await votarEmVotacao(8, { usuarioId: 3, chapaId: 12 });
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/api\/votacoes\/8\/votos$/);
+    expect(opcoes.method).toBe("POST");
+    expect(opcoes.credentials).toBe("include");
+    expect(JSON.parse(opcoes.body)).toEqual({
+      usuarioId: 3,
+      chapaId: 12,
+    });
+  });
+
   it("repassa a mensagem do backend quando o voto é recusado", async () => {
     vi.stubGlobal(
       "fetch",
