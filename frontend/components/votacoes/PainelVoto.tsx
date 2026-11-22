@@ -1,51 +1,112 @@
 "use client";
 
 import { useState } from "react";
-import type { OpcaoVoto } from "@/entities/entities";
+import type {
+  ChapaResponse,
+  OpcaoVoto,
+  TipoVotacao,
+  VotoCadastro,
+} from "@/entities/entities";
 import { votarEmVotacao } from "@/services/apiFacade";
 
-const opcoes: { valor: OpcaoVoto; rotulo: string }[] = [
+const opcoesDeliberacao: { valor: OpcaoVoto; rotulo: string }[] = [
   { valor: "SIM", rotulo: "Sim" },
   { valor: "NAO", rotulo: "Não" },
   { valor: "ABSTENCAO", rotulo: "Abstenção" },
 ];
 
-type Props = { votacaoId: number; usuarioId: number };
+type Props = {
+  votacaoId: number;
+  usuarioId: number;
+  tipo?: TipoVotacao;
+  chapas?: ChapaResponse[];
+};
 
-export default function PainelVoto({ votacaoId, usuarioId }: Props) {
+export default function PainelVoto({
+  votacaoId,
+  usuarioId,
+  tipo = "DELIBERACAO",
+  chapas = [],
+}: Props) {
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  async function votar(opcao: OpcaoVoto) {
+  async function registrarVoto(voto: VotoCadastro) {
     setEnviando(true);
     setErro(null);
     try {
-      await votarEmVotacao(votacaoId, { usuarioId, opcao });
+      await votarEmVotacao(votacaoId, voto);
       setSucesso(true);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível registrar o voto.");
+      setErro(
+        e instanceof Error ? e.message : "Não foi possível registrar o voto.",
+      );
     } finally {
       setEnviando(false);
     }
   }
 
   return (
-    <section id="votar" aria-labelledby="votar-titulo" className="mt-8">
-      <h2 id="votar-titulo" className="text-xl font-semibold text-gray-900">Seu voto</h2>
+    <section id="votar" aria-labelledby="votar-titulo" className="mt-8 border-t pt-6">
+      <h2 id="votar-titulo" className="text-xl font-semibold text-gray-900">
+        Seu voto
+      </h2>
       {sucesso ? (
-        <p role="status" className="mt-3 text-green-800">Voto registrado.</p>
+        <p role="status" className="mt-3 text-green-800">
+          Voto registrado.
+        </p>
+      ) : tipo === "ELEICAO" ? (
+        <div className="mt-3 flex flex-col gap-3">
+          <p className="text-sm text-gray-600">
+            Selecione uma das chapas concorrentes ou registre abstenção:
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {chapas.map((chapa) => (
+              <button
+                key={chapa.id}
+                type="button"
+                disabled={enviando}
+                onClick={() =>
+                  registrarVoto({ usuarioId, chapaId: chapa.id })
+                }
+                className="rounded-lg border border-indigo-300 bg-white px-4 py-2 font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+              >
+                {chapa.nome}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={enviando}
+              onClick={() =>
+                registrarVoto({ usuarioId, opcao: "ABSTENCAO" })
+              }
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Abstenção
+            </button>
+          </div>
+        </div>
       ) : (
-        <div className="mt-3 flex gap-3">
-          {opcoes.map(({ valor, rotulo }) => (
-            <button key={valor} type="button" disabled={enviando} onClick={() => votar(valor)}
-              className="rounded-lg border border-indigo-300 bg-white px-4 py-2 font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">
+        <div className="mt-3 flex flex-wrap gap-3">
+          {opcoesDeliberacao.map(({ valor, rotulo }) => (
+            <button
+              key={valor}
+              type="button"
+              disabled={enviando}
+              onClick={() => registrarVoto({ usuarioId, opcao: valor })}
+              className="rounded-lg border border-indigo-300 bg-white px-4 py-2 font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+            >
               {rotulo}
             </button>
           ))}
         </div>
       )}
-      {erro && <p role="alert" className="mt-3 text-red-800">{erro}</p>}
+      {erro && (
+        <p role="alert" className="mt-3 text-red-800">
+          {erro}
+        </p>
+      )}
     </section>
   );
 }
