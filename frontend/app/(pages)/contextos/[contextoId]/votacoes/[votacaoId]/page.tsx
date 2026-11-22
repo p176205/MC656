@@ -281,11 +281,12 @@ export default function VotacaoDetalhesPage() {
           )}
           {votacao.status === "ABERTA" &&
             !prazoExpirado &&
-            votacao.tipo === "DELIBERACAO" &&
             usuarioId !== null && (
               <PainelVoto
                 votacaoId={votacao.id}
                 usuarioId={usuarioId}
+                tipo={votacao.tipo}
+                chapas={votacao.chapas}
               />
             )}
           {votacaoEncerrada && (
@@ -311,50 +312,103 @@ export default function VotacaoDetalhesPage() {
                 </p>
               )}
               {apuracao && (
-                <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="font-medium text-gray-800">Resultado</dt>
-                    <dd className="text-gray-600">
-                      {resultadoLabels[apuracao.resultado] ?? apuracao.resultado}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">
-                      Quórum atingido
-                    </dt>
-                    <dd className="text-gray-600">
-                      {apuracao.quorumAtingido ? "Sim" : "Não"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">Votos sim</dt>
-                    <dd className="text-gray-600">{apuracao.votosSim}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">Votos não</dt>
-                    <dd className="text-gray-600">{apuracao.votosNao}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">Abstenções</dt>
-                    <dd className="text-gray-600">{apuracao.abstencoes}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">
-                      Total de votantes
-                    </dt>
-                    <dd className="text-gray-600">{apuracao.totalVotantes}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-gray-800">
-                      Percentual de votos sim
-                    </dt>
-                    <dd className="text-gray-600">
-                      {apuracao.percentualSimObtido === null
-                        ? "Não disponível"
-                        : `${apuracao.percentualSimObtido}%`}
-                    </dd>
-                  </div>
-                </dl>
+                <>
+                  <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt className="font-medium text-gray-800">Resultado</dt>
+                      <dd className="text-gray-600">
+                        {resultadoLabels[apuracao.resultado] ??
+                          apuracao.resultado}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-gray-800">
+                        Quórum atingido
+                      </dt>
+                      <dd className="text-gray-600">
+                        {apuracao.quorumAtingido ? "Sim" : "Não"}
+                      </dd>
+                    </div>
+                    {votacao.tipo === "ELEICAO" ? (
+                      <div>
+                        <dt className="font-medium text-gray-800">
+                          Chapa vencedora
+                        </dt>
+                        <dd className="text-gray-600">
+                          {apuracao.chapaVencedora
+                            ? apuracao.chapaVencedora.nome
+                            : "Nenhuma chapa eleita"}
+                        </dd>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <dt className="font-medium text-gray-800">
+                            Votos sim
+                          </dt>
+                          <dd className="text-gray-600">{apuracao.votosSim}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-gray-800">
+                            Votos não
+                          </dt>
+                          <dd className="text-gray-600">{apuracao.votosNao}</dd>
+                        </div>
+                      </>
+                    )}
+                    <div>
+                      <dt className="font-medium text-gray-800">Abstenções</dt>
+                      <dd className="text-gray-600">{apuracao.abstencoes}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-gray-800">
+                        Total de votantes
+                      </dt>
+                      <dd className="text-gray-600">
+                        {apuracao.totalVotantes}
+                      </dd>
+                    </div>
+                    {votacao.tipo === "DELIBERACAO" && (
+                      <div>
+                        <dt className="font-medium text-gray-800">
+                          Percentual de votos sim
+                        </dt>
+                        <dd className="text-gray-600">
+                          {apuracao.percentualSimObtido === null
+                            ? "Não disponível"
+                            : `${apuracao.percentualSimObtido}%`}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  {votacao.tipo === "ELEICAO" &&
+                    apuracao.resultadosChapas &&
+                    apuracao.resultadosChapas.length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Votos por chapa
+                        </h3>
+                        <ul className="mt-2 grid gap-3 sm:grid-cols-2">
+                          {apuracao.resultadosChapas.map((chapa) => (
+                            <li
+                              key={chapa.chapaId}
+                              className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-3 text-sm"
+                            >
+                              <p className="font-semibold text-indigo-950">
+                                {chapa.nome}
+                              </p>
+                              <p className="mt-1 text-gray-700">
+                                Votos: {chapa.votos}
+                                {chapa.percentualVotosValidos !== null &&
+                                  ` (${chapa.percentualVotosValidos}%)`}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                </>
               )}
             </section>
           )}
