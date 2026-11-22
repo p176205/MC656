@@ -27,7 +27,7 @@ import {
 } from "@/services/apiFacade";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import { MdBarChart, MdHowToVote, MdInfoOutline, MdSend } from "react-icons/md";
 import { LuMessagesSquare } from "react-icons/lu";
 import { HiTrash } from "react-icons/hi";
@@ -517,13 +517,23 @@ export default function Home() {
                         Detalhes
                       </Link>
 
-                      <Link
-                        href={`/contextos/${contextoAtual.id}/votacoes/${votacao.id}#votar`}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
+                      <button
+                        type="button"
+                        disabled={votacao.status === "ENCERRADA"}
+                        onClick={() =>
+                          router.push(
+                            `/contextos/${contextoAtual.id}/votacoes/${votacao.id}#votar`,
+                          )
+                        }
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium text-sm transition-all duration-200 ${
+                          votacao.status === "ENCERRADA"
+                            ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 hover:shadow-sm"
+                        }`}
                       >
                         <MdHowToVote size={19} />
                         Votar
-                      </Link>
+                      </button>
 
                       <Link
                         href={`/contextos/${contextoAtual.id}/votacoes/${votacao.id}#apuracao-titulo`}
@@ -590,10 +600,7 @@ export default function Home() {
                         {membro.email}
                       </p>
                     </div>
-                    <div
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-teal-500 hover:bg-teal-200/70 bg-teal-100 transition-colors shrink-0"
-                    >
-                      
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-teal-500 hover:bg-teal-200/70 bg-teal-100 transition-colors shrink-0">
                       {membro.papel}
                     </div>
                     {/* Remover membro e modificar peso - somente administrador */}
