@@ -44,14 +44,13 @@ cd MC656
 
 ## Variáveis de ambiente
 
-Copie o arquivo de exemplo para criar a configuração local:
+Crie o arquivo abaixo na raiz do projeto:
 
 ```bash
-cp .env.example .env
+.env
 ```
 
-O arquivo `.env` não deve ser versionado. Os valores de exemplo correspondem
-ao banco PostgreSQL iniciado pelo Docker Compose:
+Com as seguintes variáveis de ambiente:
 
 ```env
 DB_URL=jdbc:postgresql://localhost:5432/mc656
@@ -59,6 +58,7 @@ DB_USERNAME=mc656_user
 DB_PASSWORD=mc656_dev
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
+Observação: O arquivo `.env` não deve ser versionado.
 
 O Spring Boot consome `DB_URL`, `DB_USERNAME` e `DB_PASSWORD` por meio das
 propriedades `spring.datasource.*`. A variável `NEXT_PUBLIC_API_URL` é
@@ -72,15 +72,6 @@ WSL ou Git Bash, exporte as variáveis antes de iniciar o backend:
 set -a
 . ./.env
 set +a
-```
-
-No PowerShell, defina as variáveis no processo atual, por exemplo:
-
-```powershell
-$env:DB_URL = "jdbc:postgresql://localhost:5432/mc656"
-$env:DB_USERNAME = "mc656_user"
-$env:DB_PASSWORD = "mc656_dev"
-$env:NEXT_PUBLIC_API_URL = "http://localhost:8080"
 ```
 
 ## Banco de dados com Docker Compose
