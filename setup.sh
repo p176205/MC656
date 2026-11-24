@@ -13,7 +13,7 @@ command -v java >/dev/null 2>&1 || fail 'Java was not found in PATH. Install Jav
 command -v node >/dev/null 2>&1 || fail 'Node.js was not found in PATH. Install Node.js and try again.'
 command -v npm >/dev/null 2>&1 || fail 'npm was not found in PATH. Install npm and try again.'
 
-JAVA_VERSION=$(java -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*"/\1/p' | head -n 1)
+JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
 [ "$JAVA_VERSION" = '21' ] || fail "Java 21 is required; detected version: ${JAVA_VERSION:-unknown}."
 
 printf 'Java detected: '
@@ -29,7 +29,7 @@ printf '\nInstalling frontend dependencies with npm ci...\n'
 
 printf '\nPreparing backend dependencies with the Maven Wrapper...\n'
 (
-	cd "$ROOT_DIR"
+	cd "$ROOT_DIR/backend"
 	sh backend/mvnw -q -DskipTests dependency:go-offline
 )
 
