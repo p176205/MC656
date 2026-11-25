@@ -7,12 +7,18 @@ import SeletorContexto from "@/components/seletorContextos";
 import {
   Aba,
   ContextoDTO,
+  Membro,
+  MembroChapa,
   UsuarioResponse,
   VotacaoResponse,
 } from "@/entities/entities";
 import {
+  alterarPeso,
+  buscarMembrosDoContextoParticipacao,
   buscarMensagens,
   buscarVotacoesPorContexto,
+  deletarParticipacao,
+  encerrarVotacao,
   enviarMensagem,
   getContextos,
   getIdUser,
@@ -24,6 +30,9 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { MdBarChart, MdHowToVote, MdInfoOutline, MdSend } from "react-icons/md";
 import { LuMessagesSquare } from "react-icons/lu";
+import { HiTrash } from "react-icons/hi";
+import { FiEdit3 } from "react-icons/fi";
+import ModificarPeso from "@/components/modificarPeso";
 
 export default function Home() {
   const router = useRouter();
@@ -32,15 +41,20 @@ export default function Home() {
   const [contextos, setContextos] = useState<ContextoDTO[]>([]);
   const [contextoAtual, setContextoAtual] = useState<ContextoDTO>();
   const [open, setOpen] = useState(false);
-  const [abaSelecionada, setAbaSelecionada] = useState<Aba>("COMUNIDADE");
+  const [abaSelecionada, setAbaSelecionada] = useState<Aba>("VOTACAO");
   const [criarContexto, setCriarContexto] = useState(false);
   const [entrarContexto, setEntrarContexto] = useState(false);
   const [logout, setLogout] = useState<boolean>(false);
   const [votacoes, setVotacoes] = useState<VotacaoResponse[]>([]);
   const [carregandoVotacoes, setCarregandoVotacoes] = useState(false);
   const [erroVotacoes, setErroVotacoes] = useState<string | null>(null);
+  const [carregandoMembros, setCarregandoMembros] = useState(false);
+  const [membros, setMembros] = useState<Membro[]>([]);
+  const [erroMembros, setErroMembros] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [textoMensagem, setTextoMensagem] = useState("");
+  const [editarPeso, setEditarPeso] = useState(false);
+  const [membro, setMembro] = useState<Membro>();
 
   useEffect(() => {
     async function carregarDados() {
@@ -113,6 +127,53 @@ export default function Home() {
   }, [contextoAtual]);
 
   useEffect(() => {
+    let cancelado = false;
+    if (!contextoAtual) return;
+    const contextoId = contextoAtual.id;
+
+    async function carregarMembros() {
+      setCarregandoMembros(true);
+      setErroMembros(null);
+      try {
+        const resultado: Membro[] =
+          await buscarMembrosDoContextoParticipacao(contextoId);
+        console.log(resultado);
+        const membrosOrdenados = [...resultado].sort((a, b) => {
+          const tipoA = (a.papel ?? "").trim().toUpperCase();
+          const tipoB = (b.papel ?? "").trim().toUpperCase();
+
+          const aEhAdm = tipoA === "ADMINISTRADOR";
+          const bEhAdm = tipoB === "ADMINISTRADOR";
+
+          if (aEhAdm && !bEhAdm) return -1;
+          if (!aEhAdm && bEhAdm) return 1;
+
+          return tipoA.localeCompare(tipoB, "pt-BR");
+        });
+
+        setMembros(membrosOrdenados);
+        if (!cancelado) setMembros(resultado);
+      } catch (erro) {
+        if (!cancelado) {
+          setErroMembros(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível encontrar os membros do contexto.",
+          );
+          setMembros([]);
+        }
+      } finally {
+        if (!cancelado) setCarregandoMembros(false);
+      }
+    }
+
+    void carregarMembros();
+    return () => {
+      cancelado = true;
+    };
+  }, [contextoAtual]);
+
+  useEffect(() => {
     async function carregarMensagens() {
       if (!contextoAtual || !user) return;
 
@@ -161,6 +222,21 @@ export default function Home() {
     executarLogout();
   }, [logout, router]);
 
+  async function ExcluirParticipacao(idMembro: number) {
+    if (!contextoAtual || !user) return;
+
+    try {
+      await deletarParticipacao(contextoAtual.id, user.id, idMembro);
+
+      toast.success("Membro removido do contexto");
+
+      setMembros((atuais) => atuais.filter((membro) => membro.id !== idMembro));
+    } catch (erro) {
+      console.error("Erro ao excluir participação:", erro);
+      toast.error("Não foi possível remover o membro do contexto.");
+    }
+  }
+
   async function EnviarMensagem() {
     if (!contextoAtual || !user) return;
 
@@ -174,6 +250,19 @@ export default function Home() {
       setMensagens((mensagensAtuais) => [...mensagensAtuais, novaMensagem]); // Atualiza o array de mensagens com esta que acabou de ser feita
     } catch (erro) {
       console.error("Erro ao enviar mensagem:", erro);
+    }
+  }
+
+  async function encerrar(votacaoId: number) {
+    try {
+      const atualizada = await encerrarVotacao(votacaoId);
+      setVotacoes((atuais) =>
+        atuais.map((v) => (v.id === atualizada.id ? atualizada : v)),
+      );
+    } catch (e) {
+      setErroVotacoes(
+        e instanceof Error ? e.message : "Não foi possível encerrar a votação.",
+      );
     }
   }
 
@@ -197,6 +286,18 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
         <EntrarContexto user={user} setEntrarContexto={setEntrarContexto} />
+      </main>
+    );
+  }
+
+  if (editarPeso && contextoAtual && membro) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-start gap-4 py-5">
+        <ModificarPeso
+          membro={membro}
+          contextoAtual={contextoAtual.id}
+          setModificarPeso={setEditarPeso}
+        />{" "}
       </main>
     );
   }
@@ -381,12 +482,28 @@ export default function Home() {
                       <h3 className="font-semibold text-indigo-950 line-clamp-1">
                         {votacao.titulo}
                       </h3>
-                      <span className="flex shrink-0 items-center gap-2 rounded-full border-2 border-indigo-500 px-3 py-1 text-xs font-medium">
-                        <span>{votacao.status}</span>
+                      <div className="flex flex-row gap-2">
                         <span
-                          className={`h-2 w-2 rounded-full ${votacao.status === "ENCERRADA" ? "bg-red-500" : "bg-green-500"}`}
-                        />
-                      </span>
+                          className={`flex shrink-0 items-center gap-2 rounded-full border-2 px-3 py-1 text-xs font-medium ${
+                            votacao.tipo == "DELIBERACAO"
+                              ? "bg-violet-100 border-violet-500 text-violet-900"
+                              : "bg-teal-100 border-teal-500 text-teal-800"
+                          }`}
+                        >
+                          <span>
+                            {votacao.tipo == "ELEICAO"
+                              ? "ELEIÇÃO"
+                              : "DELIBERAÇÃO"}
+                          </span>
+                        </span>
+
+                        <span className="flex shrink-0 items-center gap-2 rounded-full border-2 border-indigo-500 px-3 py-1 text-xs font-medium">
+                          <span>{votacao.status}</span>
+                          <span
+                            className={`h-2 w-2 rounded-full ${votacao.status === "ENCERRADA" ? "bg-red-500" : "bg-green-500"}`}
+                          />
+                        </span>
+                      </div>
                     </div>
                     <p className="line-clamp-2 text-sm text-indigo-900/80">
                       {votacao.descricao}
@@ -400,21 +517,41 @@ export default function Home() {
                         Detalhes
                       </Link>
 
-                      <Link
-                        href="Votar"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
+                      <button
+                        type="button"
+                        disabled={votacao.status === "ENCERRADA"}
+                        onClick={() =>
+                          router.push(
+                            `/contextos/${contextoAtual.id}/votacoes/${votacao.id}#votar`,
+                          )
+                        }
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium text-sm transition-all duration-200 ${
+                          votacao.status === "ENCERRADA"
+                            ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 hover:shadow-sm"
+                        }`}
                       >
                         <MdHowToVote size={19} />
                         Votar
-                      </Link>
+                      </button>
 
                       <Link
-                        href="Resultados"
+                        href={`/contextos/${contextoAtual.id}/votacoes/${votacao.id}#apuracao-titulo`}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 border border-indigo-300 font-medium text-sm transition-all duration-20 hover:bg-indigo-50 hover:border-indigo-400  hover:shadow-sm"
                       >
                         <MdBarChart size={19} />
                         Resultados
                       </Link>
+                      {contextoAtual.papel === "ADMINISTRADOR" &&
+                        votacao.status === "ABERTA" && (
+                          <button
+                            type="button"
+                            onClick={() => encerrar(votacao.id)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-red-700 border border-red-300 font-medium text-sm hover:bg-red-50"
+                          >
+                            Encerrar
+                          </button>
+                        )}
                     </section>
                     <div className="flex items-center justify-between border-t border-indigo-300/90 pt-2 text-xs text-indigo-700">
                       <span>
@@ -445,27 +582,65 @@ export default function Home() {
             </p>
 
             <section className="flex flex-col gap-3 py-3">
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 1
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 2
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 3
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>{" "}
-              <div className="bg-indigo-100 rounded-2xl h-24 px-4 py-3">
-                Membro 4
-              </div>{" "}
+              {membros.length > 0 ? (
+                membros.map((membro) => (
+                  <div
+                    key={membro.id}
+                    className="flex items-center gap-4 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3 transition-all hover:shadow-sm"
+                  >
+                    <div className="flex items-center justify-center w-11 h-11 rounded-full bg-indigo-200 text-indigo-800 font-semibold text-sm shrink-0">
+                      {membro.nome.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold text-gray-800 truncate">
+                        {membro.nome}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {membro.email}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-teal-500 hover:bg-teal-200/70 bg-teal-100 transition-colors shrink-0">
+                      {membro.papel}
+                    </div>
+                    {/* Remover membro e modificar peso - somente administrador */}
+                    {contextoAtual.papel === "ADMINISTRADOR" && (
+                      <div className="flex flex-row gap-3">
+                        {contextoAtual.tipo == "CONDOMINIO" && (
+                          <button
+                            type="button"
+                            onClick={() => (
+                              setEditarPeso(true),
+                              setMembro(membro)
+                            )}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-blue-600 hover:bg-blue-200/70 bg-blue-100 transition-colors shrink-0"
+                          >
+                            <FiEdit3 className="text-blue-600" size={18} />
+                            Modificar peso
+                          </button>
+                        )}
+
+                        {user && membro.id != user.id && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              ExcluirParticipacao(membro.id);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 bg-red-200/70 hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <HiTrash color="red" size={18} />
+                            Remover
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-6">
+                  Nenhum membro encontrado neste contexto.
+                </p>
+              )}
             </section>
           </section>
         );
@@ -473,12 +648,13 @@ export default function Home() {
   }
   // front basico só para teste
   return (
-    <main className="min-h-screen bg-gray-50 text-gray-900">
+    <main className="min-h-screen bg-gray-50 text-gray-800">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
         <div>
-          <h1 className="text-2xl font-bold">
-            Olá, {user?.nome}! Você está no contexto {contextoAtual?.nome}
-          </h1>
+          <div className="flex flex-col gap-1 text-xl font-semibold mr-3">
+            <p>Olá, {user?.nome}!</p>
+            <p>Você está no contexto {contextoAtual?.nome}</p>
+          </div>
           <div
             className="flex flex-row gap-1"
             hidden={contextoAtual.papel != "ADMINISTRADOR"}
@@ -500,7 +676,7 @@ export default function Home() {
             setOpen={setOpen}
             onSelecionar={(contexto) => {
               setContextoAtual(contexto);
-              setAbaSelecionada("COMUNIDADE");
+              setAbaSelecionada("VOTACAO");
             }}
             onCriar={() => {
               setCriarContexto(true);

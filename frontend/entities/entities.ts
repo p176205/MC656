@@ -95,7 +95,8 @@ export type Aba =
   | "MEMBROS"
 
 export type TipoVotacao =
-  "DELIBERACAO"
+  | "DELIBERACAO"
+  | "ELEICAO";
 
 export type RegraAprovacao =
   | "MAIORIA_SIMPLES"
@@ -105,20 +106,54 @@ export type StatusVotacao =
   | "ENCERRADA"
   | "ABERTA"
 
+export interface MembroChapa {
+    id: number;
+    nome: string;
+    email: string;
+}
+
+export interface Membro {
+    id: number;
+    nome: string;
+    email: string;
+    peso: number;
+    papel: Papel;
+}
+
+export interface ChapaCadastro {
+    nome: string;
+    proposta: string | null;
+    membrosIds: number[];
+}
+
+export interface ChapaResponse {
+    id: number;
+    votacaoId: number;
+    nome: string;
+    // Texto associado à chapa; não representa uma proposta independente.
+    proposta: string | null;
+    membros: MembroChapa[];
+}
+
+export type OpcaoVoto = "SIM" | "NAO" | "ABSTENCAO";
+
+export type VotoCadastro =
+    | { usuarioId: number; opcao: OpcaoVoto; chapaId?: never }
+    | { usuarioId: number; chapaId: number; opcao?: never };
+
 export type VotacaoCadastro = {
     titulo: string;
     descricao: string;
     contextoId: number;
+    tipo: TipoVotacao;
     regraAprovacao: RegraAprovacao;
     percentualMinimo: number | null;
     quorumMinimo: number;
     dataInicio: string;
     dataFim: string;
-} & (
-    | { pauta: string; participantesAptos: number; pesoVoto?: never; unidadeApartamento?: never; categoriaSegmento?: never; elegibilidade?: never }
-    | { pesoVoto: number; unidadeApartamento: string; pauta?: never; participantesAptos?: never; categoriaSegmento?: never; elegibilidade?: never }
-    | { categoriaSegmento: string; elegibilidade: string; pauta?: never; participantesAptos?: never; pesoVoto?: never; unidadeApartamento?: never }
-);
+    adminId: number;
+    chapas: ChapaCadastro[] | null;
+};
 
 export interface VotacaoResponse {
     id: number;
@@ -133,18 +168,20 @@ export interface VotacaoResponse {
     status: StatusVotacao;
     dataInicio: string | null;
     dataFim: string | null;
-    pauta: string | null;
-    participantesAptos: number | null;
-    pesoVoto: number | null;
-    unidadeApartamento: string | null;
-    categoriaSegmento: string | null;
-    elegibilidade: string | null;
+    chapas?: ChapaResponse[];
+}
+
+export interface ResultadoChapa {
+    chapaId: number;
+    nome: string;
+    votos: number;
+    percentualVotosValidos: number | null;
 }
 
 export interface ApuracaoResponse {
     votacaoId: number;
     titulo: string;
-    resultado: "APROVADA" | "REJEITADA" | "SEM_QUORUM";
+    resultado: "APROVADA" | "REJEITADA" | "SEM_QUORUM" | "ELEITA" | "EMPATE";
     quorumAtingido: boolean;
     votosSim: number;
     votosNao: number;
@@ -153,4 +190,6 @@ export interface ApuracaoResponse {
     regraAprovacao: RegraAprovacao;
     percentualMinimo: number | null;
     percentualSimObtido: number | null;
+    resultadosChapas?: ResultadoChapa[] | null;
+    chapaVencedora?: ResultadoChapa | null;
 }

@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import type { ContextoDetalhe } from "@/entities/entities";
-import { buscarContexto } from "@/services/apiFacade";
+import { useParams, useRouter } from "next/navigation";
+import type { ContextoDetalhe, MembroChapa } from "@/entities/entities";
+import {
+  buscarContexto,
+  buscarMembrosDoContexto,
+  getIdUser,
+} from "@/services/apiFacade";
 import VotacaoForm from "@/components/votacoes/VotacaoForm";
 import { MdArrowBack } from "react-icons/md";
 
@@ -12,8 +16,12 @@ export default function NovaVotacaoPage() {
   const { contextoId: contextoIdParam } = useParams<{ contextoId: string }>();
   const contextoId = Number(contextoIdParam);
   const [contexto, setContexto] = useState<ContextoDetalhe | null>(null);
+  const [membros, setMembros] = useState<MembroChapa[]>([]);
+  const [adminId, setAdminId] = useState<number | undefined>(undefined);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     let cancelado = false;
@@ -26,8 +34,17 @@ export default function NovaVotacaoPage() {
       }
 
       try {
-        const resultado = await buscarContexto(contextoId);
-        if (!cancelado) setContexto(resultado);
+        const [resultadoContexto, resultadoMembros, usuarioAtual] =
+          await Promise.all([
+            buscarContexto(contextoId),
+            buscarMembrosDoContexto(contextoId).catch(() => []),
+            getIdUser().catch(() => null),
+          ]);
+        if (!cancelado) {
+          setContexto(resultadoContexto);
+          setMembros(resultadoMembros);
+          if (usuarioAtual) setAdminId(usuarioAtual.id);
+        }
       } catch (erroApi) {
         if (!cancelado) {
           setErro(
@@ -50,14 +67,17 @@ export default function NovaVotacaoPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10">
       <header className="flex flex-row mb-8 mt-4 justify-between">
-        <h1 className="mt-1 text-3xl font-bold text-gray-900">Nova votação</h1>
-        <Link
+        <h1 className="mt-1 text-3xl font-bold text-gray-900">
+          {contexto?.tipo != "ASSEMBLEIA" ? "Nova votação" : "Nova deliberação"}
+        </h1>
+        <button
           className="inline-flex items-center gap-2 text-indigo-800 bg-indigo-300 py-2 px-4 rounded-xl font-medium hover:bg-indigo-200 hover:shadow-sm"
-          href="/home"
+          type="button"
+          onClick={() => router.push(`/home`)}
         >
           <MdArrowBack size={20} />
           Voltar
-        </Link>
+        </button>
       </header>
 
       {carregando && <p role="status">Carregando contexto...</p>}
@@ -70,7 +90,12 @@ export default function NovaVotacaoPage() {
         </p>
       )}
       {!carregando && contexto && (
-        <VotacaoForm contextoId={contexto.id} tipoContexto={contexto.tipo} />
+        <VotacaoForm
+          contextoId={contexto.id}
+          tipoContexto={contexto.tipo}
+          adminId={adminId}
+          membrosContexto={membros}
+        />
       )}
     </main>
   );

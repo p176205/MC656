@@ -1,4 +1,7 @@
-# MC656 - Podemos dar um título ao projeto
+# MC656 — Plataforma de Deliberações e Eleições
+
+Sistema web para organizar votações e deliberações em assembleias, centros
+acadêmicos e condomínios, incluindo eleições por chapas.
 
 ## Alunos Integrantes
 
@@ -21,12 +24,14 @@ e após processos eleitorais ou deliberativos.
 
 - Git;
 - Java 21 (o backend declara `java.version` 21 no `pom.xml`);
-- Node.js e npm;
-- PostgreSQL configurado localmente.
+- Node.js 20 ou superior e npm;
+- Docker Compose (para executar o PostgreSQL localmente).
 
 O backend usa Maven por meio do Maven Wrapper versionado em `backend/`. O
 frontend usa Next.js e npm, com as versões das dependências registradas em
 `frontend/package-lock.json`.
+O arquivo `frontend/.nvmrc` fixa a versão de Node recomendada para o frontend;
+com nvm, execute `nvm use` dentro de `frontend/`.
 
 ## Clone
 
@@ -39,21 +44,21 @@ cd MC656
 
 ## Variáveis de ambiente
 
-Copie o arquivo de exemplo para criar a configuração local:
+Crie o arquivo abaixo na raiz do projeto:
 
 ```bash
-cp .env.example .env
+.env
 ```
 
-O arquivo `.env` não deve ser versionado. Ajuste seus valores conforme a
-instalação local do PostgreSQL:
+Com as seguintes variáveis de ambiente:
 
 ```env
-DB_URL=jdbc:postgresql://localhost:5432/example_db
-DB_USERNAME=example_user
-DB_PASSWORD=example_password
+DB_URL=jdbc:postgresql://localhost:5432/mc656
+DB_USERNAME=mc656_user
+DB_PASSWORD=mc656_dev
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
+Observação: O arquivo `.env` não deve ser versionado.
 
 O Spring Boot consome `DB_URL`, `DB_USERNAME` e `DB_PASSWORD` por meio das
 propriedades `spring.datasource.*`. A variável `NEXT_PUBLIC_API_URL` é
@@ -69,24 +74,21 @@ set -a
 set +a
 ```
 
-No PowerShell, defina as variáveis no processo atual, por exemplo:
+## Banco de dados com Docker Compose
 
-```powershell
-$env:DB_URL = "jdbc:postgresql://localhost:5432/example_db"
-$env:DB_USERNAME = "example_user"
-$env:DB_PASSWORD = "example_password"
-$env:NEXT_PUBLIC_API_URL = "http://localhost:8080"
+Na raiz do projeto, inicie o PostgreSQL:
+
+```bash
+docker compose up -d db
 ```
 
-## PostgreSQL
+O Compose lê as configurações do `.env` e persiste os dados no volume
+`db-data`. Se não houver `.env`, o banco usa `mc656_user` e `mc656_dev` como
+valores padrão de desenvolvimento.
 
-O PostgreSQL não é instalado nem configurado automaticamente. Crie
-manualmente um banco e um usuário, ou use uma instalação PostgreSQL já
-existente, e coloque no `.env` a URL, o usuário e a senha correspondentes.
-
-Os valores de exemplo usam o banco `example_db`, o usuário `example_user` e a
-porta `5432`. Eles são apenas exemplos e precisam existir na instalação local
-ou ser substituídos por valores válidos.
+Para usar um PostgreSQL já instalado, não inicie o serviço `db`; configure
+`DB_URL`, `DB_USERNAME` e `DB_PASSWORD` no `.env` para apontar à sua
+instalação.
 
 ## Preparação automatizada
 
@@ -109,7 +111,8 @@ WSL.
 
 ## Execução do backend
 
-Com as variáveis do banco exportadas, execute:
+Com o PostgreSQL disponível, exporte as variáveis do `.env` e inicie o
+backend:
 
 ```bash
 cd backend
@@ -127,7 +130,7 @@ O backend é executado em `http://localhost:8080` por padrão.
 
 ## Execução do frontend
 
-Em outro terminal, com `NEXT_PUBLIC_API_URL` definida, execute:
+Em outro terminal, exporte as variáveis do `.env` nesse terminal e execute:
 
 ```bash
 cd frontend
@@ -162,23 +165,24 @@ interativo.
 ## API de votações
 
 As rotas abaixo são servidas pelo backend em `http://localhost:8080`. Os nomes
-JSON seguem `camelCase`. Percentuais, quórum e peso do voto são números JSON;
-`participantesAptos` é um inteiro. `dataInicio` e `dataFim` são datas/hora
+JSON seguem `camelCase`. Percentuais, quórum e peso do voto são números JSON.
+`dataInicio` e `dataFim` são datas/hora
 locais no formato ISO-8601 `yyyy-MM-dd'T'HH:mm:ss`, por exemplo
 `2026-11-08T19:30:00`; não incluem fuso horário nem sufixo `Z`.
 
 | Método e rota | Resultado |
 | --- | --- |
 | `GET /api/contextos/id/{contextoId}` | Retorna `id`, `nome` e `tipo` do contexto; 404 se inexistente. A rota `/api/contextos/{id}` existente mantém a listagem de contextos do usuário. |
-| `POST /api/votacoes` | Abre uma votação e retorna seus dados com HTTP 201; contexto inexistente retorna 404 e dados inválidos retornam 400. |
+| `GET /api/contextos/{contextoId}/membros` | Retorna a lista de membros (`id`, `nome`, `email`) participantes do contexto; 404 se inexistente. |
+| `POST /api/votacoes` | Abre uma votação (`DELIBERACAO` ou `ELEICAO`) e retorna seus dados com HTTP 201; contexto inexistente retorna 404 e dados inválidos retornam 400. |
 | `GET /api/votacoes/contexto/{contextoId}` | Retorna as votações daquele contexto; contexto inexistente retorna 404. |
 | `GET /api/votacoes/{id}` | Retorna os dados de uma votação; 404 se inexistente. |
 | `POST /api/votacoes/{id}/votos` | Registra o voto do usuário participante; conflito ou votação fechada retorna 409. |
 | `PATCH /api/votacoes/{id}/encerrar` | Encerra uma votação aberta. |
 | `GET /api/votacoes/{id}/apuracao` | Retorna a apuração depois do encerramento (ou do fim do prazo); para votação ainda aberta retorna 409. |
 
-O cadastro recebe `titulo`, `descricao`, `contextoId`, `regraAprovacao`,
-`percentualMinimo`, `quorumMinimo`, `dataInicio` e `dataFim`. As datas podem
+O cadastro recebe `titulo`, `descricao`, `contextoId`, `tipo` (`DELIBERACAO` ou `ELEICAO`), `regraAprovacao`,
+`percentualMinimo`, `quorumMinimo`, `dataInicio`, `dataFim`, `adminId` e, quando `tipo == ELEICAO`, a lista de `chapas` (`nome`, `proposta` e `membrosIds`). As datas podem
 ser omitidas pela API; quando informadas, a data final precisa ser posterior à
 inicial. A interface de cadastro exige ambas. O status é controlado pelo
 servidor: toda votação nova começa como `ABERTA`. Os únicos status são
@@ -188,22 +192,13 @@ novos votos; apuração disponível).
 As regras aceitas são `MAIORIA_SIMPLES` e `PERCENTUAL_MINIMO`. Para
 `PERCENTUAL_MINIMO`, `percentualMinimo` deve ser maior que 0 e até 100; para
 `MAIORIA_SIMPLES`, envie `null`. `quorumMinimo` fica entre 0 e 100, inclusive.
-Além desses campos comuns, o cadastro recebe somente os campos aplicáveis ao
-tipo do contexto:
 
-- `ASSEMBLEIA`: `pauta` (texto) e `participantesAptos` (inteiro positivo).
-- `CONDOMINIO`: `pesoVoto` (número positivo) e `unidadeApartamento` (texto).
-- `CENTRO_ACADEMICO`: `categoriaSegmento` e `elegibilidade` (texto).
-
-As respostas incluem `id`, `contextoNome`, `tipo`, `status` e os campos
-específicos; os campos que não se aplicam são `null`. A apuração expõe
-`resultado`, `quorumAtingido`, contagens/pesos de votos e
-`percentualSimObtido`.
+As respostas incluem `id`, `contextoNome`, `tipo`, `status` e `chapas`. A apuração expõe
+`resultado`, `quorumAtingido`, contagens/pesos de votos,
+`percentualSimObtido`, `resultadosChapas` e `chapaVencedora`.
 
 ## Limitações conhecidas
 
-- A versão do Node.js não está fixada por `.nvmrc` ou configuração equivalente.
-- O PostgreSQL precisa ser instalado, criado e configurado manualmente.
 - O arquivo `.env` precisa ser carregado/exportado manualmente antes da
   execução; o `setup.sh` apenas prepara dependências.
 - O teste de contexto do backend pode exigir um PostgreSQL acessível com as

@@ -5,18 +5,24 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.MC656.backend.dto.AssembleiaRequestDTO;
 import com.MC656.backend.dto.CentroAcademicoRequestDTO;
 import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.EntrarContextoRequestDTO;
 import com.MC656.backend.dto.ContextoDetalheDTO;
 import com.MC656.backend.service.ContextoService;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController // Diz que essa classe possui endpoints HTTP da minha API.
 @RequestMapping("/api/contextos") // endereco base (esse é o endereco completo q o front deve usar para fazer
@@ -69,8 +75,6 @@ public class ContextoController {
         }
     }
 
-    
-
     // Entrar em contexto existente
     @PostMapping("/entrar")
     public ResponseEntity<?> entrarContexto(
@@ -105,6 +109,59 @@ public class ContextoController {
             return ResponseEntity.ok(resposta);
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{contextoId}/membros")
+    public ResponseEntity<?> listarMembros(@PathVariable Long contextoId) {
+        try {
+            var resposta = contextoService.listarMembrosDoContexto(contextoId);
+            return ResponseEntity.ok(resposta);
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{contextoId}/membrosParticipacao")
+    public ResponseEntity<?> listarMembrosParticipacao(@PathVariable Long contextoId) {
+        try {
+            var resposta = contextoService.listarMembrosParticipacao(contextoId);
+            return ResponseEntity.ok(resposta);
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{contextoId}/adm/{admId}/membros/{membroId}")
+    public ResponseEntity<Void> removerMembro(
+            @PathVariable Long contextoId,
+            @PathVariable Long admId,
+            @PathVariable Long membroId) {
+        try {
+            contextoService.deletarParticipacao(
+                    admId,
+                    contextoId,
+                    membroId);
+
+            return ResponseEntity.noContent().build();
+
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).build();
+        }
+    }
+
+    @PutMapping("/{contextoId}/membro/{membroId}/peso")
+    public ResponseEntity<?> alterarPeso(
+            @PathVariable Long contextoId,
+            @PathVariable Long membroId,
+            @RequestBody Double peso) {
+
+        try {
+            contextoService.alterarPeso(contextoId, membroId, peso);
+            return ResponseEntity.noContent().build();
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

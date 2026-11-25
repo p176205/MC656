@@ -3,6 +3,7 @@ package com.MC656.backend.service;
 import com.MC656.backend.dto.CondominioRequestDTO;
 import com.MC656.backend.dto.ContextoDetalheDTO;
 import com.MC656.backend.dto.ContextoResponseDTO;
+import com.MC656.backend.dto.MembroChapaDTO;
 import com.MC656.backend.entity.*;
 import com.MC656.backend.repository.ContextoRepository;
 import com.MC656.backend.repository.ParticipacaoRepository;
@@ -267,5 +268,34 @@ class ContextoServiceTest {
         verify(participacaoRepository).save(captor.capture());
         assertEquals(Papel.CONDOMINO, captor.getValue().getPapel());
         assertEquals("CONDOMINO", resposta.papel());
+    }
+
+    // listarMembrosDoContexto
+
+    @Test
+    void listarMembrosDoContextoRetornaUsuariosSemDuplicatas() {
+        Usuario u1 = usuario(1L);
+        Usuario u2 = usuario(2L);
+        when(contextoRepository.findById(10L)).thenReturn(Optional.of(condominio));
+        when(participacaoRepository.findByContextoId(10L)).thenReturn(List.of(
+                new Participacao(u1, condominio, Papel.SINDICO, 1.0),
+                new Participacao(u1, condominio, Papel.CONDOMINO, 2.0),
+                new Participacao(u2, condominio, Papel.CONDOMINO, 1.0)));
+
+        List<MembroChapaDTO> membros = contextoService.listarMembrosDoContexto(10L);
+
+        assertEquals(2, membros.size());
+        assertEquals(1L, membros.get(0).id());
+        assertEquals("U1", membros.get(0).nome());
+        assertEquals(2L, membros.get(1).id());
+    }
+
+    @Test
+    void listarMembrosDoContextoLancaExcecaoSeContextoInexistente() {
+        when(contextoRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(java.util.NoSuchElementException.class,
+                () -> contextoService.listarMembrosDoContexto(999L));
+        verify(participacaoRepository, never()).findByContextoId(any());
     }
 }

@@ -37,14 +37,14 @@ class VotacaoControllerTest {
     private VotacaoResponseDTO resposta(StatusVotacao status) {
         return new VotacaoResponseDTO(100L, "Reforma", "Aprovar reforma", 1L, "Assembleia Geral",
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, status, null, null,
-                "Obras", 10, null, null, null, null, List.of());
+                List.of());
     }
 
     @Test
     void abrir_Retorna201() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null, 7L, null);
+                7L, null);
         Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class))).thenReturn(resposta(StatusVotacao.ABERTA));
 
         mockMvc.perform(post("/api/votacoes")
@@ -60,7 +60,7 @@ class VotacaoControllerTest {
     void abrir_SemTitulo_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("", "Aprovar reforma", 1L,
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null, 7L, null);
+                7L, null);
 
         mockMvc.perform(post("/api/votacoes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -73,7 +73,7 @@ class VotacaoControllerTest {
     void abrir_SemAdminId_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
                 TipoVotacao.DELIBERACAO, RegraAprovacao.MAIORIA_SIMPLES, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null, null, null);
+                null, null);
 
         mockMvc.perform(post("/api/votacoes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -86,7 +86,7 @@ class VotacaoControllerTest {
     void abrir_RegraInvalidaNaEntidade_Retorna400() throws Exception {
         VotacaoCreateDTO dto = new VotacaoCreateDTO("Reforma", "Aprovar reforma", 1L,
                 TipoVotacao.DELIBERACAO, RegraAprovacao.PERCENTUAL_MINIMO, null, 50.0, null, null,
-                "Obras", 10, null, null, null, null, 7L, null);
+                7L, null);
         Mockito.when(votacaoService.abrir(any(VotacaoCreateDTO.class)))
                 .thenThrow(new IllegalArgumentException("O percentual mínimo deve estar entre 0 (exclusivo) e 100."));
 
